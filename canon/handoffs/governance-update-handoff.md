@@ -12,6 +12,8 @@ target_document: "PTXprint Headless Operations — Knowledge Base for AI Agents 
 
 # Governance Update Handoff — Aligning the Headless KB with v1.2
 
+> **✅ Resolved 2026-04-28.** All edits in this handoff have been applied to `canon/governance/headless-operations.md`. The frontmatter `updated_at: 2026-04-28T04:06:00Z` and the v1.2-aligned blockquote in §0 reflect the integrated changes. This document is retained as a historical record of what was changed; **do not re-apply**. (See `canon/handoffs/documentation-cleanup-handoff.md` §3 P0.2 for context.)
+
 > **What this document is.** A specific set of edits to apply to the headless operations governance document so it speaks v1.2's stateless build-system architecture instead of v1.0/v1.1's filesystem-edit-in-place model. Most of the governance survives untouched; the changes are surgical. Estimated effort: 30–60 minutes for a careful pass, faster if delegated to another session with this document as input.
 
 > **How to use this.** Apply edits in the order listed. Each edit names the section, the change, and a suggested replacement (where text is being added or modified). Sections not mentioned do not need changes.

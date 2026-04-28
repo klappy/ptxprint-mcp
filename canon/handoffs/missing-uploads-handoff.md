@@ -12,6 +12,8 @@ companion_to: "canon/PENDING_UPLOADS.md"
 
 # Session Handoffs — Upload Prompts
 
+> **✅ Prompts A and B resolved 2026-04-28.** All target files are in the repo: slides ESE surfaces (`canon/surfaces/ptxprint-master-slides.surface.md/.json`), training manual (`canon/derivatives/ptxprint-training-manual.md`), governance Parts 0–12 + Provenance (`canon/governance/headless-operations.md`), session-3 encoding (`canon/encodings/transcript-encoded-session-3.md`), and the font-resolution-design article (now archived per v1.2 D-021 at `canon/articles/_archive/font-resolution-design.md`). Prompt C was contingent on Prompt A failing and is also moot. This document is retained as a historical record of the bootstrap upload coordination; **do not re-paste any prompt**. (See `canon/handoffs/documentation-cleanup-handoff.md` §3 P0.2 for context.)
+
 > **What this document is.** Three copy-pasteable prompts, one per Claude session that holds files the bootstrap session didn't have access to. Each prompt is self-contained: paste it into the relevant session's chat (or open a new conversation in that session's project) and the receiving Claude will know what to do, where to put the files, and how to push. Companion: [`PENDING_UPLOADS.md`](../PENDING_UPLOADS.md) (the inventory).
 
 > **How to use.** Identify which session holds which files (see PENDING_UPLOADS.md for context). Open that session's chat. Paste the corresponding prompt below verbatim. Wait for the session to confirm it has the files and execute the upload.

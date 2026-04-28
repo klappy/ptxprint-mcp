@@ -67,9 +67,12 @@ Additional fields like `supersedes`, `companion_to`, `extends`, `applied_canon` 
 
 ## Status of canon content
 
-- **Specs**: v1.2-draft is the current build target. v1.0 (PoC) and v1.1 (filesystem-based first-principles refactor) are historical and not in the repo; v1.2 supersedes them.
-- **Governance**: a substantial agent-facing governance document was authored from the PTXprint MASTER SLIDES deck PDF. It is currently aligned with v1.0/v1.1 and is being updated to v1.2 conventions per [`handoffs/governance-update-handoff.md`](handoffs/governance-update-handoff.md). Once updated it lands in [`governance/`](governance/).
-- **Encodings**: session 5 captures the architectural pivot to v1.2. Earlier session encodings (1–4) are referenced but may not yet be in this repo.
+- **Specs**: v1.0, v1.1, and v1.2 are all in [`specs/`](specs/). v1.2 is the current build target; v1.0 and v1.1 are retained as historical context. The original 17-tool PoC is at [`specs/archive/`](specs/archive/).
+- **Governance**: [`governance/headless-operations.md`](governance/headless-operations.md) (Parts 0–12 + Provenance) is in repo and v1.2-aligned. The historical update handoff at [`handoffs/governance-update-handoff.md`](handoffs/governance-update-handoff.md) is now resolved.
+- **Encodings**: all five sessions (1–5) are in [`encodings/`](encodings/). Session 5 captures the architectural pivot to v1.2.
+- **Articles**: [`articles/`](articles/) exists with [`_archive/`](articles/_archive/) (superseded design history). The five v1.2 gating articles (per spec §2) are not yet authored — see [`handoffs/documentation-cleanup-handoff.md`](handoffs/documentation-cleanup-handoff.md) §1 Track 2.
+- **Surfaces**: [`surfaces/`](surfaces/) contains the ptx2pdf and PTXprint MASTER SLIDES surfaces (markdown + JSON for each).
+- **Derivatives**: [`derivatives/`](derivatives/) contains the training manual produced from the slides ESE.
 
 ## Promotion to broader klappy canon
 

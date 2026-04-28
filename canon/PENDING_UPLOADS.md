@@ -11,6 +11,8 @@ created_at: 2026-04-28T04:20:00Z
 
 # `PENDING_UPLOADS.md` — Files Needed in This Repo
 
+> **✅ Required uploads complete (2026-04-28).** All bootstrap-required artifacts are in the repo. The only remaining item is §4 (optional pre-v1.2 article drafts for historical archive); the v1.2 build does not need them. This file should be deleted once §4 is either uploaded or explicitly punted. (See `canon/handoffs/documentation-cleanup-handoff.md` §3 P0.2 for context.)
+
 > **Why this exists.** This repo was bootstrapped by a single Claude session. That session had direct access to some artifacts but not others — some files were produced by sibling sessions (font work, slides ESE, training manual) or were uploaded as attachments to earlier sessions and didn't survive context compaction. Those files need to land here for the repo to be complete. This document names each missing file, where it should land, and which session is expected to have it.
 
 > **Looking for ready-to-paste prompts to give to the other sessions?** See [`handoffs/missing-uploads-handoff.md`](handoffs/missing-uploads-handoff.md) — three copy-pasteable session prompts (slides-ESE, font-resolution, operator-manual-paste) that another Claude session can act on directly.
@@ -29,17 +31,23 @@ created_at: 2026-04-28T04:20:00Z
 | `canon/specs/ptxprint-mcp-v1.1-spec.md` | ✅ committed |
 | `canon/specs/ptxprint-mcp-v1.2-spec.md` | ✅ committed |
 | `canon/specs/archive/ptxprint-mcp-first-pass-poc.md` | ✅ committed (the original 17-tool PoC) |
-| `canon/handoffs/governance-update-handoff.md` | ✅ committed |
 | `canon/encodings/transcript-encoded-session-1.md` | ✅ committed |
 | `canon/encodings/transcript-encoded-session-2.md` | ✅ committed |
+| `canon/encodings/transcript-encoded-session-3.md` | ✅ committed |
 | `canon/encodings/transcript-encoded-session-4.md` | ✅ committed |
 | `canon/encodings/transcript-encoded-session-5.md` | ✅ committed |
+| `canon/articles/_archive/font-resolution-design.md` | ✅ committed (superseded — v1.2 D-021 retired the three-MCP path; archived as design history) |
 | `canon/surfaces/ptx2pdf-surface.md` | ✅ committed |
 | `canon/surfaces/ptx2pdf-surface.json` | ✅ committed |
 | `canon/surfaces/ptxprint-master-slides.surface.md` | ✅ committed |
 | `canon/surfaces/ptxprint-master-slides.surface.json` | ✅ committed |
 | `canon/derivatives/ptxprint-training-manual.md` | ✅ committed |
 | `canon/governance/headless-operations.md` | ✅ committed (full Parts 0–12 + Provenance, v1.2-aligned) |
+| `canon/handoffs/governance-update-handoff.md` | ✅ committed (resolved 2026-04-28) |
+| `canon/handoffs/missing-uploads-handoff.md` | ✅ committed (Prompts A and B resolved 2026-04-28) |
+| `canon/handoffs/session-3-gaps-handoff.md` | ✅ committed |
+| `canon/handoffs/oddkit-kb-isolation-feature-request.md` | ✅ committed |
+| `canon/handoffs/documentation-cleanup-handoff.md` | ✅ committed |
 
 ---
 
@@ -73,7 +81,7 @@ git push origin main
 
 For Claude sessions using the operator's PAT (scope already covers this repo as of the bootstrap commit): same flow, with the PAT inserted into the remote URL.
 
-For uploads via the operator manually: drag-and-drop on the GitHub web UI works for individual files; the directory structure is already in place for §1 and §3.
+For uploads via the operator manually: drag-and-drop on the GitHub web UI works for individual files; `canon/articles/_archive/` already exists for §4.
 
 ---
 
