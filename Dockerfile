@@ -15,11 +15,14 @@ FROM python:3.11-slim-bookworm AS ptxprint-base
 
 WORKDIR /app
 
+# Use bash so heredocs can use bash-only options like `pipefail`.
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
 # Apt dependencies — pinned to the upstream sillsdev/ptx2pdf set, minus
 # ttf-mscorefonts-installer (license interactivity) and minus the noto fonts
 # that upstream commented out.
 RUN <<EOF
-set -euxo pipefail
+set -eux
 apt-get update
 apt-get install --no-install-recommends -y \
     git ca-certificates curl \
