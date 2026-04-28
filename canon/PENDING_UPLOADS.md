@@ -69,22 +69,6 @@ created_at: 2026-04-28T04:20:00Z
 
 ---
 
-### 2. Session 3 artifacts — font resolution work
-
-**Target paths:**
-- `canon/encodings/transcript-encoded-session-3.md`
-- `canon/articles/font-resolution-design.md` (new directory `canon/articles/` may need creating)
-
-**Status:** Not yet in repo.
-
-**Source:** The "Finding fonts for language support" Claude session. That session produced a font-resolution design document and a session encoding.
-
-**What's needed:** Whichever session/contributor has those files should clone this repo, place them at the indicated paths, and push.
-
-**Why this matters:** The font resolution design work decided that fonts travel with payloads via URL+sha256 (informed v1.2's `fonts` array slot). The session encoding documents the rationale. Without it, the v1.2 build's font-handling design has missing context and the "no system fonts in the Container" decision (per session-5 D-025) lacks its full backing argument.
-
----
-
 ### 3. Slides ESE artifacts and derivative training manual
 
 **Target paths:**
