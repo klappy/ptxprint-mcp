@@ -46,6 +46,7 @@ interface Env {
   PTXPRINT_CONTAINER: DurableObjectNamespace;
   OUTPUTS: R2Bucket;
   UPLOADS: R2Bucket;
+  WORKER_URL: string;
   PTXPRINT_TIMEOUT_DEFAULT: string;
   RESULT_PRESIGNED_TTL: string;
 }
@@ -85,7 +86,29 @@ export class PtxprintMcp extends McpAgent<Env> {
         const logKey = outputLogKey(payload, hash);
 
         const env = this.env;
-        const baseUrl = (this.props as { workerUrl?: string } | undefined)?.workerUrl ?? "";
+        // baseUrl is the Worker's public URL. We use it to build the
+        // worker_callback_url passed to the Container (so the container can
+        // POST state patches back to /internal/job-update and PUT artifacts
+        // to /internal/upload), and to build the predicted_pdf_url returned
+        // to the agent.
+        //
+        // Priority order:
+        //   1. env.WORKER_URL — wrangler var; the canonical source. Required
+        //      for the container callback path to work end-to-end.
+        //   2. this.props.workerUrl — historically used, but the props
+        //      plumbing in agents@0.2.x's McpAgent.serve doesn't actually
+        //      flow this through (ServeOptions has no `props` field — the
+        //      previous `{ props: ctorProps }` was always silently dropped).
+        //      Kept as a fallback for when the SDK gains a working props
+        //      pipeline; safe to leave in place.
+        //   3. Empty string — last-resort fallback. Causes
+        //      worker_callback_url to be null, which causes the container to
+        //      silently no-op all state updates and uploads. This is the
+        //      bug we just stopped having.
+        const baseUrl =
+          this.env.WORKER_URL ||
+          (this.props as { workerUrl?: string } | undefined)?.workerUrl ||
+          "";
 
         // Cache check — HEAD the expected R2 path.
         const head = await env.OUTPUTS.head(pdfKey);
@@ -114,6 +137,39 @@ export class PtxprintMcp extends McpAgent<Env> {
         const jobId = jobIdFromHash(hash);
         await initJob(env.JOB_STATE, jobId, hash, submittedAt);
 
+        // ----- Diagnostic instrumentation (Day-1 PoC) -----
+        //
+        // We have observed jobs sitting at state="queued" indefinitely with no
+        // sign the container ever started executing POST /jobs. Without runtime
+        // log access this is invisible. The block below makes every step of the
+        // dispatch visible in JobStateDO so `get_job_status` reflects what
+        // happened, regardless of whether the waitUntil promise survives DO
+        // hibernation.
+        //
+        // Three breadcrumbs end up in JobStateDO depending on outcome:
+        //   1. "Worker: about to dispatch container.fetch"  (always, before fetch)
+        //   2. "Worker: container responded HTTP <code>"    (on non-2xx response)
+        //   3. "Worker: container.fetch threw: <error>"     (on thrown error)
+        // Plus on success the container itself patches state=running per main.py.
+        //
+        // If state stays at the INITIAL_STATE summary "Container will pick up
+        // shortly" forever, we know waitUntil was killed before even the first
+        // pre-dispatch state write — which means hypothesis (1) (DO hibernation)
+        // is the root cause.
+
+        const patchJobState = async (patch: Record<string, unknown>) => {
+          try {
+            const stub = env.JOB_STATE.get(env.JOB_STATE.idFromName(jobId));
+            await stub.fetch("https://do/update", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify(patch),
+            });
+          } catch {
+            // Swallow — we're already inside best-effort instrumentation.
+          }
+        };
+
         const containerId = env.PTXPRINT_CONTAINER.idFromName(jobId);
         const containerStub = env.PTXPRINT_CONTAINER.get(containerId);
         const containerReq = new Request("http://container/jobs", {
@@ -131,11 +187,48 @@ export class PtxprintMcp extends McpAgent<Env> {
           }),
         });
 
+        const dispatchPromise = (async () => {
+          await patchJobState({
+            human_summary: "Worker: about to dispatch container.fetch (pre-call breadcrumb).",
+          });
+          try {
+            const res = await containerStub.fetch(containerReq);
+            if (!res.ok) {
+              const body = await res.text().catch(() => "<no body>");
+              await patchJobState({
+                state: "failed",
+                failure_mode: "hard",
+                completed_at: new Date().toISOString(),
+                errors: [`container responded HTTP ${res.status}: ${body.slice(0, 1000)}`],
+                human_summary: `Worker: container HTTP ${res.status}; body=${body.slice(0, 200)}`,
+              });
+            } else {
+              // 2xx — the container has executed (or is executing) POST /jobs and
+              // is already patching its own state via /internal/job-update.
+              // Record a breadcrumb so we can see the dispatch returned cleanly.
+              await patchJobState({
+                human_summary: `Worker: container.fetch resolved HTTP ${res.status} (container handler ran; see its own state updates).`,
+              });
+            }
+          } catch (err: unknown) {
+            const e = err as { name?: string; message?: string; stack?: string };
+            const msg = `${e?.name ?? "Error"}: ${e?.message ?? String(err)}`;
+            await patchJobState({
+              state: "failed",
+              failure_mode: "hard",
+              completed_at: new Date().toISOString(),
+              errors: [`container dispatch threw: ${msg}`],
+              human_summary: `Worker: container.fetch threw: ${msg}`,
+              log_tail: (e?.stack ?? "").slice(0, 2000),
+            });
+          }
+        })();
+
         // ctx.waitUntil keeps the dispatch alive after we return to the agent.
         // Risk noted in spec §6: at 30+ minutes the platform may terminate the
-        // dispatch fetch. Day-2 mitigation: container self-pokes to reset its
-        // own sleepAfter timer.
-        this.ctx.waitUntil(containerStub.fetch(containerReq));
+        // dispatch fetch. The diagnostic above will tell us if the issue is
+        // already biting at minute 0 in this McpAgent-DO context.
+        this.ctx.waitUntil(dispatchPromise);
 
         return {
           content: [
@@ -177,7 +270,10 @@ export class PtxprintMcp extends McpAgent<Env> {
             isError: true,
           };
         }
-        const baseUrl = (this.props as { workerUrl?: string } | undefined)?.workerUrl ?? "";
+        const baseUrl =
+          this.env.WORKER_URL ||
+          (this.props as { workerUrl?: string } | undefined)?.workerUrl ||
+          "";
         const augmented = {
           ...state,
           pdf_url: state.pdf_r2_key ? r2PublicUrl(state.pdf_r2_key, baseUrl) : null,

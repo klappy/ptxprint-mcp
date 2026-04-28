@@ -68,6 +68,15 @@
   // Build command for `wrangler deploy` — none needed, TS is bundled by Wrangler/esbuild.
 
   "vars": {
+    // Canonical public URL of this Worker. Used by submit_typeset to compute
+    // the `worker_callback_url` it sends to the Container — the container
+    // POSTs back to /internal/job-update with state patches, and PUTs to
+    // /internal/upload to write artifacts to R2. If unset (or empty) the
+    // Worker passes `worker_callback_url: null` to the container, which
+    // silently no-ops every state update and every artifact upload — making
+    // jobs appear stuck at `state=queued` indefinitely. This var must match
+    // the real workers.dev (or custom) hostname this Worker is deployed at.
+    "WORKER_URL": "https://ptxprint-mcp.klappy.workers.dev",
     "PTXPRINT_TIMEOUT_DEFAULT": "300",
     "RESULT_PRESIGNED_TTL": "604800"
   }
