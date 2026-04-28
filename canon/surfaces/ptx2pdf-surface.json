@@ -1,0 +1,335 @@
+{
+  "artifact_registration": {
+    "title": "Epistemic Surface Extraction — sillsdev/ptx2pdf for PTXprint MCP Server",
+    "format": "code_repository",
+    "subject_uri": "https://github.com/sillsdev/ptx2pdf/tree/master",
+    "generator": "claude-opus-4.7 (interactive session, web_search + web_fetch lens passes)",
+    "created_at": "2026-04-27T20:30:00Z",
+    "attribution": "ESE produced for PTXprint MCP Server project; subject repo authored by SIL Global / sillsdev contributors",
+    "intent": "Surface what an MCP server agent needs to know to drive PTXprint headlessly — entry points, project shape, config schema, inputs, outputs, failure modes, and deployment footprint.",
+    "canonical_status": "non_canonical",
+    "subject_repo_observed_version": "PTXprint 3.0.19 (release 2026-04-19) per docs/inno-docs/ReleaseNotes.txt",
+    "ese_method_uri": "klappy://canon/epistemic-surface-extraction"
+  },
+  "segmentation_spec": {
+    "modality": "code_repository",
+    "modality_note": "Canon ESE (klappy://canon/epistemic-surface-extraction) defines modalities for non-text artifacts (screenshots, audio, video, PDF slides). A code repository is text but has the ESE-relevant property: an LLM cannot ingest the whole repo in one pass and meaning depends on lens-by-lens passes. Modality 'code_repository' is introduced here with explicit notation.",
+    "unit": "lens",
+    "anchor_type": "repo_path",
+    "anchor_stability_note": "Anchors are repo-relative paths (e.g. 'docs/documentation/snippets.md'). Paths are stable under master-branch refactors except when files are moved or renamed; a follow-up audit at the time of MCP build should re-verify each path.",
+    "method": "Targeted web_search for distinctive terms per lens, web_fetch on raw.githubusercontent.com for stable raw-text reads. HTML rendering via github.com/blob is robots-disallowed; raw URLs accessible only after surfacing via search.",
+    "lenses_total": 12,
+    "lenses_with_direct_evidence": 9,
+    "lenses_inferred_or_partial": 3
+  },
+  "global_surface": {
+    "one_sentence": "ptx2pdf is the upstream monorepo for PTXprint, a Python/GTK desktop frontend that drives a XeTeX macro engine to typeset Paratext-format scripture (USFM) into PDFs; the Python layer is where MCP-server integration would live.",
+    "key_themes": [
+      "two-layer architecture: Python orchestration over XeTeX macros",
+      "project-and-configuration data model rooted in Paratext's filesystem conventions",
+      "GUI-tied workflow with a headless print path the SME confirms exists in conversation",
+      "rich peripheral content (covers, diglots, polyglots, cross-references, ornaments) that produces a large optional config surface",
+      "active development cadence — 3.0.x releasing approximately monthly through 2026"
+    ],
+    "forbidden_moves": [
+      "Do not treat this surface as a config schema specification — the 400-setting cfg field-set is not enumerated here.",
+      "Do not treat lens 11 (MCP server design surface) as a build spec — it is a candidate set, subject to operator review and gap-analysis against the existing first-pass server.",
+      "Do not assume any path or filename in this surface still exists at MCP-build-time without re-verifying — ptx2pdf is actively refactored.",
+      "Do not infer headless CLI flags from this document — the SME described their existence in conversation; the actual flag names and behavior must be read from runjob.py and any argparse setup before being relied on."
+    ]
+  },
+  "segments": [
+    {
+      "lens_id": "L1",
+      "lens": "Repo identity and scope",
+      "anchors": [
+        "README.md",
+        "docs/home/README.md",
+        "https://software.sil.org/ptxprint/"
+      ],
+      "evidence_status": "direct",
+      "bullets": [
+        "Self-description: 'XeTeX based macro package for typesetting USFM formatted (Paratext output) scripture files' — sets the engine (XeTeX), the input grammar (USFM), and the upstream provenance (Paratext).",
+        "Repo aims to be the common source bringing copies from other repositories together — meaning ptx2pdf consolidates both the macro layer and the Python frontend (PTXprint), which historically lived separately.",
+        "Master branch is the main release branch; there are 'various long term branches' beyond master — implying an MCP server should pin to a release tag, not master, for reproducibility.",
+        "External release portal at software.sil.org/ptxprint is the user-facing distribution; the GitHub repo is the dev source — these are different entry points for different audiences.",
+        "License and governance not surfaced in this pass — to verify before MCP server is published."
+      ],
+      "short_quotes": [
+        "PTX2PDF is a XeTeX based macro package for typesetting USFM formatted (Paratext output) scripture files."
+      ],
+      "cross_references": [
+        {"relation": "compresses", "target": "transcript-encoded.md#O-002"}
+      ]
+    },
+    {
+      "lens_id": "L2",
+      "lens": "Headless invocation pathway",
+      "anchors": [
+        "python/lib/ptxprint/ (module root, per ptxprint.spec)",
+        "release_notes_reference: 'fix typo in runjob' (3.0.6, 2025-12-03)",
+        "transcript SME description"
+      ],
+      "evidence_status": "partial — module name 'runjob' is confirmed in release notes; the actual entry-point CLI signature has not been read from source",
+      "bullets": [
+        "SME quote in transcript: 'all the headless does is read the configuration and hit print' — implies a code path that takes (project_dir, config_name) and produces a PDF without launching GUI.",
+        "Release-notes evidence places this code path in a module named 'runjob' (3.0.6 patch references 'runjob' by name) — likely python/lib/ptxprint/runjob.py.",
+        "Apt-installed CLI binary is `ptxprint`; transcript mentions a runtime introspection flag described as '-I' that exposes UI-control-to-config-key mapping. Inference: the same `ptxprint` binary supports flags that route to either GUI launch or headless run.",
+        "Inference (unverified): the existing first-pass MCP server invokes either `ptxprint` with flags or imports the Python module and calls runjob's entry function directly. Either path needs verification before the MCP server can be hardened.",
+        "An auxiliary Python script `python/scripts/pdfinish` exists (per ptxprint.spec) — likely a post-typesetting PDF post-processor, separate from the main job runner."
+      ],
+      "short_quotes": [
+        "make sure prepress file can be renamed (procpdf). fix typo in runjob"
+      ],
+      "rules_or_constraints_shown": [
+        "Headless run is the agentic surface (transcript C-001).",
+        "GUI dependencies (PyGObject, GTK) may still be imported even in headless mode — must be verified that runjob can run without an X server."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "transcript-encoded.md#O-001"}
+      ]
+    },
+    {
+      "lens_id": "L3",
+      "lens": "Project shape — the input directory the agent points at",
+      "anchors": [
+        "transcript SME description (lines 164–242)",
+        "issue #587 (mentions \\shared\\ptxprint\\CONFIGURATION layout)",
+        "issue #352 ('Default' configuration name)"
+      ],
+      "evidence_status": "direct from issues + transcript; layout fully consistent across sources",
+      "bullets": [
+        "Project root is a Paratext-style directory; PTXprint reads project files directly without requiring Paratext to be running.",
+        "Per-config artifacts live under `<project>/shared/ptxprint/<CONFIGURATION>/` — this is where each named config's `ptxprint.cfg`, `ptxprint.sty`, and (post-fix-of-issue-587) per-config changes file live.",
+        "Two load-bearing files per configuration: `ptxprint.cfg` (key-value config, ~400 settings) and `ptxprint.sty` (USFM stylesheet override).",
+        "Project-wide artifacts (USFM source files, PrintDraftChanges.txt, fonts referenced) live at the project root, not per-config.",
+        "'Default' is the actual default configuration name; arbitrary config names like 'cover', 'NiceLayout' are user-created variants. Configurations are sorted caseless in the UI as of 3.0.19."
+      ],
+      "short_quotes": [
+        "rather lives in the \\shared\\ptxprint\\CONFIGURATION folder"
+      ],
+      "cross_references": [
+        {"relation": "compresses", "target": "transcript-encoded.md#O-002"}
+      ]
+    },
+    {
+      "lens_id": "L4",
+      "lens": "ptxprint.cfg — the main config file shape",
+      "anchors": [
+        "transcript SME description",
+        "issue #338 (sty file reorder issue — implies INI-like format)",
+        "PTXprintTechRef.pdf (referenced in ptxprint.spec but not directly read in this pass)"
+      ],
+      "evidence_status": "partial — shape (~400 settings, key/value, sectioned) is described by SME but the actual section names, types, and field semantics have not been read from source in this pass",
+      "bullets": [
+        "Approximately 400 settings — confirmed by SME, who described it as 'the main one with four hundred settings in it'.",
+        "Inference: Likely a Python `configparser`-style INI file with `[section]` headers and `key = value` lines. The cover-wizard and Pretore wiring (`-E 1`) suggest experimental/feature-flag pattern in keys.",
+        "Field-level docs are incomplete (transcript O-open P1) — the runtime introspection mode (CLI flag exposing tooltip/ID/setting-name per UI control) is the highest-fidelity available source for this mapping.",
+        "PTXprintTechRef.pdf bundled in the installer (per ptxprint.spec → 'docs/documentation/PTXprintTechRef.pdf' → 'ptxprint/PDFassets/reference') is the canonical technical reference; reading it is a recommended next ESE pass.",
+        "The existing first-pass MCP server (transcript O-001) was given ~150 real projects' configs as exemplars — that corpus is the empirical schema, more reliable than any one document."
+      ],
+      "rules_or_constraints_shown": [
+        "An MCP server exposing config edits must validate against the actual schema before writing — silent writes of unknown keys is the documented failure mode in transcript O-open P1."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "transcript-encoded.md#O-open-P1-001"}
+      ]
+    },
+    {
+      "lens_id": "L5",
+      "lens": "ptxprint.sty — the stylesheet override shape",
+      "anchors": [
+        "issue #338 (style ordering)",
+        "docs/documentation/snippets.md",
+        "docs/documentation/figures.md"
+      ],
+      "evidence_status": "direct — file format is USFM-stylesheet syntax with PTXprint extensions",
+      "bullets": [
+        "Content is USFM-style markup definitions; users back up sty files across versions to track tweaks (issue #338).",
+        "PTXprint overrides default USFM styles per-configuration; original defaults live in usfm_sb.sty (referenced as a file that 'went missing' in 2.7.27 release notes).",
+        "Style elements use markers like `\\zpa-xc`, `\\xt`, `\\bd` (snippets.md, figures.md) — opaque to non-USFM readers; an MCP server should treat `.sty` content as opaque key-value configuration of named styles.",
+        "Style editor in PTXprint reorders entries on save (issue #338, fixed) — implies non-canonical write order historically; an MCP server writing `.sty` should preserve user content rather than round-tripping through the editor.",
+        "Style decisions interact with figure placement codes (1-2 letter codes plus optional alignment number), which are PTXprint extensions to USFM-3 (figures.md)."
+      ],
+      "cross_references": [
+        {"relation": "compresses", "target": "transcript-encoded.md#O-002"}
+      ]
+    },
+    {
+      "lens_id": "L6",
+      "lens": "Inputs — USFM source, fonts, images",
+      "anchors": [
+        "docs/documentation/figures.md",
+        "ptxprint.spec (font/image bundled assets)",
+        "release_notes 3.0.19 (Charis added to bundled fonts)"
+      ],
+      "evidence_status": "direct",
+      "bullets": [
+        "USFM files are the primary source; PTXprint converts USFM to USX internally (snippets.md describes 'parsing the USFM into USX').",
+        "Image inputs: PTXprint generates a USFM-3 piclist from Paratext figure lines, and supports .png images (3.0.19 fix for png in picture catalogue). Multiple positioning options beyond USFM-3 spec exist (1-2 letter pgpos codes).",
+        "Font inputs are the dominant runtime dependency. Apt install pulls `fonts-sil-charis` as default; Charis is bundled in 3.0.19 builds. SME identified fonts as the binary blocker for headless container deployment (transcript O-open P1-002).",
+        "Cross-reference data lives in `python/lib/ptxprint/xrefs/` (per ptxprint.spec) — bundled with the install, not user-provided.",
+        "Bundled XeTeX binaries (`.tfm`, `.pfm`, `.pfb`) live in `xetex/` in the source tree (per ptxprint.spec) — installed builds carry their own XeTeX. Source installs require `texlive-xetex` from the OS."
+      ],
+      "rules_or_constraints_shown": [
+        "Without the right font files in the runtime environment, typesetting fails — this is the binary blocker for headless container deployment."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "transcript-encoded.md#O-open-P1-002"}
+      ]
+    },
+    {
+      "lens_id": "L7",
+      "lens": "Outputs — PDF, intermediates, logs",
+      "anchors": [
+        "release_notes (multiple versions)",
+        "issue #20 (catcode failure with .log artifact named ptxprint-RUTCABRS.log)",
+        "issue #212 (failed run still produces PDF without pictures)"
+      ],
+      "evidence_status": "direct — output naming and partial-success behavior visible in issue logs",
+      "bullets": [
+        "Final output is a PDF. Naming convention seen in issues: `ptxprint-<PROJECT>.log` for the run log; the PDF naming is project-and-config-derived but exact pattern not surfaced in this pass.",
+        "Intermediate artifacts include `procpdf` (renamed during prepress, 3.0.6) and a `parlocs` file (parallel-locations metadata, 'Keep going if no parlocs file' release note).",
+        "PDF-finishing is a separate optional script (`python/scripts/pdfinish` per ptxprint.spec) — implies the main job emits a 'pre-finish' PDF that pdfinish post-processes.",
+        "Partial success is possible — issue #212 documents a run that emitted a PDF but skipped all pictures after canonicalisation errors. An MCP server returning success-or-failure should surface non-fatal warnings, not just exit code.",
+        "On 3.0.19, parallel processing for the PDF Viewer pane was added — implies the renderer is multi-process-aware, with `page_filler` doing concurrent layout."
+      ],
+      "rules_or_constraints_shown": [
+        "Validation cannot rely on exit code alone (issue #212): a 'successful' run can be silently degraded.",
+        "An MCP server's render tool should return: PDF path, log path, warning list, and a structural assertion (e.g., 'pictures were rendered: N expected, N actual')."
+      ]
+    },
+    {
+      "lens_id": "L8",
+      "lens": "Failure modes and validation surface",
+      "anchors": [
+        "issue #1 (long hang on project select)",
+        "issue #20 (USFM-injected catcode causing TeX 'Missing number' error, 'No pages of output')",
+        "issue #212 (Failed to canonicalise — produced incomplete PDF)",
+        "issue #235 (slow run with [Not Responding])",
+        "release_notes 3.0.9 ('Add check for content in scripture file to catch it before TeX gives an unhelpful error')"
+      ],
+      "evidence_status": "direct — failure modes are richly documented in the issue tracker",
+      "bullets": [
+        "Hard failures surface as TeX errors with line numbers (e.g. 'Missing number, treated as zero' from issue #20). The .log file is the diagnostic artifact; the user-facing error is often opaque without it.",
+        "Soft failures: the PDF is produced but degraded (no pictures, no TOC, etc.). Detection requires inspecting the PDF, the log, and possibly the parlocs file.",
+        "Performance failures: long hangs (multi-minute) on first project access (issue #1) and on print (issue #235). An MCP server must set sensible timeouts and surface 'still working' progress, not 'unresponsive'.",
+        "Pre-flight checks are an active development direction (3.0.9 release note: catch empty scripture files before TeX). An MCP server can wrap the run with the same checks PTXprint runs internally — exposing them as a separate tool would let the agent fail fast without invoking XeTeX.",
+        "Release-note signal: 'truthful and informative' mismatch warnings are in 3.0.8 — implies the team values legible error surfaces. An MCP server should mirror this — opaque pass-through of TeX errors is a regression."
+      ],
+      "rules_or_constraints_shown": [
+        "An MCP server's render tool MUST distinguish: (a) hard failure (no PDF), (b) soft failure (degraded PDF), (c) success — by inspecting both exit code and post-conditions."
+      ]
+    },
+    {
+      "lens_id": "L9",
+      "lens": "Test fixtures in repo",
+      "anchors": [
+        "transcript SME assertion: 'even the test projects that are on the repository… there's a few. And the README file afterwards, which you can build on.'",
+        "release_notes 2.7.27 ('Update test standards and add more tests')"
+      ],
+      "evidence_status": "partial — existence asserted by SME and corroborated by release notes; specific paths not surfaced in this pass",
+      "bullets": [
+        "SME confirmed test projects exist in-repo with a README. Walked example in transcript: a project with three configurations — 'cover', 'default', and a third config — accessed via the GUI's project picker.",
+        "Specific test-project paths (likely under `tests/` or a similarly named top-level directory) were not surfaced via the search-based passes; a follow-up `tree` listing of the repo root or fetch of a paths-listing file is the next step.",
+        "Release notes 2.7.27 confirms an active 'test standards' practice — implies golden output PDFs may exist and could be reused as MCP-server smoke-test fixtures.",
+        "Inference: the SME's reference to ~150 real projects is likely external (their personal corpus), not in-repo. The in-repo fixtures are the small canonical set; the 150 are the empirical training set the existing first-pass MCP server learned from.",
+        "MCP-server next step: enumerate in-repo test projects, run each through the proposed render tool, diff the resulting PDF (or its parlocs/log) against a checked-in expected output."
+      ],
+      "rules_or_constraints_shown": [
+        "Per transcript C-002, fixtures come from the in-repo test corpus, not a parallel dataset."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "transcript-encoded.md#C-002"}
+      ]
+    },
+    {
+      "lens_id": "L10",
+      "lens": "Deployment and runtime requirements (Docker / container shape)",
+      "anchors": [
+        "python/readme.md (apt install list for Ubuntu 18.04/20.04)",
+        "ptxprint.spec (PyInstaller binary spec for Windows packaging)",
+        "InnoSetupPTXprint.iss (Windows installer config)"
+      ],
+      "evidence_status": "direct for source-install; the SME-mentioned 'Dockerfile' was NOT directly observed in repo searches in this pass",
+      "bullets": [
+        "Source-install runtime (Ubuntu 20.04 baseline): `python3-gi gobject-introspection gir1.2-gtk-3.0 libgtk-3-0 gir1.2-gtksource-3.0 python3-cairo python3-regex python3-pil texlive-xetex fonts-sil-charis` — apt install footprint.",
+        "Apt-package install adds 86 packages, 187 MB of archives, 628 MB additional disk space — material container-size budget for any deployment.",
+        "Python deps (per python/readme.md): PyGObject, regex, PIL, fonttools, cairo. Hidden imports (per ptxprint.spec): gi.repository.fontconfig, gi.repository.Poppler, numpy._core._exceptions.",
+        "Inference (unverified): SME mentioned 'we have a Docker file so you can actually quite easily deploy at least the headless version'. A Dockerfile was not surfaced via the search passes in this ESE — either it lives in a path the searches did not surface, in a sibling repo, or was added recently. To confirm before relying on it.",
+        "PyInstaller spec for Windows packages everything as a self-contained `PTXprint.exe`. Linux/Mac use system-installed XeTeX (texlive-xetex). For containers, the bundled-xetex Windows pattern may be the more robust template."
+      ],
+      "rules_or_constraints_shown": [
+        "An MCP server deployed in a container must include: Python 3.x, PyGObject + GTK, XeTeX, fonts (at minimum SIL Charis for English-only scope), and all `python/lib/ptxprint/` resources."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "transcript-encoded.md#O-open-P1-002"}
+      ]
+    },
+    {
+      "lens_id": "L11",
+      "lens": "MCP server design surface — candidate tools",
+      "anchors": [
+        "synthesis from L1–L10",
+        "transcript O-001 (existing server exposes projects/configs/overrides)"
+      ],
+      "evidence_status": "design proposal — derived from observed surface, not read from existing first-pass MCP server's source",
+      "bullets": [
+        "Candidate read tools: `list_projects(root)`, `list_configurations(project)`, `get_config(project, config_name)`, `get_stylesheet(project, config_name)`, `describe_setting(setting_name)`, `list_test_fixtures()` — small, idempotent, exposable to an agent without write risk.",
+        "Candidate write tools: `set_config_overrides(project, config_name, overrides_dict)` and `create_configuration(project, name, base=default)`. Writes should be staged into a working copy, not the project on disk, until an explicit commit step.",
+        "Candidate execute tool: `render(project, config_name, overrides=None, books=None) → {pdf_path, log_path, warnings[], structural_checks{}}`. This is the tool the existing first-pass server is reportedly missing or returning empty (transcript O-001).",
+        "Candidate introspect tool: `dump_setting_metadata()` that wraps the runtime '-I' (or equivalent) PTXprint flag the SME described — to give an agent the GUI-label-to-cfg-key mapping without reading the GTK code.",
+        "Out-of-scope for v1 by design (deferred): GUI tools, font installation, project creation from scratch, Paratext-server integration. Each is a meaningful surface but expanding initial scope past 'render an existing project's existing config' is the failure mode the operator's two-phase direction (transcript D-003) was guarding against."
+      ],
+      "rules_or_constraints_shown": [
+        "Tool surface must mirror the headless contract (transcript C-001): inputs are project + config + overrides; output is PDF or legible failure.",
+        "Validation is the hardest part (transcript O-001 SME quote) — every render tool result includes structural assertions, not just success/failure."
+      ]
+    },
+    {
+      "lens_id": "L12",
+      "lens": "Open questions and gaps in this surface",
+      "anchors": [
+        "self-audit"
+      ],
+      "evidence_status": "explicit gap inventory",
+      "bullets": [
+        "Q1 — Headless CLI signature: what is the exact argv for invoking PTXprint headlessly, and does it bypass GTK init? Resolution: read `python/lib/ptxprint/runjob.py` and any `__main__` entry in the ptxprint package directly.",
+        "Q2 — Config field schema: what are the 400 setting names, types, valid values, and which are user-facing vs internal-derived? Resolution: parse the GTK Glade XML (UI definitions), correlate to the `runtime introspection (-I) flag` output, and cross-check against PTXprintTechRef.pdf.",
+        "Q3 — Dockerfile: does an actual Dockerfile exist in this repo (or a sibling)? SME asserted 'we have a Docker file' — not surfaced in this pass. Resolution: targeted search for `Dockerfile`, `docker-compose.yml`, or container build CI under `.github/workflows/`.",
+        "Q4 — Test fixture paths: where exactly do the in-repo test projects live, and what golden outputs (if any) accompany them? Resolution: directory listing of repo root and `tests/` (or equivalent).",
+        "Q5 — License: not surfaced in this pass; required before publishing any MCP server that wraps or distributes ptx2pdf code. Resolution: read LICENSE file at repo root."
+      ]
+    }
+  ],
+  "containment": {
+    "label": "interpretive_non_canonical_non_instructional",
+    "clause": "This artifact is interpretive and non-canonical. It is a surface extraction of the sillsdev/ptx2pdf code repository, not a specification of PTXprint. It may illustrate the shape of the codebase but does not define rules. Where this surface and the repository disagree, the repository wins. Where this surface and canon disagree, canon wins. If any part of this document can be safely treated as instruction-to-execute, the surface has failed and should be edited.",
+    "precedence": "canon > repo source > this surface"
+  },
+  "promotion_rule": {
+    "note": "Per klappy://canon/epistemic-surface-extraction, surfaces inform but do not become canon. Durable insights from this ESE — for example, the principle that 'an MCP server's render tool must distinguish hard / soft / success failures' — should be promoted by editing canon directly (e.g., a new principle under canon/principles/), not by linking this surface as authority."
+  },
+  "provenance": {
+    "extraction_method": "lens-based passes via web_search + web_fetch over robots-allowed raw.githubusercontent.com paths and search-result URLs",
+    "passes_executed": [
+      "transcript_re-read_for_lens_inventory",
+      "canon_search_for_ESE_method",
+      "repo_root_search",
+      "python_readme_fetch",
+      "ptxprint_spec_search",
+      "config_layout_search",
+      "release_notes_fetch_full",
+      "headless_runner_search",
+      "deployment_search"
+    ],
+    "human_review_status": "not_reviewed",
+    "next_recommended_passes": [
+      "fetch and read python/lib/ptxprint/runjob.py source",
+      "fetch and read PTXprintTechRef.pdf for config schema",
+      "directory listing of repo root and tests/ for fixture paths",
+      "search for Dockerfile presence",
+      "read LICENSE file"
+    ]
+  }
+}

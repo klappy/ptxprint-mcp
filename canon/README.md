@@ -19,10 +19,13 @@ This directory holds the project's knowledge base. Every file is intended to be:
 
 | Subdirectory | Purpose |
 |---|---|
-| [`specs/`](specs/) | Versioned PTXprint MCP server specifications. Don't edit published versions — create a new file and supersede. |
-| [`governance/`](governance/) | Agent-facing operational knowledge: how to construct payloads, interpret results, handle the long tail of PTXprint operational concerns. The "user manual" for the AI. |
+| [`specs/`](specs/) | Versioned PTXprint MCP server specifications. v1.2 is the current build target; v1.0 and v1.1 are historical. The original 17-tool PoC lives under `specs/archive/`. Don't edit published versions — create a new file and supersede. |
+| [`governance/`](governance/) | Agent-facing operational knowledge: how to construct payloads, interpret results, handle the long tail of PTXprint operational concerns. The "user manual" for the AI. **Currently incomplete** — see [`PENDING_UPLOADS.md`](PENDING_UPLOADS.md) §1. |
 | [`handoffs/`](handoffs/) | Cross-session work-transfer documents. Not durable canon; describe what one session is asking the next session (or another collaborator) to do. |
-| [`encodings/`](encodings/) | DOLCHEO+H session encodings — Decisions, Observations, Learnings, Constraints, Handoffs, Open questions captured per session. The project's running ledger. |
+| [`encodings/`](encodings/) | DOLCHEO+H session encodings — Decisions, Observations, Learnings, Constraints, Handoffs, plus Open questions captured per session. The project's running ledger. |
+| [`surfaces/`](surfaces/) | ESE (Epistemic Surface Extraction) outputs: structured `.surface.md` and `.surface.json` artifacts derived from large source materials (upstream code repositories, slide decks, etc.). Non-canonical by rule — surfaces inform but do not become canon. |
+| `articles/` (planned) | Topic-keyed agent-facing canon articles authored from governance + surfaces + session learnings. Will hold `payload-construction.md`, `output-naming.md`, `config-construction.md`, `font-resolution.md`, `failure-mode-taxonomy.md` — the five gating articles for the v1.2 smoke test. |
+| [`PENDING_UPLOADS.md`](PENDING_UPLOADS.md) | List of files needed in this repo that the bootstrap session did not have direct access to. Other sessions and the operator should upload per the instructions there. |
 
 ## Frontmatter convention
 
