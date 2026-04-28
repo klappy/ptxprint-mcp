@@ -69,6 +69,12 @@
 
   "vars": {
     "PTXPRINT_TIMEOUT_DEFAULT": "300",
-    "RESULT_PRESIGNED_TTL": "604800"
+    "RESULT_PRESIGNED_TTL": "604800",
+    // Canonical public URL of this Worker. Used by the MCP tool handlers to
+    // build (a) callback URLs the Container fetches back to, and (b) R2 proxy
+    // URLs returned to the agent. We can't derive this from the McpAgent DO's
+    // execution context (the DO doesn't see the original Request), so it's a
+    // var. If the deployment moves to a custom domain, update this value.
+    "WORKER_PUBLIC_URL": "https://ptxprint-mcp.klappy.workers.dev"
   }
 }

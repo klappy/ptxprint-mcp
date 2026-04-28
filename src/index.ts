@@ -48,6 +48,7 @@ interface Env {
   UPLOADS: R2Bucket;
   PTXPRINT_TIMEOUT_DEFAULT: string;
   RESULT_PRESIGNED_TTL: string;
+  WORKER_PUBLIC_URL: string;
 }
 
 // ---------- Helpers ----------
@@ -85,7 +86,11 @@ export class PtxprintMcp extends McpAgent<Env> {
         const logKey = outputLogKey(payload, hash);
 
         const env = this.env;
-        const baseUrl = (this.props as { workerUrl?: string } | undefined)?.workerUrl ?? "";
+        // workerUrl was historically read from `(this.props as { workerUrl?: string }).workerUrl`,
+        // but `props` was never actually populated — see PR #4 for the diagnosis.
+        // The replacement is a wrangler var so the URL is reliably available
+        // inside the McpAgent DO.
+        const baseUrl = env.WORKER_PUBLIC_URL ?? "";
 
         // Cache check — HEAD the expected R2 path.
         const head = await env.OUTPUTS.head(pdfKey);
@@ -177,7 +182,7 @@ export class PtxprintMcp extends McpAgent<Env> {
             isError: true,
           };
         }
-        const baseUrl = (this.props as { workerUrl?: string } | undefined)?.workerUrl ?? "";
+        const baseUrl = env.WORKER_PUBLIC_URL ?? "";
         const augmented = {
           ...state,
           pdf_url: state.pdf_r2_key ? r2PublicUrl(state.pdf_r2_key, baseUrl) : null,
