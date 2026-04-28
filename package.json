@@ -17,6 +17,7 @@
     "@cloudflare/containers": "^0.1.0",
     "@modelcontextprotocol/sdk": "^1.18.0",
     "agents": "^0.2.0",
+    "ai": "^4.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

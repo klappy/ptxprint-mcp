@@ -53,7 +53,7 @@
       "class_name": "PtxprintContainer",
       "image": "./Dockerfile",
       "max_instances": 5,
-      "instance_type": "standard"
+      "instance_type": "standard-2"
     }
   ],
 
