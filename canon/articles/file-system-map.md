@@ -100,8 +100,8 @@ Note `<PRJ>` (uppercase project id) and `<config>` (case-as-named) appear in som
 <num><BOOK><prj>-<config>[.SFM|-diglot].adj
   │     │      │        │     │
   │     │      │        │     └─ `.SFM.adj` for monoglot, `-diglot.adj` for diglot
-  │     │      │        └────── lowercase config name (no, actually case-as-named)
-  │     │      └─────────────── lowercase project id? actually case-as-named
+  │     │      │        └────── config name (case as named)
+  │     │      └─────────────── project ID (case as named)
   │     └────────────────────── three-letter USFM book code, uppercase
   └──────────────────────────── two-digit book number, zero-padded
 ```
