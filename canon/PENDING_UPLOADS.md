@@ -36,55 +36,14 @@ created_at: 2026-04-28T04:20:00Z
 | `canon/encodings/transcript-encoded-session-5.md` | ✅ committed |
 | `canon/surfaces/ptx2pdf-surface.md` | ✅ committed |
 | `canon/surfaces/ptx2pdf-surface.json` | ✅ committed |
-| `canon/governance/headless-operations.md` (Parts 0–2 only, partial) | ⚠️ needs completion — see §1 below |
+| `canon/surfaces/ptxprint-master-slides.surface.md` | ✅ committed |
+| `canon/surfaces/ptxprint-master-slides.surface.json` | ✅ committed |
+| `canon/derivatives/ptxprint-training-manual.md` | ✅ committed |
+| `canon/governance/headless-operations.md` | ✅ committed (full Parts 0–12 + Provenance, v1.2-aligned) |
 
 ---
 
 ## Files that need to be uploaded
-
-### 1. Headless Operations governance — full Parts 3–12 + Provenance (HIGHEST PRIORITY)
-
-**Target path:** `canon/governance/headless-operations.md` (existing file; replace the "PENDING UPLOAD" section near the bottom)
-
-**Status:** The file currently contains Parts 0–2 only, with a placeholder where Parts 3–12 + Provenance should go.
-
-**Source:** The operator authored this document by extracting content from a PDF of the PTXprint MASTER SLIDES deck. The full document was uploaded as an attachment to an earlier Claude session ("PTXprint training manual creation" — chat URL `claude.ai/chat/fddce82c-e7f8-4c20-9882-b4c4152aa4f6` per session-1's transcript reference, or whichever session received the upload most recently).
-
-**What's needed:** Paste the original Parts 3–12 plus the Provenance section into the existing file, replacing the "PENDING UPLOAD" placeholder block. Authored sections (in order):
-- Part 3 — The Configuration Model
-- Part 4 — The Override Mechanism
-- Part 5 — Settings Cookbook (by user intent)
-- Part 6 — Supporting Files
-- Part 7 — USFM in Headless Context
-- Part 8 — Workflow Recipes
-- Part 9 — Diagnostic Patterns
-- Part 10 — Conversational Patterns
-- Part 11 — Settings That Need Special Handling
-- Part 12 — Open Gaps in This KB
-- Provenance
-
-**After upload:** apply [`canon/handoffs/governance-update-handoff.md`](handoffs/governance-update-handoff.md) to align the full document with v1.2 conventions. Estimated 30–60 minutes for the alignment pass.
-
-**Why this matters:** Without the full document, `payload-construction.md`, `output-naming.md`, `failure-mode-taxonomy.md`, and the agent-facing operational knowledge are all stuck. The v1.2 build cannot pass its end-to-end smoke test without this content available to the agent via oddkit.
-
----
-
-### 3. Slides ESE artifacts and derivative training manual
-
-**Target paths:**
-- `canon/surfaces/ptxprint-master-slides.surface.md`
-- `canon/surfaces/ptxprint-master-slides.surface.json`
-- `canon/articles/ptxprint-training-manual.md`
-
-**Status:** Not yet in repo.
-
-**Source:** The "PTXprint training manual creation" Claude session (chat URL `claude.ai/chat/fddce82c-e7f8-4c20-9882-b4c4152aa4f6`). That session ran ESE on the 438-slide MASTER SLIDES deck and authored a derivative training manual (3 files, ~127 KB total).
-
-**What's needed:** Clone this repo, place the three files at the indicated paths, push.
-
-**Why this matters:** The slides surface is the structural index of the deck (24 lenses, page-range anchored). The training manual is a 12-part linear learning sequence derived from the surface. Both feed canon authoring for the agent-facing articles (`payload-construction.md`, `config-construction.md`, etc.) and provide the structured raw material the operator's PDF extraction was distilled from.
-
----
 
 ### 4. (Optional) Pre-v1.2 canon article drafts
 
