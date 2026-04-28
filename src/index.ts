@@ -327,14 +327,25 @@ export default {
     }
 
     // MCP transport — streamable HTTP at /mcp; legacy SSE at /sse for compatibility.
+    //
+    // The `binding` option is REQUIRED here. agents@0.2.x defaults `binding` to
+    // "MCP_OBJECT" inside `McpAgent.serve`, but our DO binding is named
+    // "MCP_AGENT" in wrangler.jsonc — so without this option the SDK throws
+    // `Could not find McpAgent binding for MCP_OBJECT` and the Worker returns
+    // a Cloudflare 1101 (uncaught JS exception) on every /mcp and /sse hit.
+    //
+    // (The previous version also passed `{ props: ctorProps }` here. ServeOptions
+    // does not include a `props` field — it accepts only `binding`, `corsOptions`,
+    // `transport`, `jurisdiction` — so that property was silently dropped and
+    // `workerUrl` never reached the agent. Plumbing workerUrl is a separate fix:
+    // it has to flow through `ctx.props`, which is OAuth-Provider-managed in this
+    // SDK; for now `r2PublicUrl` returns relative `/r2/...` paths from the tools,
+    // which is acceptable for the smoke tests.)
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
-      // Pass workerUrl in props so tool handlers can construct R2 proxy URLs.
-      const ctorProps = { workerUrl: `${url.protocol}//${url.host}` };
-      return PtxprintMcp.serve("/mcp", { props: ctorProps }).fetch(req, env, ctx);
+      return PtxprintMcp.serve("/mcp", { binding: "MCP_AGENT" }).fetch(req, env, ctx);
     }
     if (url.pathname === "/sse" || url.pathname.startsWith("/sse/")) {
-      const ctorProps = { workerUrl: `${url.protocol}//${url.host}` };
-      return PtxprintMcp.serveSSE("/sse", { props: ctorProps }).fetch(req, env, ctx);
+      return PtxprintMcp.serveSSE("/sse", { binding: "MCP_AGENT" }).fetch(req, env, ctx);
     }
 
     return new Response("not found", { status: 404 });
