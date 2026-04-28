@@ -11,6 +11,14 @@
     "head_sampling_rate": 1
   },
 
+  // Bundle alias — agents@0.2.x dynamically imports the `ai` SDK for a code path
+  // we never use. esbuild still resolves it at bundle time. Aliasing to an empty
+  // stub avoids shipping the AI SDK (multi-MB) and avoids peerDep semver wrangling.
+  // See src/stubs/ai-empty.ts for context.
+  "alias": {
+    "ai": "./src/stubs/ai-empty.ts"
+  },
+
   // Three Durable Object classes:
   //   PtxprintMcp     — the McpAgent itself (agents/mcp wraps stateful sessions in a DO)
   //   JobStateDO      — per-job state machine (state, progress, urls, errors)
@@ -53,7 +61,7 @@
       "class_name": "PtxprintContainer",
       "image": "./Dockerfile",
       "max_instances": 5,
-      "instance_type": "standard"
+      "instance_type": "standard-2"
     }
   ],
 
