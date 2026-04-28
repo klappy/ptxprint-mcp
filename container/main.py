@@ -220,14 +220,24 @@ def build_ptxprint_argv(payload: PayloadModel, scratch: Path) -> list[str]:
     return argv
 
 
-def find_output_pdf(scratch: Path, project_id: str, config_name: str) -> Path | None:
-    """Locate the output PDF after a run. PTXprint writes to local/ptxprint/."""
-    candidates = list((scratch / project_id / "local" / "ptxprint").glob(f"{project_id}_{config_name}_*_ptxp.pdf"))
+def find_output_pdf(scratch: Path, project_id: str, config_name: str | None) -> Path | None:
+    """Locate the output PDF after a run. PTXprint writes to local/ptxprint/.
+
+    When `config_name` is None (Phase 1, `-c` omitted) PTXprint's internal
+    default may not match `payload.config_name`, so glob with a wildcard
+    in the config-name slot.
+    """
+    name = config_name or "*"
+    candidates = list((scratch / project_id / "local" / "ptxprint").glob(f"{project_id}_{name}_*_ptxp.pdf"))
     return candidates[0] if candidates else None
 
 
-def find_output_log(scratch: Path, project_id: str, config_name: str) -> Path | None:
-    candidates = list((scratch / project_id / "local" / "ptxprint" / config_name).glob(f"{project_id}_{config_name}_*_ptxp.log"))
+def find_output_log(scratch: Path, project_id: str, config_name: str | None) -> Path | None:
+    base = scratch / project_id / "local" / "ptxprint"
+    if config_name:
+        candidates = list((base / config_name).glob(f"{project_id}_{config_name}_*_ptxp.log"))
+    else:
+        candidates = list(base.glob(f"*/{project_id}_*_*_ptxp.log"))
     return candidates[0] if candidates else None
 
 
@@ -310,8 +320,9 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
                 stderr_tail = f"TIMEOUT after {timeout_s}s\n{(exc.stderr or '')[-1000:]}"
                 log.error("job %s timed out", job_id)
 
-            pdf_path = find_output_pdf(scratch, payload.project_id, payload.config_name)
-            log_path = find_output_log(scratch, payload.project_id, payload.config_name)
+            effective_config = payload.config_name if payload.config_files else None
+            pdf_path = find_output_pdf(scratch, payload.project_id, effective_config)
+            log_path = find_output_log(scratch, payload.project_id, effective_config)
             log_text = log_path.read_text(errors="replace") if log_path else stderr_tail
             errors, overfull = parse_log_for_errors(log_text)
             log_tail = "\n".join(log_text.splitlines()[-100:])
