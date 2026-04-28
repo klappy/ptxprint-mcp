@@ -41,10 +41,16 @@ EOF
 
 # Install PTXprint from sillsdev/ptx2pdf upstream. Pin to a tag/sha at hardening
 # time; for Day-1 we track master.
+#
+# Upstream-pyproject patch: as of 3.0.20 (2026-04-28), pyproject.toml declares
+# a dependency named "markdown_it" which does not exist on PyPI (the real
+# package is "markdown-it-py"). We sed-fix it in place after the clone.
+# Worth filing upstream as a bug in sillsdev/ptx2pdf.
 ARG PTX2PDF_REF=master
 RUN git clone --depth 1 --branch ${PTX2PDF_REF} \
         https://github.com/sillsdev/ptx2pdf.git /tmp/ptx2pdf \
  && cd /tmp/ptx2pdf \
+ && sed -i 's/"markdown_it"/"markdown-it-py"/' pyproject.toml \
  && pip install --no-cache-dir . \
  && rm -rf /tmp/ptx2pdf /root/.cache
 
