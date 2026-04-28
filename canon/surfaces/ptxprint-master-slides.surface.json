@@ -1,0 +1,476 @@
+{
+  "artifact_registration": {
+    "title": "Epistemic Surface Extraction — PTXprint: MASTER SLIDES",
+    "format": "google_slides_deck",
+    "subject_uri": "https://docs.google.com/presentation/d/1LOp7bHXQPMIxnyeiPqb5o4-n35pFulDJwBiQgaXeG4o/edit",
+    "subject_title": "PTXprint: MASTER SLIDES — Bible Layout For Everyone",
+    "subject_authors": "Martin Hosken (Project Lead, System Architect, TeX macros), Mark Penny (UI Developer, Testing, Documentation), David Gardner (TeX Macro Coding, Diglot Specialist), and other contributors",
+    "subject_publisher": "SIL International / WSTech",
+    "subject_observed_total_slides": 438,
+    "subject_self_described_status": "work-in-progress; the deck itself enumerates 13 sections still to be added (slide 5)",
+    "generator": "claude-opus-4.7 (interactive session, web_fetch on /htmlpresent rendering)",
+    "created_at": "2026-04-27T21:11:00Z",
+    "attribution": "ESE produced for the PTXprint MCP Server / training-manual project; subject deck authored by SIL International contributors named above",
+    "intent": "Surface what an AI-assisted training-manual author needs to know about the PTXprint MASTER SLIDES deck — its information architecture, the conceptual model it teaches, the hands-on exercises it embeds, and the open gaps it acknowledges — without canonising any of it.",
+    "canonical_status": "non_canonical",
+    "ese_method_uri": "klappy://canon/epistemic-surface-extraction"
+  },
+  "segmentation_spec": {
+    "modality": "slides",
+    "modality_note": "Canon ESE defines slide modality as unit=page, anchor_type=page_number, 1 segment per page. This artifact deviates by using a lens-based grouping with page_range anchors — matching the project precedent established by ptx2pdf.surface.{md,json} and avoiding the 'Raw Dump' failure mode named in canon ESE for a 438-slide deck. The page_index sidecar at the end of this file preserves per-page navigability.",
+    "unit": "lens",
+    "anchor_type": "page_range",
+    "anchor_stability_note": "Anchors are slide-number ranges within the observed version of the deck. Slide numbers are stable so long as the authors do not insert/delete slides at the start. The deck is actively edited; re-verify page anchors at the time of any downstream use.",
+    "method": "Single-pass web_fetch on the /htmlpresent variant of the Google Slides URL (the /export/pdf variant required pre-surfaced URL access). The /htmlpresent rendering preserves slide numbers and most text content; image-only slides surface only their slide number. Lenses were derived from the deck's own thematic section breaks.",
+    "lenses_total": 24,
+    "lenses_with_direct_evidence": 24,
+    "lenses_inferred_or_partial": 0
+  },
+  "global_surface": {
+    "one_sentence": "PTXprint: MASTER SLIDES is a 438-slide working training deck maintained by the PTXprint development team that walks a Paratext-aware audience from product positioning, through install and first PDF, into the full settings universe (Mini/Basic/Full views, ~400 options), and out to advanced workflows (changes.txt, headless CLI, override files, diglot/polyglot, Strong's index, Arabic features).",
+    "key_themes": [
+      "Three-tier UI surface — Mini, Basic, Full views — with explicit control counts (5 / 14 / 27 on the Layout tab) that constitute a first-class progressive-disclosure pattern users can lock per configuration.",
+      "Configuration-as-folder — every named configuration lives at <project>/shared/ptxprint/<ConfigName>/ and is shared via Paratext Send/Receive; output PDFs live at <project>/local/ptxprint/.",
+      "Tooltip-first documentation philosophy — the deck repeatedly tells the reader they may not need a manual because every UI control surfaces a tooltip; the deck itself is positioned as supplementary.",
+      "USFM as the lingua franca — text transformations (changes.txt), styling (.sty), peripherals (FRT/BAK), AdjLists, and piclists are all USFM-adjacent text artifacts the user is expected to read and write directly.",
+      "Beyond Paratext — projects do not require Paratext to be running; a folder of USFM files plus PTXprint is a complete workflow, and DBL/Open.Bible bundles can be unpacked directly.",
+      "Visual interactivity — right-click on the PDF preview pane is a primary editing surface (paragraph adjust, picture management, send-ref-to-Paratext)."
+    ],
+    "forbidden_moves": [
+      "Do not treat this surface as a PTXprint user manual. The deck itself is the authored teaching material; this surface is awareness extraction.",
+      "Do not treat lens bullets as canonical statements about how PTXprint behaves. Behaviour comes from the running software, the bundled tooltips, and the PTXprintTechRef.pdf — not from this surface.",
+      "Do not treat the page anchors as durable. The deck is actively edited (slide 5 lists 13 known additions still to come); slide numbers can shift.",
+      "Do not infer settings names, default values, or precise UI labels from this document. Where surface bullets reference a setting, treat it as a pointer; verify against the running PTXprint UI before encoding into the MCP server's schema.",
+      "Do not assume features described as 'coming soon' or 'experimental' have shipped. Slide 15 explicitly partitions the feature set into 'with ease', 'with some pain', and 'coming soon'."
+    ]
+  },
+  "segments": [
+    {
+      "lens_id": "L1",
+      "lens": "Deck identity, authorship, work-in-progress posture",
+      "page_range": "1–5",
+      "evidence_status": "direct",
+      "bullets": [
+        "Title page (slide 1) names three primary developers — Martin Hosken (project lead, TeX macros), Mark Penny (UI, testing, documentation), David Gardner (TeX macro coding, diglot specialist) — and credits 'many other contributors'.",
+        "The deck self-identifies as MASTER SLIDES, which the project's training community can fork or extract from for specific audiences.",
+        "Slide 5 is an explicit author's-list of 13 sections still to be written: configurations, thumb tabs, ornaments x2, dynamic borders & section headings, Style Editor detail, ptxprint-mods.tex, USFM auto-correct, header/footer language handling, Codelet buttons, \\zrules / \\zqrcode insertion, .triggers files, picture-set imports, and many slide-screenshot refreshes.",
+        "Slides 2–4 are image-only navigation pages (table-of-contents grids with 'Click to jump' chips); the deck is intended to be read non-linearly.",
+        "The final slide (438) credits Mark Penny, SIL International, as the presenting author of the deck — distinct from the 'developed by' attribution on slide 1."
+      ],
+      "rules_or_constraints_shown": [
+        "The deck's known-gaps slide is itself a contract: the surface should treat anything in that list as not-yet-canonically-taught material, even if related slides exist."
+      ],
+      "cross_references": [
+        {"relation": "complements", "target": "transcript-encoded.md#O-001"}
+      ]
+    },
+    {
+      "lens_id": "L2",
+      "lens": "Background — why PTXprint exists, who maintains it, history",
+      "page_range": "6–19",
+      "evidence_status": "direct",
+      "bullets": [
+        "The framing motivation (slide 7) is that getting well-formatted scripture out of Paratext is too hard; PTXprint is positioned as a missing tool in the translator's toolbox.",
+        "Project provenance (slide 11): a 48-year arc rooted in 1978-era TeX, a 2004–2013 PTX2PDF macro phase, and PTXprint as the GUI frontend layered on top from 2020 onward; led by SIL's WSTech.",
+        "The product's stated values (slide 10) cluster around being free, open source, community-driven, stand-alone, well-supported, scalable, and explicitly 'archaic' (XeTeX is old technology and that is part of the value proposition).",
+        "The product goal (slide 12) is shifting day-to-day typesetting from professional typesetters to translation teams: zero-cost, hours not weeks of training, lowering the load on overworked specialists.",
+        "Ecosystem positioning (slide 16): PTXprint is integrated into the Paratext menu and uses Paratext's Send/Receive to share saved configurations — but the deck stresses (boxed callout) that PTXprint can run on a folder of USFM files without Paratext at all."
+      ],
+      "rules_or_constraints_shown": [
+        "Independence-from-Paratext is a load-bearing claim. An MCP server that hard-requires a Paratext install is a regression against this stated value."
+      ]
+    },
+    {
+      "lens_id": "L3",
+      "lens": "Comparison to PubAssist+InDesign — what trades off",
+      "page_range": "20–41",
+      "evidence_status": "direct",
+      "bullets": [
+        "The deck stages an explicit comparison (slides 38–40) between PTXprint and PubAssist+InDesign and links to https://software.sil.org/ptxprint/differences/ for the canonical version.",
+        "PTXprint's named limitations (slide 38): no in-place text editing, formatting via styles + rules only, requires re-runs to update layout, longer books are 'cumbersome', and the tongue-in-cheek 'you can't pay for it'.",
+        "PubAssist's named limitations (slide 39): cannot do interlinear, dynamic text borders are difficult, polyglot/Graphite/QR are impossible, last-minute changes hurt, and it requires paid InDesign.",
+        "The fundamental contrast (slide 40): PubAssist is a semi-automatic hands-on system; PTXprint is an automated repeatable pipeline — better for clusters with multiple similar projects and for multiplying typesetter effectiveness.",
+        "Slides 21–37 are mostly image-only example outputs showing layout variety; the deck shows rather than tells what 'PTXprint can do' before listing capabilities."
+      ],
+      "rules_or_constraints_shown": [
+        "Repeatability is treated as a primary product virtue, which directly supports the case for an MCP server: a tool whose value is repeatability is a tool that benefits from being scriptable."
+      ]
+    },
+    {
+      "lens_id": "L4",
+      "lens": "Getting Started — install, first PDF, view levels",
+      "page_range": "42–62",
+      "evidence_status": "direct",
+      "bullets": [
+        "Discovery path (slide 44): the deck directs new users to software.sil.org/ptxprint and the three-step Download → Install → Run rhythm.",
+        "First-run behaviour (slide 47): if no Paratext projects exist, the Berean Standard Bible (BSB) auto-installs, and users can also import scripture texts (DBL, etc.) via a 3-step wizard or pull a Module.",
+        "Three view levels (slide 48 → 50–52): Basic view is sufficient for most starts; Mini view exposes only the fewest possible settings (and can be set as a final lockdown state before sharing a config); Full view exposes everything.",
+        "Tooltips are pushed early and often (slide 53): 'These tooltips are everywhere. So read them!' — the deck repeatedly returns to this principle as the primary documentation surface.",
+        "Book selection flexibility (slide 54): the deck shows 8 example specifications including ranges (ROM 3-5), spans across books (JHN 21-ACT 3), verse ranges (EXO 20:12-17), Hebrew canonical order, and full Bible-with-peripherals specs."
+      ],
+      "rules_or_constraints_shown": [
+        "The Mini/Basic/Full view hierarchy is a published, durable surface contract — an MCP server can mirror this as a tool-detail-level parameter rather than reinventing one.",
+        "BSB auto-install is a recoverable empty-state. An MCP server probing a fresh install should not assume project absence is fatal."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "transcript-encoded.md#O-open-P1-001"}
+      ]
+    },
+    {
+      "lens_id": "L5",
+      "lens": "Help architecture — tooltips, search, errors, community",
+      "page_range": "63–79",
+      "evidence_status": "direct",
+      "bullets": [
+        "Built-in help (slide 64–67) is presented as the default support surface: a Help tab, an experimental support chatbot, and contextual tooltips on every option (the deck claims 'over 400 options to customize' on slide 66).",
+        "Settings search (slide 69) addresses the 400-option discoverability problem with a search box; the deck's training exercise asks the reader to find obscure features (Refresh captions, Underline thickness, Stretch a font, Watermark, Strong's Numbers, Sidebars, Thumb tabs, Spine).",
+        "Error-handling guidance (slides 70–72): pay attention to status-bar messages, read the typesetting Report, scan diagnostic error messages from top down, look at hints at the end of error blocks, send an archive when stuck.",
+        "Update cadence (slide 73): a new version ships several times a month; the deck instructs the reader to check the 'new version available' icon and not file bugs against stale builds.",
+        "Community support (slides 74–78): the project has migrated its forum to community.scripture.software.sil.org/c/ptxprint/27 (also support.bible/ptxprint), and there are training video showcases on Vimeo (/showcase/9331905, /showcase/10946202)."
+      ],
+      "rules_or_constraints_shown": [
+        "'Read the tooltip' is the documented first-resort answer to settings questions. An MCP server's describe_setting tool should source from the same tooltip strings, not invent them."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "transcript-encoded.md#O-003"}
+      ]
+    },
+    {
+      "lens_id": "L6",
+      "lens": "Configurations — storage layout, naming, import/export, sharing",
+      "page_range": "80–90",
+      "evidence_status": "direct",
+      "bullets": [
+        "A configuration is a folder of settings stored at <project>/shared/ptxprint/<ConfigName>/ (slide 83); the local/ptxprint folder holds tmp folders and PDFs that get cleaned up.",
+        "Send/Receive shares configurations across project members because they live in /shared (slide 82); the deck explicitly warns the reader to think before creating a new configuration and naming it.",
+        "Copy-Configuration-to-other-projects is the export path (slide 84) but assumes Send/Receive edit access on the destination — the deck flags this assumption as 'rather rare' (slide 85).",
+        "Import Settings (slides 86–89) is the inverse: pull settings from any PTXprint-produced PDF or PTXprintArchive.zip without needing project access; the recommended best practice is to create a new config and import into it rather than overwrite.",
+        "A public gallery aspiration is named (slide 86, http://tiny.cc/jamesgallery) where users can submit sample PDFs and others can clone the layout via Import Settings."
+      ],
+      "rules_or_constraints_shown": [
+        "Settings inheritance and config import are first-class authoring surfaces; the existing PTXprint MCP spec's create_config tool should preserve this idiom, including the 'create new, import into it' best practice."
+      ],
+      "cross_references": [
+        {"relation": "compresses", "target": "PTXprint_MCP_SPEC.md_-_First_Pass#section-3.3-config-inheritance"}
+      ]
+    },
+    {
+      "lens_id": "L7",
+      "lens": "Layout — page geometry, fonts, scripts, hyphenation, paragraph adjustment",
+      "page_range": "91–130",
+      "evidence_status": "direct",
+      "bullets": [
+        "Layout view-tier control counts (slide 99): Mini view = 5 controls, Basic view = 14 controls, Full view = 27 controls. This is the most precise progressive-disclosure number-set in the deck and is directly useful for sizing an MCP server's Layout-tab tool surface.",
+        "Pre-layout decision checklist (slide 97): the deck instructs the user to start from the end product backward — printer, page size, margins (incl. gutter), font size and leading, single/double column, hyphenation availability, footnotes/cross-refs/glossary markup.",
+        "Guides, baselines, and graph paper (slides 100–102) are layout debugging surfaces; the graph overlay does not appear on the final PDF and is meant for measurement during setup.",
+        "Optimisation buttons (slide 104) auto-compute optimal line spacing to reduce wasted paper; variable line spacing (slide 106) is a 'short-runs-on-thick-paper' quick fix the deck flags as situational, not default.",
+        "Hyphenation (slides 126–127) distinguishes Paratext's wordlist file from PTXprint's hyphen.tex file, with an explicit complex-script support list (mymr, thai, arab, sinh, mlym, taml, telu, knda, orya) and a 63,929-word automatic limit beyond which PTXprint picks the most-likely-to-hyphenate words by length and frequency.",
+        "Paragraph shrink/expand (slides 116–124): right-click on the preview pane gives line and text shrink/expand; a typesetter testimonial (slide 122) describes Galatians/Ephesians/1-John typeset in three minutes each via this interactive surface."
+      ],
+      "rules_or_constraints_shown": [
+        "The paragraph-adjust contract has shipped UI affordances; an MCP server's set_adjlist tool should produce content that round-trips through the same right-click adjustment surface."
+      ]
+    },
+    {
+      "lens_id": "L8",
+      "lens": "Body, glossary, marginal verses, columns",
+      "page_range": "131–154",
+      "evidence_status": "direct",
+      "bullets": [
+        "Introductory outlines (slides 134–136) use \\io1 / \\io2 / \\ior … \\ior* USFM markers and are right-aligned by default; the deck flags this as a setting users should know exists.",
+        "Configurable marginal verses (slides 141–143) let the user pick where verse numbers go on the page; the feature is described as long-existing but newly-positionable.",
+        "Glossary markup options (slides 145–147) include several floor styles plus 'None' (which removes the \\w word|...\\w* markup entirely); \\zglm and \\w character styles are the user-facing styling hooks.",
+        "Column toggling per book (slides 149–150): when a publication is 2-column, certain books (Psalms, Glossary) commonly need 1-column overrides; the deck treats this as a Body-tab setting rather than a per-book hack.",
+        "Hanging poetry verse numbers (slide 153) is treated as a separate body feature, called out by name."
+      ]
+    },
+    {
+      "lens_id": "L9",
+      "lens": "Cross-references and footnotes",
+      "page_range": "155–171",
+      "evidence_status": "direct",
+      "bullets": [
+        "Footnotes are described as 'easy' (slide 156): the user picks whether they appear and where; \\f styling controls caller appearance and size in the text area.",
+        "External cross-reference lists (slides 160–161) are presented as one of the more powerful tools — the deck framing is 'thousands of references without adding to your USFM text'.",
+        "Placement options (slides 162–169) include side-aligned columnar references, inner-aligned for space efficiency, centre-column for 2-column layouts, and column-aligned variants.",
+        "The 'why so many lists?' question is named but not answered exhaustively in the deck — it points to filter + placement + alignment as the three orthogonal axes.",
+        "A practice exercise (slide 170) asks the reader to add an external Standard list filtered to JHN/1-3JN/REV, placed below footnotes, with the project's existing cross-references suppressed."
+      ],
+      "rules_or_constraints_shown": [
+        "Cross-reference list selection is a config-level decision with downstream layout implications; an MCP server's get_config / set_config_values tools should expose these as a coherent group, not as scattered keys."
+      ]
+    },
+    {
+      "lens_id": "L10",
+      "lens": "Pictures — sources, placement, copyright, sensitivity, downloading",
+      "page_range": "172–206",
+      "evidence_status": "direct",
+      "bullets": [
+        "PTXprint's image-search order (slide 175): Paratext project Figures folder → project local/figures (high-res, not Send/Recv shared) → user AppData imagesets → custom shared folder. The deck calls out that high-res images are deliberately excluded from Send/Receive sharing.",
+        "Per-illustration controls (slides 177–183): Anchor Ref (distinct from Caption Ref) is the white-space-fix lever; multi-row selection allows bulk Scale changes; known illustration series (CN, CO, AB, etc.) carry automatic copyright attribution.",
+        "Sensitivity handling (slide 187) and image mirroring (slides 181–182) are first-class workflows for adapting culturally inappropriate images to local audiences.",
+        "Copyright generation (slides 185–186) supports automatic credits in multiple languages (en, hu, ro, fr, es, id) via \\zimagecopyrights variants and known series codes (ab/cn/co/hk/lb/bk/ba/dy/gt/dh/mh/mn/wa/dn/ib).",
+        "David C. Cook permissions (slides 190–195) are obtained via a pre-filled Google Form that PTXprint generates from project metadata; the high-res download workflow (slides 197–200) goes through a request → wait <24h → email → download → DO-NOT-UNZIP loop."
+      ],
+      "rules_or_constraints_shown": [
+        "Image copyright is treated as an automated workflow with explicit policy hooks (Get Permission, Request Access). An MCP server that handles image management must preserve the request/wait/download lifecycle, not bypass it."
+      ]
+    },
+    {
+      "lens_id": "L11",
+      "lens": "Styles, sidebars, and the Style Editor",
+      "page_range": "207–215",
+      "evidence_status": "direct",
+      "bullets": [
+        "The Styles tab is repeatedly described as 'overwhelming' (slide 208); the recommended first move is the Filter button to limit the view to styles in use in the current project.",
+        "Style identifiers can be qualified by category and id (slide 211): mt1 is the basic main-title style, but cat:coverfront|mt1 targets the cover, cat:coverspine|mt1 targets the spine, id:GLO|mt1 targets the GLOssary book — a powerful but easy-to-overlook combinator.",
+        "Sidebars (slides 213–214) carry sidebar-specific settings beyond ordinary styles: position-on-page, width-relative-to-page, background shading, borders, foreground/background colours, and transparency (alpha).",
+        "Slide 5's gap inventory explicitly notes that the Style Editor needs more deck coverage — caller beware that this lens is necessarily light.",
+        "The deck author embedded a self-note (slide 208) requesting a future slide explaining the right-hand-side font-description controls, bold/Bold interactions, and parent-relative scaling — these remain undocumented in deck form at this version."
+      ]
+    },
+    {
+      "lens_id": "L12",
+      "lens": "Diglot, polyglot, versification, DBL/Open.Bible ingestion",
+      "page_range": "216–239",
+      "evidence_status": "direct",
+      "bullets": [
+        "Diglot is positioned as a gateway to a richer family (slides 216–219): two-column primary/secondary, then 'di-script', 'di-...imagine!', and finally polyglot. The deck names a referenced best-practices document by John Nystrom on diglot setup.",
+        "Diglot challenges enumerated (slide 218): merging strategy choice depending on project alignment, balancing line spacing with column size, dual-caption pictures, custom alignment tools, AdjLists + changes.txt interaction, two-config concurrency limits, front/back matter complexity.",
+        "Polyglot configurability (slide 227) and right-click context (slide 226) are the editing surfaces; the deck pitches polyglot as 'now possible' suggesting it is a relatively recent first-class feature.",
+        "Versification (slides 228–229) is described with a teaching aphorism: nobody worries about it until two texts are placed side-by-side and don't line up. The deck shows synchronisation tooling for differing models.",
+        "DBL ingestion (slides 230–236) is a 3-step pipeline: pick a text on Open.Bible, locate the downloaded bundle, assign a project name; PTXprint then unzips the bundle, creates a settings file, and opens the new project — an end-to-end onboarding for users without an existing Paratext project."
+      ],
+      "rules_or_constraints_shown": [
+        "Diglot configurations engage two project-config pairs simultaneously; an MCP server modelling diglot must preserve both as first-class targets, not collapse into a single config view."
+      ]
+    },
+    {
+      "lens_id": "L13",
+      "lens": "Special layouts — Reader, Journaling, Study, Pastor's, QR, Concordance",
+      "page_range": "240–254",
+      "evidence_status": "direct",
+      "bullets": [
+        "Six named layout patterns (slide 241): Reader edition (no inline ch/vs, no notes), Journaling (single-column with very wide outer margins), Conventional Study Bible (for merged SB projects), Pastor's Study Bible (cross-refs + Strong's index), Interactive QR-coded content (still experimental), and module-derived publications.",
+        "Reader edition (slide 243) uses faint marginal verses showing only the first verse of each paragraph, achieved via a TeX 'snippet' the deck links to on GitHub (sillsdev/ptx2pdf docs/documentation/snippets.md).",
+        "Study Bible layout (slide 245) is presented as a 3-click setup but relies on \\ef … \\ef* extended-footnote markup in the source USFM rather than ordinary \\f.",
+        "QR codes (slides 250–253) are inserted via \\zqrcode markers with size/position/data attributes; the deck shows a \\setcvhook pattern for binding QR codes to specific verse references and notes a spreadsheet-driven .trigger file workflow as the recommended bulk method — explicitly NOT editing USFM directly.",
+        "Concordance layout (slide 254) is a 3-column layout pattern; the deck shows it but does not enumerate its setup steps in this version."
+      ]
+    },
+    {
+      "lens_id": "L14",
+      "lens": "Modules — derivative scripture products",
+      "page_range": "255–269",
+      "evidence_status": "direct",
+      "bullets": [
+        "Modules are scripture selections with optional bridging material (slide 256): example modules listed include Christmas Story Harmony, Proverbs by Topic, OT Stories from PNG, Lives of the Prophets from Indonesia, BSI Children's Bible, Power-to-Save key verses.",
+        "Module repository (slide 257): lingtran.net/Bible-Module-Repository (or tiny.cc/modules) is the canonical share point.",
+        "Custom-module creation by AI (slide 257) points to scripturemodulemaker-10015268.chipp.ai as the named tooling for generating new modules.",
+        "Workflow (slides 259–260) downloads a custom module and prints it via the same Bible Module selector used for repository modules.",
+        "Slides 263–268 are image-only example outputs, again favouring shown-not-told for layout variety."
+      ]
+    },
+    {
+      "lens_id": "L15",
+      "lens": "Strong's Numbers — generation from Paratext Biblical Terms",
+      "page_range": "270–282",
+      "evidence_status": "direct",
+      "bullets": [
+        "The framing problem (slide 272): Biblical Terms data in Paratext represents 'gold' that historically stayed locked inside the project; PTXprint's Strong's Index feature exposes it as a printable reference.",
+        "A single dialog (slide 274) is described as the assembly point for the index settings; the typeset index appears in the XXS book alongside other generated peripherals.",
+        "In-text markup (slide 277) relies on Biblical Terms Renderings already existing in Paratext — meaning the index is not fabricated by PTXprint, it surfaces work the team has already done.",
+        "Greek and Hebrew indexes can be separated (slide 280), with \\links style controlling element formatting; the \\xts marker styles the 4-digit Strong's cell within text (slide 279).",
+        "The deck makes an explicit value argument (slide 281): the Strong's index takes under ten minutes to generate, costs nothing extra to produce, and gives translation communities back the data they have already created — framed as 'why wouldn't you do this?'"
+      ],
+      "rules_or_constraints_shown": [
+        "Strong's index generation reads from Paratext data and writes into a generated USFM book (XXS). An MCP server enabling this must preserve that read-from-Paratext / write-to-XXS boundary."
+      ]
+    },
+    {
+      "lens_id": "L16",
+      "lens": "Interlinear — including on-the-fly TECkit",
+      "page_range": "283–294",
+      "evidence_status": "direct",
+      "bullets": [
+        "Interlinear precondition (slide 284): if Paratext's interlinear window shows red/blue/black glosses, PTXprint's interlinear will not work — the user must Approve Glosses (turning everything black) first.",
+        "Interlinear diglot (slide 287) combines interlinear stacking with two-column diglot, increasing complexity.",
+        "On-the-fly interlinear via TECkit (slides 290–293) wraps every Hebrew word in \\zb ... \\zb* via a regex change, then uses an int|zb style with a YiddishPasekh2Latin TECkit map to romanise each word during typesetting.",
+        "The setup is described as advanced (slide 293): three-level glossing using TECkit + Paratext interlinear data + ruby glossing markers, and the deck explicitly says users should not expect to set this up alone.",
+        "The deck flags this lens as a 'support-required' workflow rather than a self-serve one, matching the 'coming soon: Complex on-the-fly interlinear' line on slide 15."
+      ]
+    },
+    {
+      "lens_id": "L17",
+      "lens": "Ornaments — decorative rules, borders, page borders",
+      "page_range": "295–304",
+      "evidence_status": "direct",
+      "bullets": [
+        "Decorative rules (slides 296–300) are inserted via \\zrule markers with width / align / thick / cat parameters; the deck shows changes.txt patterns to inject ornamental rules under \\mt1 main titles.",
+        "Ornament definition (slide 300) lives in the .sty file as a Marker block (e.g. cat:ornaments3|zrule with BorderColour, BorderStyle (e.g. VectorianRule1), BorderLineWidth, TextProperties).",
+        "Front-page ornaments (slides 301–302) use \\esb ... \\esbe sidebar blocks with cat=frontpage and BorderStyle=ornaments, plus BorderPatternTop/Bot/Left/Right specifications — the deck shows a complete Telugu front-page example.",
+        "Page borders (slide 303) split into 'dynamically generated' vs static; the dynamic variant is named but its details are deferred (slide 5 lists 'How to set up dynamic borders and section headings' as a known gap).",
+        "Slide 5's gap inventory explicitly notes ornaments-x2-kinds and ptxprint-mods.sty population as still-to-add; this lens is therefore inherently incomplete in deck form."
+      ]
+    },
+    {
+      "lens_id": "L18",
+      "lens": "Table of Contents and Thumb Tabs",
+      "page_range": "305–318",
+      "evidence_status": "direct",
+      "bullets": [
+        "ToC insertion (slide 307–308) uses \\ip \\ztoc|<order>\\* in the front-matter peripheral, where order can be main / ot / nt / dc / pre / post / heb / sorta / sortb / sortc / bible / biba / bibb / bibc.",
+        "Sorting variants (slide 310) trade off canonical book order against alphabetical (\\toc1), short-name (\\toc2), or abbreviated (\\toc3) column ordering — the deck shows side-by-side examples.",
+        "Column alignment across multiple ToC tables (slides 311–312) is solved by editing the cat:toc|tc1 / tc2 style's Space-Before Factor at the project level.",
+        "Diglot ToC (slides 313–315) uses |mainL / |mainR suffixes to split primary/secondary languages and \\zglot|R\\* / \\zglot|L\\* to handle RTL/LTR mixing inside the table.",
+        "Thumb tabs (slides 316–317) bleed off the page (cropped at trim) and rely on \\toc1/2/3 fields for their labels; slide 5 lists thumb-tab single-sided handling as a known deck-coverage gap."
+      ]
+    },
+    {
+      "lens_id": "L19",
+      "lens": "Peripheral matter, front matter, covers (basic + wizard)",
+      "page_range": "319–345",
+      "evidence_status": "direct",
+      "bullets": [
+        "Peripherals tab order (slide 321): pre-PTXprint PDFs can be imported, then the ToC, then PTXprint-generated FRT content (driven by the View+Edit tab), then variables, then a colophon (auto-disabled when front matter is enabled), then post-PTXprint PDFs.",
+        "Front-matter generation modes (slide 322): Basic (front + verso + ToC), Advanced (whole-NT/Bible material), and Paratext (local copy of the project's FRT book that the user can modify).",
+        "Special front-matter codes (slides 324–325): \\zcopyright / \\zlicense / \\zimagecopyrights have no |variable or closing \\*; built-in CC logos are available via \\zccimg by-nd|...\\*; layout helpers \\zbl|N\\*, \\zgap|1.3cm\\*, \\nopagenums / \\dopagenums / \\resetpagenums round out the toolkit.",
+        "Cover wizard (slide 336) is described as work-in-progress, replacing the older Cover tab with a 6-step wizard supporting foreground/background images with cropping, resizable elements, optional spine, instant preview — the deck flags 'wishful thinking' on the precise-positioning claim, indicating active development.",
+        "Cover composition (slides 334–342) covers single-sheet front+back+spine+whole, shading, borders, image(s), crop/trim marks, bleed, title, subtitle, and ISBN (with barcode generation); the deck practice exercise (slide 343) walks black-and-white minimum then full-colour with ISBN."
+      ]
+    },
+    {
+      "lens_id": "L20",
+      "lens": "Finishing — reports, error detection, output formats, booklet, diff",
+      "page_range": "346–377",
+      "evidence_status": "direct",
+      "bullets": [
+        "Typesetting Report (slides 347–349) is reachable from an info button on the preview pane or the Help tab; it carries summary information, highlights warnings/errors, and includes diagnostic hints — the deck repeatedly tells users to read it first.",
+        "Whitespace and collision detection (slides 350–352) flag vertical rivers, horizontal-spacing problems, and element collisions during typesetting; both are presented as default-on-but-tunable.",
+        "Booklet pagination (slides 356–360) supports 2-up, 4-up (with 16-page test pattern), and 8-up impositions; back-to-back printing requires flipping on the short or long side depending on the imposition; the deck includes a Fold-First option for some bind orders.",
+        "Compare PDFs (slides 361–366) generates a *_diff.pdf showing pixel differences between two runs (red = removed, blue = new, gray = identical); the deck recommends 'Only Show Pages with Differences' and a low Max Diff Pages, and notes diff PDFs can be large.",
+        "PDF output formats (slides 367–371): Print-CMYK / Print-Gray / Print-Spot for paper, Screen-Quickest for fastest preview, Digital-RGB / Digital-CMYK for screen distribution; Spot-color is presented as a 2-color publication option distinct from full CMYK.",
+        "Printer quotations (slides 374–376): a Printers tab integrates cost-comparison across Pretore, Print_Gallery, and Pothi, letting teams compare per-quantity, per-page-count without leaving the app."
+      ],
+      "rules_or_constraints_shown": [
+        "PDF Compare is a validation surface PTXprint already ships. An MCP server's 'did this layout change' question can call this rather than reinventing pixel-diff."
+      ]
+    },
+    {
+      "lens_id": "L21",
+      "lens": "Extras — Unicode codes, code snippets, autosave, internet/translate",
+      "page_range": "378–393",
+      "evidence_status": "direct",
+      "bullets": [
+        "Alt-X in the View+Edit window displays Unicode codepoints for the selected text (slide 379) — a built-in inspection tool the deck shows but does not name as a 'feature' elsewhere.",
+        "Code snippet libraries (slide 380) span Headers/Footers, Chapters, Verses, Hooks (\\sethook, \\setcvhook, \\setbookhook, \\setbetweenhook), Tweaks, Strong's, Notes, Other, and Tracing flags — the deck treats these as copy-paste-and-tweak templates rather than first-class UI.",
+        "Front-matter snippets (slide 384) cover Pages, Labels, Conditions (\\zifvarset, \\ztruetext / \\zfalsetext, \\zifhooks), Diglot helpers, Other layout primitives, Periph+Var, Image, Legal (CC + copyright), ISBN+QR, and Contents helpers — a much larger set than the front-matter UI exposes.",
+        "Quick Run (slide 388) is a one-pass typesetting mode that skips multi-pass refinement (chapter repositioning, cutout fitting, colophon credits, ToC generation) — useful for fast iteration but explicitly not for final output.",
+        "Internet-use settings (slides 390–392): web-link smart handling for non-English users (Google Translate auto-redirect), with toggles to disable Translate alone, and a master switch to disable all internet use."
+      ]
+    },
+    {
+      "lens_id": "L22",
+      "lens": "Advanced — changes.txt, CLI/headless, deploy, Arabic features",
+      "page_range": "394–426",
+      "evidence_status": "direct",
+      "bullets": [
+        "changes.txt scoping levels (slides 396–397): unrestricted globals, book-restricted (at MAT;ACT;GAL ...), book+chapter (at JHN 2 ...), book+chapter+verse (at MAT 7:23 ...), and environment-restricted (in '\\\\f .+?\\\\f\\\\*': 'Syria' > 'Aram') — combinable via 'at LUK 3:10 in '\\\\f .+?\\\\f\\\\*''.",
+        "Pre-processing scripts (slide 405): Windows .bat/.exe and Linux .sh/.py scripts can run before typesetting; the deck shows the program-infile-outfile contract.",
+        "Multi-lingual headers (slides 403–404) auto-insert English book codes via the regex \"(\\\\id (...).+\\n)\" > \"\\1\\\\h1 \\2\\r\\n\" — a 1-line trick the deck includes from a Resources2Share file.",
+        "Headless CLI (slide 417): ptxprint.exe -b ROM -c SingleSpaceDraft -P XYZ runs the named config for a project; -h lists all arguments; the deck calls out batch-mode operation (e.g. digitalbible.org auto-generation) as a documented use case — directly relevant to the MCP server work.",
+        "Silent install (slide 418): /VERYSILENT /SUPPRESSMSGBOXES /NORESTART deploys PTXprint without user interaction, which auto-starts after install — relevant for container/server deployment.",
+        "Arabic features (slides 419–425): Tatweel/Kashida insertion via Ctrl-grave in Paratext (only affects typesetting, not source USFM), RTL-aware viewer navigation, end-of-Ayah verse decorators for bordered text, coloured diacritics, contextual spaces, font-feature toggles."
+      ],
+      "rules_or_constraints_shown": [
+        "The CLI signature on slide 417 is the deck's own statement of the headless contract. An MCP server's run_typeset tool should mirror this argument shape (-P, -c, -b) rather than reinvent it."
+      ],
+      "cross_references": [
+        {"relation": "extends", "target": "ptx2pdf.surface.json#L2"},
+        {"relation": "extends", "target": "transcript-encoded.md#O-001"}
+      ]
+    },
+    {
+      "lens_id": "L23",
+      "lens": "Setting Overrides — project-level and config-level lockdowns",
+      "page_range": "427–433",
+      "evidence_status": "direct",
+      "bullets": [
+        "Two override files exist (slide 429): <project>/shared/ptxprint/ptxprint_project.cfg locks settings across all configs in the project; <project>/shared/ptxprint/<config>/ptxprint_override.cfg locks settings for a single named config.",
+        "Override semantics (slide 432): an entry in either file disables the corresponding UI control; prefixing the value with a star (*) means 'set this default but allow the user to change it temporarily'.",
+        "Use-case framing (slide 428): cluster administrators want to enforce consistency (layout, wording, font) across many projects; overrides give that lockdown without rewriting individual configs.",
+        "Authoring workflow (slide 432) is currently manual: open ptxprint.cfg in a text editor, Save-As to the appropriate override filename, delete the lines that should NOT be overridden, save — there is no UI for creating these files in this version.",
+        "The existing PTXprint MCP spec (§10) explicitly defers ptxprint_project.cfg.override as 'may be deprecated upstream; not exposed' — the deck's slide 429 shows the override mechanism is alive and shipping, suggesting the MCP spec needs revisiting."
+      ],
+      "rules_or_constraints_shown": [
+        "Override files are an authoring surface that is documented in the deck and shipping in the product. The MCP server's set_config_values tool ignores them in v1; revisit before users lose data to silently-overridden writes."
+      ],
+      "cross_references": [
+        {"relation": "contradicts", "target": "PTXprint_MCP_SPEC.md_-_First_Pass#section-10-out-of-scope"}
+      ]
+    },
+    {
+      "lens_id": "L24",
+      "lens": "Open questions and acknowledged gaps",
+      "page_range": "self-audit + slide 5",
+      "evidence_status": "direct",
+      "bullets": [
+        "The deck enumerates its own gaps on slide 5 — 13 items: how to save multiple sets of settings using configs (pros/cons/naming); thumb tabs incl. single-sided; ornaments x2 + ptxprint-mods.sty population; dynamic borders + section headings; Style Editor detail; ptxprint-mods.tex and other special files; auto-correct USFM; multi-language headers/footers; Codelet buttons on View+Edit; \\zrules + \\zqrcode insertion; .triggers files (a.k.a. 'inserts'); picture-set imports; many slides need newer screenshots.",
+        "Surface-level gaps the deck does not flag but that an MCP-server author needs: precise mapping of all 400+ settings to UI control names (the runtime introspection -I flag is the canonical source per transcript-encoded.md O-003); precise output-filename collision behaviour when -b overrides match no books in the config.",
+        "Authorial divergence: deck attribution is 'Mark Penny / SIL International' (slide 438), credit list is Hosken+Penny+Gardner (slide 1) — a consumer of the deck should treat slide-5 gap claims as Mark Penny's editorial declaration, not a project-wide spec.",
+        "The deck links externally to multiple resources (software.sil.org/ptxprint, vimeo.com/showcase/9331905, vimeo.com/showcase/10946202, support.bible/ptxprint, lingtran.net/Bible-Module-Repository, github.com/sillsdev/ptx2pdf docs/documentation/snippets.md) — none of these were independently verified in this surface pass.",
+        "Visual-only slides (image-only screenshots) constitute roughly 20-30% of the deck (slides 2-4, 8-9, 21-37, 49, 51, 91-96, 131, 137, 158, 263-268, 332-333, 344-345, 389, 415, 434, 436); their content is indexed only by slide number in this surface and should be treated as lower-fidelity coverage."
+      ]
+    }
+  ],
+  "page_index": {
+    "1-5": "L1",
+    "6-19": "L2",
+    "20-41": "L3",
+    "42-62": "L4",
+    "63-79": "L5",
+    "80-90": "L6",
+    "91-130": "L7",
+    "131-154": "L8",
+    "155-171": "L9",
+    "172-206": "L10",
+    "207-215": "L11",
+    "216-239": "L12",
+    "240-254": "L13",
+    "255-269": "L14",
+    "270-282": "L15",
+    "283-294": "L16",
+    "295-304": "L17",
+    "305-318": "L18",
+    "319-345": "L19",
+    "346-377": "L20",
+    "378-393": "L21",
+    "394-426": "L22",
+    "427-433": "L23"
+  },
+  "containment": {
+    "label": "interpretive_non_canonical_non_instructional",
+    "clause": "This artifact is interpretive and non-canonical. It is a surface extraction of the PTXprint MASTER SLIDES deck, not a specification of PTXprint and not an authoritative training manual. It illustrates the structure of the deck and the conceptual model the deck teaches; it does not define rules. Where this surface and the deck disagree, the deck wins. Where this surface and the running PTXprint product disagree, the product wins. Where this surface and canon disagree, canon wins. If any part of this document can be safely treated as instruction-to-execute, the surface has failed and should be edited.",
+    "precedence": "canon > running PTXprint product > the deck > this surface"
+  },
+  "promotion_rule": {
+    "note": "Per klappy://canon/epistemic-surface-extraction, surfaces inform but do not become canon. Durable insights from this ESE — for example, the principle that progressive disclosure (Mini/Basic/Full) is a first-class UI contract that an MCP server can mirror as a tool-detail-level parameter — should be promoted by editing canon directly, not by linking this surface as authority. The companion training manual ptxprint-training-manual.md is a separately-authored derivative work and is itself non-canonical."
+  },
+  "provenance": {
+    "extraction_method": "Single-pass web_fetch on the /htmlpresent variant of the Google Slides URL after the /export/pdf variant returned a permissions error; lenses derived from the deck's own thematic section breaks; cross-references to transcript-encoded.md, ptx2pdf.surface.json, and PTXprint_MCP_SPEC.md_-_First_Pass made manually after reviewing project files.",
+    "passes_executed": [
+      "web_fetch_/htmlpresent_full_token_pull",
+      "lens_inventory_from_section_headings",
+      "page_range_anchoring_per_lens",
+      "cross_reference_pass_against_transcript_and_mcp_spec",
+      "self_audit_for_gaps_and_image_only_slides"
+    ],
+    "human_review_status": "not_reviewed",
+    "next_recommended_passes": [
+      "image-only slide pass — process screenshots through visual surface for slides 2-4, 8-9, 21-37, 49, 51, 91-96, 131, 137, 158, 263-268, 332-333, 344-345, 389, 415, 434, 436",
+      "external-link verification — confirm the seven external URLs cited in the deck still resolve and carry the content the deck implies",
+      "tooltip cross-reference — once an MCP server's describe_setting tool exists, validate that the slides which name settings (e.g. slide 99's view-tier control counts) match the live UI",
+      "slide-5 gap-closure tracking — re-run this ESE after any future deck version to detect which of the 13 known gaps have been filled"
+    ]
+  }
+}
