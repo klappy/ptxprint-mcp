@@ -187,30 +187,57 @@ async def fetch_inputs(scratch: Path, project_id: str, payload: PayloadModel) ->
 
 
 def build_ptxprint_argv(payload: PayloadModel, scratch: Path) -> list[str]:
-    """Construct the ptxprint CLI invocation per v1.2 spec §5 / §4."""
+    """Construct the ptxprint CLI invocation.
+
+    Phase 1 contract (`canon/articles/phase-1-poc-scope.md`, session 7 D-025):
+    when `config_files` is empty the agent has not supplied any named config,
+    so we omit the `-c` flag and let PTXprint run with built-in defaults.
+    With `-c <name>` set and no matching `shared/ptxprint/<name>/` folder on
+    disk, PTXprint exits 0, writes no log, and produces no PDF — the silent
+    bail that blocked session-3 end-to-end smoke. Aligning to canon's
+    Phase 1 argv exemplar:
+
+        ptxprint -P DEFAULT -b "JHN" -p <scratch> -q
+
+    Phase 2+ payloads populate `config_files`; the `-c` path is retained
+    for that case (v1.2 spec §5).
+    """
     argv = [
         os.environ.get("PTXPRINT_BIN", "ptxprint"),
         "-P",  # headless print mode
         payload.project_id,
-        "-c", payload.config_name,
+    ]
+    if payload.config_files:
+        argv.extend(["-c", payload.config_name])
+    argv.extend([
         "-b", " ".join(payload.books),
         "-p", str(scratch),
         "-q",  # quiet (suppress splash)
-    ]
+    ])
     for k, v in (payload.define or {}).items():
         argv.append("-D")
         argv.append(f"{k}={v}")
     return argv
 
 
-def find_output_pdf(scratch: Path, project_id: str, config_name: str) -> Path | None:
-    """Locate the output PDF after a run. PTXprint writes to local/ptxprint/."""
-    candidates = list((scratch / project_id / "local" / "ptxprint").glob(f"{project_id}_{config_name}_*_ptxp.pdf"))
+def find_output_pdf(scratch: Path, project_id: str, config_name: str | None) -> Path | None:
+    """Locate the output PDF after a run. PTXprint writes to local/ptxprint/.
+
+    When `config_name` is None (Phase 1, `-c` omitted) PTXprint's internal
+    default may not match `payload.config_name`, so glob with a wildcard
+    in the config-name slot.
+    """
+    name = config_name or "*"
+    candidates = list((scratch / project_id / "local" / "ptxprint").glob(f"{project_id}_{name}_*_ptxp.pdf"))
     return candidates[0] if candidates else None
 
 
-def find_output_log(scratch: Path, project_id: str, config_name: str) -> Path | None:
-    candidates = list((scratch / project_id / "local" / "ptxprint" / config_name).glob(f"{project_id}_{config_name}_*_ptxp.log"))
+def find_output_log(scratch: Path, project_id: str, config_name: str | None) -> Path | None:
+    base = scratch / project_id / "local" / "ptxprint"
+    if config_name:
+        candidates = list((base / config_name).glob(f"{project_id}_{config_name}_*_ptxp.log"))
+    else:
+        candidates = list(base.glob(f"*/{project_id}_*_*_ptxp.log"))
     return candidates[0] if candidates else None
 
 
@@ -293,12 +320,33 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
                 stderr_tail = f"TIMEOUT after {timeout_s}s\n{(exc.stderr or '')[-1000:]}"
                 log.error("job %s timed out", job_id)
 
-            pdf_path = find_output_pdf(scratch, payload.project_id, payload.config_name)
-            log_path = find_output_log(scratch, payload.project_id, payload.config_name)
+            effective_config = payload.config_name if payload.config_files else None
+            pdf_path = find_output_pdf(scratch, payload.project_id, effective_config)
+            log_path = find_output_log(scratch, payload.project_id, effective_config)
             log_text = log_path.read_text(errors="replace") if log_path else stderr_tail
             errors, overfull = parse_log_for_errors(log_text)
             log_tail = "\n".join(log_text.splitlines()[-100:])
             failure_mode = classify_exit(exit_code, pdf_path is not None)
+
+            # Silent-bail diagnostic: when both PDF and log are absent the
+            # agent receives an opaque failure (empty log_tail, empty errors,
+            # exit_code 0). Synthesize a marker so the cause is at least
+            # visible. Refs: canon/encodings/transcript-encoded-session-3.md
+            # (C-009).
+            if pdf_path is None and log_path is None:
+                argv_str = " ".join(argv)
+                stderr_str = (stderr_tail or "").strip() or "(empty)"
+                log_tail = (
+                    f"[container diagnostic] PTXprint exited {exit_code} "
+                    f"with no PDF and no log file.\n"
+                    f"[container diagnostic] argv: {argv_str}\n"
+                    f"[container diagnostic] stderr_tail: {stderr_str[:1500]}"
+                )
+                if not errors:
+                    errors = [
+                        "PTXprint produced no output (silent exit). "
+                        "Likely cause: missing config_files or invalid project layout."
+                    ]
 
             await patch_state(callback, job_id, {
                 "progress": {"current_phase": "uploading"},
