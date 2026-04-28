@@ -7,7 +7,7 @@ stability: working
 tags: ["handoff", "session-3", "gaps", "ese-gap-analysis", "font-resolution", "followups"]
 canonical_status: non_canonical
 created_at: 2026-04-28T05:25:00Z
-companion_to: "canon/encodings/transcript-encoded-session-3.md, canon/articles/font-resolution-design.md"
+companion_to: "canon/encodings/transcript-encoded-session-3.md, canon/articles/_archive/font-resolution-design.md (superseded — v1.2 D-021 retired the three-MCP path)"
 ---
 
 # Session 3 Gaps Handoff

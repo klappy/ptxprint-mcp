@@ -1,25 +1,31 @@
 ---
-title: "Font Resolution Design v2 — Three-MCP Architecture"
+title: "Font Resolution Design v2 — Three-MCP Architecture (SUPERSEDED)"
 subtitle: "Content-cache MCP, fonts MCP, and the thin PTXprint integration"
 audience: project
 exposure: working
 voice: neutral
-stability: working
-tags: ["ptxprint", "mcp", "fonts", "content-cache", "design", "vodka-architecture", "lff", "r2", "cloudflare"]
+stability: archived
+tags: ["ptxprint", "mcp", "fonts", "content-cache", "design", "vodka-architecture", "lff", "r2", "cloudflare", "superseded", "design-history"]
 version: "v0.2-draft"
 date: 2026-04-28
+status: superseded
+superseded_by: "canon/articles/font-resolution.md (TODO — see canon/specs/ptxprint-mcp-v1.2-spec.md §2)"
+supersession_reason: "v1.2 D-021 absorbed font fetching into the payload schema; the three-MCP design is no longer the build target. Retained as design history of the path not taken."
 supersedes_partial: "font-resolution-design.md (session 3 v1)"
-companion_to: "ptxprint-mcp-v1-spec.md, transcript-encoded-session-3-1.md"
-addresses: "transcript-encoded.md#O-open-P1-002"
+companion_to: "canon/specs/archive/ptxprint-mcp-first-pass-poc.md"
+addresses: "transcript-encoded.md#O-open-P1-002 (now closed by v1.2 D-021)"
 applied_canon:
   - klappy://canon/principles/vodka-architecture
   - klappy://canon/principles/kiss-simplicity-is-the-ceiling
   - klappy://canon/principles/dry-canon-says-it-once
   - klappy://odd/constraints/anti-cache-lying
-status: draft_for_review
 ---
 
 # Font Resolution Design v2 — Three-MCP Architecture
+
+> **Status: superseded.** This article describes a three-MCP architecture (content-cache MCP + fonts MCP + thin PTXprint integration) that v1.2 D-021 retired. v1.2 makes fonts payload entries fetched and verified by the Container at job time; no separate fonts MCP is built. This article is retained as design history of the path not taken; it is **not live guidance**. The replacement article `canon/articles/font-resolution.md` (per v1.2 spec §2) is the authoritative source once authored. For current font-handling, see `canon/specs/ptxprint-mcp-v1.2-spec.md` §4 (payload schema, `fonts` array) and §5 (Container fontconfig setup).
+
+---
 
 > The font dependency for headless PTXprint deployment is not one problem; it is three. Bytes need a home, font catalogues need a translator, and PTXprint needs fonts in the right place at job time. Three concerns, three MCPs, three thin servers. None hold opinions about the others' domains. The cache cannot lie because its key is the content's identity. The fonts MCP knows about LFF and nothing else. PTXprint MCP knows about typesetting and accepts opaque file tuples at job submit. This document specifies all three.
 

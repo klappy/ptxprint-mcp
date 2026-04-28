@@ -15,7 +15,7 @@ applied_canon:
   - klappy://canon/principles/dry-canon-says-it-once
   - klappy://odd/constraints/anti-cache-lying
   - klappy://canon/bootstrap/model-operating-contract
-companion_artifact: "font-resolution-design.md"
+companion_artifact: "_archive/font-resolution-design.md (superseded by v1.2 D-021; pending replacement at canon/articles/font-resolution.md)"
 ---
 
 # PTXprint MCP Server — Transcript Encoding Session 3

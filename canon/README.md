@@ -24,7 +24,7 @@ This directory holds the project's knowledge base. Every file is intended to be:
 | [`handoffs/`](handoffs/) | Cross-session work-transfer documents. Not durable canon; describe what one session is asking the next session (or another collaborator) to do. |
 | [`encodings/`](encodings/) | DOLCHEO+H session encodings — Decisions, Observations, Learnings, Constraints, Handoffs, plus Open questions captured per session. The project's running ledger. |
 | [`surfaces/`](surfaces/) | ESE (Epistemic Surface Extraction) outputs: structured `.surface.md` and `.surface.json` artifacts derived from large source materials (upstream code repositories, slide decks, etc.). Non-canonical by rule — surfaces inform but do not become canon. |
-| `articles/` (planned) | Topic-keyed agent-facing canon articles authored from governance + surfaces + session learnings. Will hold `payload-construction.md`, `output-naming.md`, `config-construction.md`, `font-resolution.md`, `failure-mode-taxonomy.md` — the five gating articles for the v1.2 smoke test. |
+| [`articles/`](articles/) | Topic-keyed agent-facing canon articles. Currently contains `_archive/` (superseded design docs retained for history). Will hold `payload-construction.md`, `output-naming.md`, `config-construction.md`, `font-resolution.md`, `failure-mode-taxonomy.md` — the five gating articles for the v1.2 smoke test (per spec §2; see [`handoffs/documentation-cleanup-handoff.md`](handoffs/documentation-cleanup-handoff.md) §1 Track 2). |
 | [`PENDING_UPLOADS.md`](PENDING_UPLOADS.md) | List of files needed in this repo that the bootstrap session did not have direct access to. Other sessions and the operator should upload per the instructions there. |
 
 ## Frontmatter convention
