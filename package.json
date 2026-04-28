@@ -1,0 +1,27 @@
+{
+  "name": "ptxprint-mcp",
+  "version": "0.1.0",
+  "description": "PTXprint MCP server — stateless content-addressed Bible typesetting on Cloudflare Workers + Containers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tsc": "tsc --noEmit",
+    "cf-typegen": "wrangler types"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "agents": "^0.2.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251024.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.20.0"
+  }
+}

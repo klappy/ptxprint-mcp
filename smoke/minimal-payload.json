@@ -1,0 +1,26 @@
+{
+  "_comment": "Day-1 smoke test payload. Per operator directive (transcript 2026-04-28 line 1664-1704): 'no config and just the USFM for like the BSB and see what comes out'. PTXprint falls back to bundled Charis when no config_files / fonts are supplied (Day-1 inherits upstream Dockerfile's font bundle; Day-2 strips and forces explicit font payloads per session-3 C-007).",
+  "_todo": [
+    "Replace sources[0].url + sha256 with a real BSB book URL once a stable host is chosen.",
+    "Confirm config_name default behavior with an empty config_files map; PTXprint may need a minimal [project] section to find the source.",
+    "If PTXprint refuses a fully-empty config, fall back to a single-key cfg under config_files."
+  ],
+
+  "schema_version": "1.0",
+  "project_id": "BSB",
+  "config_name": "Default",
+  "books": ["JHN"],
+  "mode": "simple",
+  "define": {},
+  "config_files": {},
+  "sources": [
+    {
+      "book": "JHN",
+      "filename": "43JHNBSB.SFM",
+      "url": "https://example.invalid/REPLACE_ME/43JHNBSB.SFM",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "fonts": [],
+  "figures": []
+}
