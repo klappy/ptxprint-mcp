@@ -1,0 +1,23 @@
+# node / TS
+node_modules/
+.wrangler/
+dist/
+*.tsbuildinfo
+
+# git
+.git/
+.github/
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# canon — not needed in container
+canon/
+
+# scratch
+scratch/
+*.log
+*.tmp

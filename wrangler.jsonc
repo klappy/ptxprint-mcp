@@ -1,0 +1,66 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ptxprint-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Observability — free, on by default. Surfaces logs in the CF dashboard.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
+  // Three Durable Object classes:
+  //   PtxprintMcp     — the McpAgent itself (agents/mcp wraps stateful sessions in a DO)
+  //   JobStateDO      — per-job state machine (state, progress, urls, errors)
+  //   PtxprintContainer — the Container DO wrapper (CF Containers run inside DOs)
+  "durable_objects": {
+    "bindings": [
+      { "name": "MCP_AGENT", "class_name": "PtxprintMcp" },
+      { "name": "JOB_STATE", "class_name": "JobStateDO" },
+      { "name": "PTXPRINT_CONTAINER", "class_name": "PtxprintContainer" }
+    ]
+  },
+
+  // SQLite-backed DO migrations — single migration declares all three classes.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["PtxprintMcp", "JobStateDO", "PtxprintContainer"]
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "OUTPUTS",
+      "bucket_name": "ptxprint-outputs"
+      // Lifecycle policy: configure 90-day retention in the CF dashboard or via
+      // `wrangler r2 bucket lifecycle add` after first deploy.
+    },
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "ptxprint-uploads"
+      // Lifecycle policy: configure 24-hour retention in the CF dashboard or via
+      // `wrangler r2 bucket lifecycle add` after first deploy.
+    }
+  ],
+
+  // Container declaration — the image is built from ./Dockerfile during `wrangler deploy`.
+  // standard-2 = 1 vCPU, 6 GiB memory, 12 GB disk (per v1.2 spec D-025).
+  "containers": [
+    {
+      "class_name": "PtxprintContainer",
+      "image": "./Dockerfile",
+      "max_instances": 5,
+      "instance_type": "standard"
+    }
+  ],
+
+  // Build command for `wrangler deploy` — none needed, TS is bundled by Wrangler/esbuild.
+
+  "vars": {
+    "PTXPRINT_TIMEOUT_DEFAULT": "300",
+    "RESULT_PRESIGNED_TTL": "604800"
+  }
+}
