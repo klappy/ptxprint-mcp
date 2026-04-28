@@ -59,6 +59,20 @@ function r2PublicUrl(key: string, baseUrl: string): string {
   return `${baseUrl.replace(/\/$/, "")}/r2/${key}`;
 }
 
+function requireWorkerPublicUrl(env: Env): string {
+  // Fail loudly if WORKER_PUBLIC_URL is missing. Falling back to "" silently
+  // reproduces the exact Day-1 blocker this var was added to fix:
+  // `worker_callback_url` becomes null and the container's patch_state() no-ops,
+  // leaving jobs stuck in `queued` forever. See PR #4.
+  const url = env.WORKER_PUBLIC_URL;
+  if (!url) {
+    throw new Error(
+      "WORKER_PUBLIC_URL is not set. Configure it in wrangler.jsonc `vars` for the current environment.",
+    );
+  }
+  return url;
+}
+
 function jobIdFromHash(payloadHash: string): string {
   // Use the payload hash itself as the job_id. This is stable across resubmits
   // of the same payload and gives free idempotency at the DO layer.
@@ -90,7 +104,7 @@ export class PtxprintMcp extends McpAgent<Env> {
         // but `props` was never actually populated — see PR #4 for the diagnosis.
         // The replacement is a wrangler var so the URL is reliably available
         // inside the McpAgent DO.
-        const baseUrl = env.WORKER_PUBLIC_URL ?? "";
+        const baseUrl = requireWorkerPublicUrl(env);
 
         // Cache check — HEAD the expected R2 path.
         const head = await env.OUTPUTS.head(pdfKey);
@@ -182,7 +196,7 @@ export class PtxprintMcp extends McpAgent<Env> {
             isError: true,
           };
         }
-        const baseUrl = env.WORKER_PUBLIC_URL ?? "";
+        const baseUrl = requireWorkerPublicUrl(env);
         const augmented = {
           ...state,
           pdf_url: state.pdf_r2_key ? r2PublicUrl(state.pdf_r2_key, baseUrl) : null,
