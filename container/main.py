@@ -317,6 +317,26 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             log_tail = "\n".join(log_text.splitlines()[-100:])
             failure_mode = classify_exit(exit_code, pdf_path is not None)
 
+            # Silent-bail diagnostic: when both PDF and log are absent the
+            # agent receives an opaque failure (empty log_tail, empty errors,
+            # exit_code 0). Synthesize a marker so the cause is at least
+            # visible. Refs: canon/encodings/transcript-encoded-session-3.md
+            # (C-009).
+            if pdf_path is None and log_path is None:
+                argv_str = " ".join(argv)
+                stderr_str = (stderr_tail or "").strip() or "(empty)"
+                log_tail = (
+                    f"[container diagnostic] PTXprint exited {exit_code} "
+                    f"with no PDF and no log file.\n"
+                    f"[container diagnostic] argv: {argv_str}\n"
+                    f"[container diagnostic] stderr_tail: {stderr_str[:1500]}"
+                )
+                if not errors:
+                    errors = [
+                        "PTXprint produced no output (silent exit). "
+                        "Likely cause: missing config_files or invalid project layout."
+                    ]
+
             await patch_state(callback, job_id, {
                 "progress": {"current_phase": "uploading"},
                 "human_summary": f"Typesetting {failure_mode}; uploading artifacts.",
