@@ -203,12 +203,10 @@ export class PtxprintMcp extends McpAgent<Env> {
                 human_summary: `Worker: container HTTP ${res.status}; body=${body.slice(0, 200)}`,
               });
             } else {
-              // 2xx — the container has executed (or is executing) POST /jobs and
-              // is already patching its own state via /internal/job-update.
-              // Record a breadcrumb so we can see the dispatch returned cleanly.
-              await patchJobState({
-                human_summary: `Worker: container.fetch resolved HTTP ${res.status} (container handler ran; see its own state updates).`,
-              });
+              // 2xx — the container has executed POST /jobs and awaited its own
+              // final patch_state before returning, so the JobStateDO already
+              // holds the container's detailed human_summary. Skip writing a
+              // generic breadcrumb here so we don't overwrite that summary.
             }
           } catch (err: unknown) {
             const e = err as { name?: string; message?: string; stack?: string };
