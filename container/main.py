@@ -187,16 +187,33 @@ async def fetch_inputs(scratch: Path, project_id: str, payload: PayloadModel) ->
 
 
 def build_ptxprint_argv(payload: PayloadModel, scratch: Path) -> list[str]:
-    """Construct the ptxprint CLI invocation per v1.2 spec §5 / §4."""
+    """Construct the ptxprint CLI invocation.
+
+    Phase 1 contract (`canon/articles/phase-1-poc-scope.md`, session 7 D-025):
+    when `config_files` is empty the agent has not supplied any named config,
+    so we omit the `-c` flag and let PTXprint run with built-in defaults.
+    With `-c <name>` set and no matching `shared/ptxprint/<name>/` folder on
+    disk, PTXprint exits 0, writes no log, and produces no PDF — the silent
+    bail that blocked session-3 end-to-end smoke. Aligning to canon's
+    Phase 1 argv exemplar:
+
+        ptxprint -P DEFAULT -b "JHN" -p <scratch> -q
+
+    Phase 2+ payloads populate `config_files`; the `-c` path is retained
+    for that case (v1.2 spec §5).
+    """
     argv = [
         os.environ.get("PTXPRINT_BIN", "ptxprint"),
         "-P",  # headless print mode
         payload.project_id,
-        "-c", payload.config_name,
+    ]
+    if payload.config_files:
+        argv.extend(["-c", payload.config_name])
+    argv.extend([
         "-b", " ".join(payload.books),
         "-p", str(scratch),
         "-q",  # quiet (suppress splash)
-    ]
+    ])
     for k, v in (payload.define or {}).items():
         argv.append("-D")
         argv.append(f"{k}={v}")
