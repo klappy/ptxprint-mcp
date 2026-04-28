@@ -144,9 +144,7 @@ export class PtxprintMcp extends McpAgent<Env> {
             payload_hash: hash,
             pdf_r2_key: pdfKey,
             log_r2_key: logKey,
-            worker_callback_url: baseUrl
-              ? `${baseUrl.replace(/\/$/, "")}/internal/job-update`
-              : null,
+            worker_callback_url: `${baseUrl.replace(/\/$/, "")}/internal/job-update`,
           }),
         });
 
