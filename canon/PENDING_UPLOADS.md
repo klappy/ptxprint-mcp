@@ -13,6 +13,8 @@ created_at: 2026-04-28T04:20:00Z
 
 > **Why this exists.** This repo was bootstrapped by a single Claude session. That session had direct access to some artifacts but not others — some files were produced by sibling sessions (font work, slides ESE, training manual) or were uploaded as attachments to earlier sessions and didn't survive context compaction. Those files need to land here for the repo to be complete. This document names each missing file, where it should land, and which session is expected to have it.
 
+> **Looking for ready-to-paste prompts to give to the other sessions?** See [`handoffs/missing-uploads-handoff.md`](handoffs/missing-uploads-handoff.md) — three copy-pasteable session prompts (slides-ESE, font-resolution, operator-manual-paste) that another Claude session can act on directly.
+
 > **Who this is for.** The operator, or any session/contributor with access to the missing files, who can clone the repo and push the artifacts at the indicated paths.
 
 ---
