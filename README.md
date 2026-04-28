@@ -67,6 +67,27 @@ ptxprint-mcp/
 
 ## Acknowledgements
 
-PTXprint is developed by SIL Global. This project wraps and extends that work; it does not modify PTXprint itself. The PTXprint training deck (438-slide MASTER SLIDES authored by Hosken, Penny, and Gardner) and the upstream `ptx2pdf/docs/documentation/` markdown were primary sources for the governance knowledge base.
+### Upstream
 
-The architectural conventions (vodka architecture, ESE method, OLDC+H encoding, oddkit retrieval pattern) come from the broader klappy canon.
+PTXprint is developed by [SIL Global](https://www.sil.org/). This project wraps and extends that work; it does not modify PTXprint itself. The PTXprint MASTER SLIDES deck (438 slides authored by Martin Hosken, Mark Penny, and David Gardner) and the upstream [`sillsdev/ptx2pdf`](https://github.com/sillsdev/ptx2pdf) repository were primary canon sources.
+
+### Methodology and tooling
+
+This project was scoped, designed, and bootstrapped using [klappy](https://github.com/klappy)'s [oddkit](https://github.com/klappy/oddkit) — an MCP-served knowledge base and discipline layer for **Outcomes-Driven Development (ODD)**. ODD treats exploration, planning, and execution as distinct epistemic modes with different rules: planning front-loads ambiguity (questions are the work product); execution does not (questions should be answered before code is written). The architectural conventions applied here — vodka architecture, KISS, DRY canon, mode discipline, verification-requires-fresh-context — come from the broader klappy canon.
+
+### Discovery process
+
+The pre-implementation phase ran across five conversational sessions, processing multiple sources before any spec was committed:
+
+- **Planning meeting transcripts** with PTXprint's SME (Martin Hosken) and the project operator. Each transcript was encoded as **DOLCHEO+H** artifacts — Decisions, Observations, Learnings, Constraints, Handoffs, plus Open questions — so context survives across sessions and remains agent-searchable. The five session encodings live under [`canon/encodings/`](canon/encodings/).
+- **The PTXprint MASTER SLIDES deck** (438 slides) — processed via **Epistemic Surface Extraction (ESE)**, a lens-based pass over artifacts too large to ingest in one shot. The resulting `surface.json` and `surface.md` artifacts seeded the agent-facing operational knowledge base.
+- **The `sillsdev/ptx2pdf` source repository** — the same ESE method applied to a code repository, surfacing entry points, project shape, configuration model, failure modes, and deployment footprint.
+- **The first-pass MCP server PoC and its specification** — analyzed against vodka-architecture principles to identify domain opinions that had drifted into server code, driving the v1.0 → v1.1 → v1.2 simplification (17 tools → 7 → 4) documented in [`canon/encodings/transcript-encoded-session-5.md`](canon/encodings/transcript-encoded-session-5.md).
+- **A PDF extraction of the deck → operator-authored governance document** — the most concrete agent-facing canon material drafted to date, currently being aligned to v1.2 per [`canon/handoffs/governance-update-handoff.md`](canon/handoffs/governance-update-handoff.md).
+- **The operator's ~1000 real PTXprint configurations** (private corpus) — used to validate that the proposed payload schema covers real-world variation across many translation projects.
+
+oddkit provided the discipline throughout: anchoring elapsed time across long sessions; retrieving and applying canon at every mode transition; orienting at context shifts; pressure-testing decisions before they hardened into specs; validating completion claims against required artifacts before any "done" signal; encoding durable session ledgers so each new session inherited the prior one's reasoning rather than rebuilding it.
+
+### Going forward
+
+oddkit will continue at runtime. The AI agent driving this MCP server will load oddkit MCP separately and set its `knowledge_base_url` to this repository, treating [`canon/`](canon/) as the project's knowledge base. The agent's reasoning loop becomes: **search canon → understand → construct payload → submit job → poll → handle result.** Each future autonomous coding run that builds, extends, or maintains this MCP server follows the same discipline — anchoring time, declaring mode, retrieving canon, preflighting before artifact work, validating against required outputs, and encoding decisions for the next session to inherit. Co-locating the code and the governance KB in this single repo prevents drift between what the system does and what the agent thinks it does.
