@@ -21,6 +21,8 @@ status: draft_for_review
 # PTXprint MCP Server — v1.2 Specification
 
 > **What changed from v1.1.** v1.1 was filesystem-based — the MCP server pretended to be a project store, exposing read/write/list against a sandboxed tree. That bound the server to a single host and made horizontal scaling impossible. v1.2 inverts: project state lives wherever the agent has access to it (operator's filesystem, Git, DBL, R2), and the typesetting MCP becomes a stateless content-addressed build system. PTXprint is treated as a pure function of (config, sources, fonts) → PDF. The server is a job queue with autoscaling ephemeral workers. Tool count: **4** (was 7), with no file IO at all. Output is content-addressed in R2 — re-running an unchanged build is free. Deployable on Cloudflare with one Worker and one Container image.
+>
+> **Session 13 update (2026-04-29).** Added a 4th tool, `docs(query, audience?, depth?)`, that proxies oddkit's search+get over this repo's canon. Reverses session-2 D-004 deliberately — see §3 `docs` for the boundary check.
 
 ---
 
@@ -97,7 +99,7 @@ The agent's reasoning loop: search canon → understand the change or pattern �
 
 ---
 
-## 3. Tools (3)
+## 3. Tools (4)
 
 ### `submit_typeset(payload)`
 
@@ -167,6 +169,36 @@ Behavior: read DO state, return. Pure Worker work; never reaches the Container.
 Behavior: set `cancel_requested: true` in the DO. The running Container's PTXprint task polls the DO every 5–10 seconds (between progress markers) and on detecting the flag, sends SIGTERM to the PTXprint subprocess and updates state=`cancelled`. Worker doesn't need direct IPC to the Container; the DO is the cancellation channel.
 
 Acknowledged latency: up to 10 seconds between cancel request and PTXprint actually stopping. Acceptable for v1.2.
+
+### `docs(query, audience?, depth?)`
+
+Added in session 13 (2026-04-29). Reverses session-2 D-004 ("no retrieval in MCP server") for one specific reason: downstream agents like BT Servant want one MCP wired up, not two. The retrieval brain still lives in oddkit; this tool is a pinned forwarding layer.
+
+**Inputs:**
+
+| Param | Type | Default | Meaning |
+|---|---|---|---|
+| `query` | string (required) | — | Natural-language question or topic |
+| `audience` | `"headless" \| "gui"` | `"headless"` | Bias toward agent-facing or human-training docs |
+| `depth` | `1 \| 2 \| 3` | `1` | Progressive disclosure: 1=snippet, 2=full top doc, 3=top + next two in full |
+
+**Returns:**
+```json
+{
+  "answer": "...",
+  "sources": [
+    { "uri": "klappy://canon/...", "title": "...", "snippet": "...", "score": 10.27 }
+  ],
+  "deeper": ["Tell me more about: ...", "..."],
+  "governance_source": "knowledge_base"
+}
+```
+
+Behavior: HTTP POST to `https://oddkit.klappy.dev/mcp` with `action: "search"` and `knowledge_base_url: "https://github.com/klappy/ptxprint-mcp"`. Audience filter is a tag-based bonus, not a hard filter — same-score peers with audience-matching tags float up; clearly-better non-matching results stay on top. `depth >= 2` adds an `action: "get"` for the top URI; `depth = 3` enriches the next two as well.
+
+Failure mode: graceful. On oddkit unreachable or timeout (5s search / 10s get), returns `{ answer: null, sources: [], governance_source: "minimal", error: "..." }`. Agent can degrade.
+
+Vodka boundary check: the tool knows two URLs (this repo, oddkit). It holds zero PTXprint domain semantics. The retrieval logic, the BM25 scoring, the index — all in oddkit. This file is forwarding plus an audience-tiebreaker. If `docs` ever grows a PTXprint-flavored taxonomy (Shape C from the session-13 plan), that taxonomy moves into canon governance docs that oddkit retrieves, not into this server.
 
 ### Why there is no upload tool
 
