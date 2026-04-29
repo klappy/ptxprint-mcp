@@ -1,5 +1,5 @@
 ---
-title: "PTXprint MCP — Day-1 Build & Deploy Notes"
+title: "PTXprint MCP — Deployment & Operations"
 audience: project
 exposure: working
 voice: instructional
@@ -7,122 +7,142 @@ stability: working
 canonical_status: non_canonical
 ---
 
-# Day-1 Build & Deploy Notes
+# Deployment & Operations
 
-> Companion to the v1.2 spec. Pragmatic notes for the first PR landing on
-> `feat/v1.2-day1-poc`. Not canon — these are setup notes that can move into
-> README once the build is verified.
+> Practical notes for re-deploying, redeploying after changes, and keeping the system healthy. Companion to [`ARCHITECTURE.md`](ARCHITECTURE.md) and [`canon/specs/ptxprint-mcp-v1.2-spec.md`](canon/specs/ptxprint-mcp-v1.2-spec.md).
 
-## What this PR contains
+## Current state
 
-- TypeScript Worker exposing the MCP server via streamable HTTP at `/mcp`
-- Three Durable Object classes: `PtxprintMcp` (agent), `JobStateDO` (per-job state), `PtxprintContainer` (Container wrapper)
-- Two R2 buckets: `ptxprint-outputs` (content-addressed PDFs + logs), `ptxprint-uploads` (presigned upload staging — Day-2 wires this up)
-- A `Dockerfile` that inherits the upstream `sillsdev/ptx2pdf` install pattern and adds a thin FastAPI HTTP handler on top
-- A FastAPI handler in `container/main.py` that runs PTXprint synchronously, verifies sha256 on inputs, classifies exits (hard / soft / success), and uploads results back through the Worker
+- **Live deployment:** `https://ptxprint-mcp.klappy.workers.dev`
+- **Worker version (per `/health`):** `0.1.0`
+- **Spec target:** `v1.2-draft`
+- **Container image:** built from `./Dockerfile`; pinned to PTXprint `3.0.20` (`ARG PTX2PDF_REF=3.0.20`)
+- **R2 buckets:** `ptxprint-outputs` (binding `OUTPUTS`), `ptxprint-uploads` (binding `UPLOADS`)
+- **Durable Objects:** `PtxprintMcp`, `JobStateDO`, `PtxprintContainer` (single migration `v1`)
+- **Container instance:** `standard-2` (1 vCPU, 6 GiB memory, 12 GB disk), `max_instances: 5`
 
-## What's IN scope for Day-1
+There is **no GitHub Actions workflow** in `.github/workflows/` — deploys are manual via the operator running `wrangler deploy`. PRs that change `src/` or `Dockerfile` land in `main` at merge but do not auto-deploy; the operator must redeploy for the change to take effect.
 
-- `submit_typeset` — full flow: validate, hash, R2 cache check, DO init, container dispatch via `ctx.waitUntil`
-- `get_job_status` — DO read with R2 proxy URL augmentation
-- `cancel_job` — DO flag set; container-side SIGTERM polling is a stub for Day-2
-- `get_upload_url` — explicitly returns "not implemented" for Day-1; agents pre-stage files at any HTTPS URL and reference by URL+sha256
+## Deploying changes
 
-## What's OUT for Day-1 (Day-2+)
+### Worker code (`src/`)
+
+```bash
+git pull
+npm install
+npx wrangler deploy
+# Verify: curl https://ptxprint-mcp.klappy.workers.dev/health → {"ok":true,"version":"0.1.0",...}
+```
+
+### Container image (`Dockerfile`, `container/main.py`)
+
+`wrangler deploy` builds and pushes the container image alongside the Worker — no separate build step required. The Container DO picks up the new image on its next cold start (it sleeps after 45m idle by default).
+
+To force a fresh container instance after a Dockerfile change:
+- Submit a smoke job with a unique payload (e.g. add a comment to `_comment` to perturb the hash) — this dispatches to a new container instance which pulls the new image.
+- Or wait out the 45-minute sleep window.
+
+### Canon-only changes (`canon/`, `*.md`)
+
+No deploy needed. Canon is served by `oddkit` MCP at agent runtime, not by this Worker. Push to main and the next session's `oddkit_search` against `knowledge_base_url=https://github.com/klappy/ptxprint-mcp/tree/main` will see the change (subject to oddkit's own caching — see H-017 in recent handoffs for the indexing-URL friction).
+
+## First-time setup (re-creating the deployment from scratch)
+
+For a fresh Cloudflare account or a forked deployment, the steps are roughly:
+
+### 1. R2 buckets
+
+```bash
+npx wrangler r2 bucket create ptxprint-outputs
+npx wrangler r2 bucket create ptxprint-uploads
+```
+
+Set lifecycle policies in the CF dashboard → R2 → bucket → Settings → Object lifecycle:
+- `ptxprint-outputs`: 90-day expiration on prefix `outputs/<hash>/` (skip the `outputs/fixtures/` prefix if you want to retain staged test fonts; see H-022).
+- `ptxprint-uploads`: 24-hour expiration on prefix `uploads/`.
+
+### 2. Wrangler config
+
+Edit `wrangler.jsonc`:
+- `vars.WORKER_URL` must match the workers.dev hostname (or your custom domain).
+- `containers[0].max_instances` and `instance_type` per your CF Containers tier.
+
+### 3. Deploy
+
+```bash
+npm install
+npx wrangler deploy
+```
+
+The first deploy creates the Durable Object SQLite tables (per the `migrations` block) and pushes the container image.
+
+### 4. WAF / Browser Integrity rules
+
+The CF dashboard's default Browser Integrity Check treats MCP clients (and `urllib`'s default UA) as bots and 403s them. Before exposing `/mcp` publicly:
+
+- **Security** → **WAF** → **Custom rules** → add a skip rule:
+  - Field: `URI Path` contains `/mcp`
+  - Action: **Skip** → Browser Integrity Check, Bot Fight Mode
+
+Or set an explicit `User-Agent` on every client request that goes through the Worker (smoke harnesses use `ptxprint-smoke/0.1` or similar; default `python-urllib/3.x` will be 1010-banned). See session-9's encoding for the original incident.
+
+## Health checks
+
+```bash
+# Liveness — fast
+curl -A "ptxprint-ops/0.1" -w "\nHTTP %{http_code}\n" \
+  https://ptxprint-mcp.klappy.workers.dev/health
+
+# Smoke (Phase 1, ~5-10 sec)
+# Submit smoke/minimal-payload.json or smoke/fonts-payload.json via JSON-RPC POST to /mcp.
+# See README.md "Reproducing the smoke locally" for the full sequence.
+
+# Re-verify session-11 reference PDF (90-day retention)
+curl -A "ptxprint-ops/0.1" -I \
+  https://ptxprint-mcp.klappy.workers.dev/r2/outputs/802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd/minitest_Default_JHN_ptxp.pdf
+```
+
+## What's IN the deployment today
+
+- `submit_typeset` — full flow: validate, hash, R2 cache check, DO init, container dispatch.
+- `get_job_status` — DO read with R2 proxy URL augmentation. Honest `failure_mode ∈ {hard, soft, success}`.
+- `cancel_job` — DO flag set; container-side SIGTERM polling is a stub for Day-2.
+- `get_upload_url` — explicitly returns "not implemented"; agents pre-stage files at any HTTPS URL.
+- `/internal/upload` — unauthenticated R2 PUT under the `outputs/` prefix only. Used by the container to upload artifacts; also used (manually) to stage stable test fixtures like `outputs/fixtures/fonts/...`. Day-2 will replace with presigned URLs.
+- `/r2/<key>` — GET and HEAD proxy through the Worker (HEAD added in session 11; deploy gated). Day-2 will switch to presigned GETs.
+
+## What's NOT in the deployment today (Day-2+)
 
 - Multi-pass autofill mode (`payload.mode = "autofill"`)
 - Streaming progress per-pass to the JobStateDO
 - Container-side cancellation (SIGTERM PTXprint when `cancel_requested` flag set)
-- Presigned R2 PUT URLs (Day-1 routes uploads through the Worker proxy)
+- Presigned R2 PUT URLs for `get_upload_url`
 - Stripping bundled fonts from the Container (session-3 C-007 — Day-2 hardening)
+- Reliable widget-ID overrides via `define` / `-D` (blocked on session-1 O-003 / H-019)
 
-## Cloudflare dashboard wiring (the operator's task)
+## Known good behaviour — empirical reference points
 
-### Workers Builds (GitHub integration)
+| Demonstration | Session | Job ID prefix | PDF size | Wall-clock | Notes |
+|---|---|---|---|---|---|
+| First end-to-end PDF (Phase 1, cfg-edit Charis) | 10 | `6f37b42b…` | 66966 B | 4.1s | minitests JHN, Charis substituted for Gentium Plus |
+| First payload-supplied fonts (Phase 2 demo) | 11 | `802e42e7…` | 68111 B | 4.7s | minitests JHN, Gentium Plus 6.200 via payload |
 
-In the CF dashboard:
+Both jobs are reproducible from `smoke/*.json` fixtures + the JSON-RPC harness pattern.
 
-1. **Workers & Pages** → **Workers Builds** → **Connect** → choose `klappy/ptxprint-mcp`.
-2. Build settings:
-   - Build branch: `main` (production); preview deployments per branch on `feat/*`
-   - Build command: `npm install`
-   - Deploy command: `npx wrangler deploy`
-   - Root directory: `/`
-3. Wrangler picks up `wrangler.jsonc` automatically. Container image build happens during `wrangler deploy`.
+## Observed quirks (don't relearn)
 
-### R2 buckets
+- **Default `urllib` UA gets Cloudflare-1010-banned.** Always set explicit `User-Agent` on programmatic requests.
+- **`HEAD /r2/<key>` returned 404 until session-11.** Now fixed (route handler accepts both methods); deploy is gated on next `wrangler deploy`.
+- **Job IDs are `sha256(canonicalize(payload))`.** Same payload → same id → same R2 path → free cache hit. Perturb a comment or any field to force fresh DO state.
+- **`define` overrides do NOT take effect** for cfg keys with the same name. PTXprint widget IDs ≠ cfg keys (session-1 O-003 still open). Edit `config_files` directly OR supply the actual font via `fonts` payload.
+- **`project_id` capped at 8 chars** by the v1.2 schema. Paratext convention is project-id = folder-name; "minitests" (9 chars) must be renamed to "minitest" when used as a payload.
+- **Payload-supplied fonts work without `fc-cache` or `OSFONTDIR` wiring.** PTXprint's startup adds `<project>/shared/fonts/` to XeTeX's resolution paths automatically. Session-11 empirically confirmed this; the prediction otherwise was wrong.
+- **`fonts-sil-gentium` ≠ `fonts-sil-gentiumplus`** in Debian. The Dockerfile installs the former (original Gentium 1.03 from 2008, Regular only). "Gentium Plus" lives in the latter, which is *not* installed. If a fixture references "Gentium Plus", the agent must either substitute Charis SIL via cfg-edit or supply Gentium Plus via the `fonts` payload.
 
-Create both buckets before first deploy (the `bucket_name` values in `wrangler.jsonc`):
+## Where to read for more depth
 
-```bash
-# CLI alternative; UI works too
-npx wrangler r2 bucket create ptxprint-outputs
-npx wrangler r2 bucket create ptxprint-uploads
-
-# Lifecycle policies (set in dashboard → R2 → bucket → Settings → Object lifecycle):
-#   ptxprint-outputs : 90-day expiration on prefix outputs/
-#   ptxprint-uploads : 24-hour expiration on prefix uploads/
-```
-
-### Browser integrity / bot policy (lessons from the oddkit 403 incident)
-
-The CF dashboard's default "Browser Integrity Check" treats MCP clients as
-bots and 403s them. Before exposing the MCP endpoint:
-
-1. **Security** → **WAF** → **Custom rules** → add a skip rule for the MCP path:
-   - Field: `URI Path` contains `/mcp`
-   - Action: **Skip** → Browser Integrity Check, Bot Fight Mode
-
-Or disable Browser Integrity Check for the entire `*.workers.dev` hostname
-during hackathon week and re-enable selectively later.
-
-## Smoke test (Day-1 first PDF)
-
-`smoke/minimal-payload.json` is the operator's "no config, just USFM" minimal
-viable payload. It currently has placeholder URL + sha256 — replace with a
-real BSB Gospel-of-John SFM URL before submitting.
-
-```bash
-# 1. Get the BSB JHN file SHA-256
-curl -sL "https://path/to/43JHNBSB.SFM" -o /tmp/jhn.sfm
-sha256sum /tmp/jhn.sfm
-# Update smoke/minimal-payload.json with URL + hash
-
-# 2. Submit via MCP (using mcp-cli or any MCP client)
-mcp call ptxprint-mcp submit_typeset --payload "$(cat smoke/minimal-payload.json)"
-# Returns: { job_id, predicted_pdf_url, cached: false }
-
-# 3. Poll until done
-mcp call ptxprint-mcp get_job_status --job_id <job_id>
-# Repeat every ~10s until state ∈ {succeeded, failed}
-
-# 4. Fetch result
-curl <predicted_pdf_url> -o /tmp/result.pdf
-```
-
-## Known unknowns / quick risks
-
-- **Wrangler / agents / @cloudflare/containers package versions** in `package.json` are best-guess for 2026-04. If `npm install` complains, lock versions to whatever resolves and update accordingly.
-- **`ctx.waitUntil` longevity** is the v1.2 §6 risk. Day-1 simple typesetting (~1 min) is well within the budget. Autofill (~30 min) is Day-2 territory and may need the container self-poke fallback.
-- **Container HTTP path resolution.** The CF Container DO base class proxies HTTP from `stub.fetch(req)` to the running container at `defaultPort`. URL paths are preserved. If the container is reached at the wrong path, check the `defaultPort` matches FastAPI's listen port (8080 in both places).
-- **Worker callback URL.** The container needs a public Worker URL to call back to (`/internal/job-update`, `/internal/upload`). Day-1 derives it from the inbound MCP request's host. If the Container is dispatched from a non-MCP code path in future, the callback URL must be supplied explicitly.
-- **PTXprint's behavior on a fully-empty `config_files`.** Untested. PTXprint may require at least a `[project]` section pointing at a USFM source. If the Day-1 smoke test fails here, the fix is a single-line cfg in `config_files`.
-
-## Files in this PR
-
-```
-package.json
-tsconfig.json
-wrangler.jsonc
-Dockerfile
-.dockerignore
-src/index.ts                — Worker entry, McpAgent, internal routes
-src/payload.ts              — schema (zod), JCS canonicalization, sha256
-src/output-naming.ts        — PDF / log key derivation
-src/job-state-do.ts         — JobStateDO class + helpers
-src/container.ts            — PtxprintContainer DO (CF Container wrapper)
-container/main.py           — FastAPI handler (POST /jobs)
-container/requirements.txt
-smoke/minimal-payload.json
-BUILD.md                    — this file
-```
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — system overview in one diagram
+- [`canon/specs/ptxprint-mcp-v1.2-spec.md`](canon/specs/ptxprint-mcp-v1.2-spec.md) — the formal spec
+- [`canon/articles/`](canon/articles/) — agent-facing operational knowledge (font resolution, payload construction, failure-mode taxonomy, etc.)
+- [`canon/handoffs/`](canon/handoffs/) — durable cross-session records; the latest is the live source of truth on system state
+- [`canon/encodings/`](canon/encodings/) — DOLCHEO+H session ledgers (sessions 1-11 to date)

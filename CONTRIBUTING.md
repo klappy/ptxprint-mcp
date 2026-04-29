@@ -1,12 +1,12 @@
 # Contributing
 
-> This repo is in pre-implementation, working-draft state. Contribution patterns are loose; the goal is to land a working v1.2 system before formalizing process. What follows is the minimum.
+> The MCP server is live and Phase-1-demonstrated; canon is actively grown alongside the running system. Contribution patterns are still loose. What follows is the minimum.
 
 ## What lives where
 
 - **Top-level Markdown** (`README.md`, `ARCHITECTURE.md`, this file) — project-facing documentation. Casual frontmatter.
 - **`canon/`** — knowledge base. Every file requires structured frontmatter so [`oddkit`](https://github.com/klappy/oddkit) MCP can retrieve it. See [`canon/README.md`](canon/README.md) for the conventions.
-- **`src/`** (when added) — Worker, Container, and shared code. Lives with the docs that govern it; do not split into another repo.
+- **`src/`** — Worker, Container DO classes, and shared TypeScript code. `container/` holds the Python FastAPI handler that runs inside the Cloudflare Container. Both live with the docs that govern them; do not split into another repo.
 
 ## Frontmatter for canon documents
 
