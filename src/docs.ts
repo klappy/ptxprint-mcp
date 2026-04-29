@@ -145,22 +145,20 @@ export async function fetchDocs(
     ...ranked.slice(1, 5).map(toSource),
   ];
 
-  // depth=3: also fetch the next 2 ranked docs in full.
+  // depth=3: also fetch the next 2 ranked docs in full, in parallel.
   if (depth === 3) {
     const neighbors = ranked.slice(1, 3);
-    for (let i = 0; i < neighbors.length; i++) {
-      try {
-        const doc = await callOddkit<OddkitGetResult>(
-          "get",
-          neighbors[i].uri,
-          GET_TIMEOUT_MS,
-        );
-        if (doc && sources[i + 1]) {
-          sources[i + 1].snippet = doc.content;
-        }
-      } catch {
-        // Leave the snippet in place; partial enrichment is fine.
+    const results = await Promise.allSettled(
+      neighbors.map((n) =>
+        callOddkit<OddkitGetResult>("get", n.uri, GET_TIMEOUT_MS),
+      ),
+    );
+    for (let i = 0; i < results.length; i++) {
+      const r = results[i];
+      if (r.status === "fulfilled" && r.value && sources[i + 1]) {
+        sources[i + 1].snippet = r.value.content;
       }
+      // On rejection, leave the snippet in place; partial enrichment is fine.
     }
   }
 
@@ -220,11 +218,22 @@ async function callOddkit<T>(
 
     const text = await res.text();
     const envelope = parseSseOrJson(text);
-    if (!envelope) return null;
+    if (!envelope) {
+      throw new Error("oddkit returned an unparseable envelope");
+    }
+
+    // JSON-RPC error response: { error: { code, message, ... } }
+    if (envelope.error) {
+      const msg =
+        envelope.error.message ?? `oddkit JSON-RPC error ${envelope.error.code ?? ""}`.trim();
+      throw new Error(`oddkit error: ${msg}`);
+    }
 
     // JSON-RPC envelope: { result: { content: [{ type: "text", text: "..." }] }, ... }
     const inner = envelope?.result?.content?.[0]?.text;
-    if (typeof inner !== "string") return null;
+    if (typeof inner !== "string") {
+      throw new Error("oddkit response missing result.content[0].text");
+    }
 
     return JSON.parse(inner) as T;
   } finally {
@@ -239,6 +248,7 @@ async function callOddkit<T>(
  */
 function parseSseOrJson(text: string): {
   result?: { content?: Array<{ type: string; text: string }> };
+  error?: { code?: number; message?: string };
 } | null {
   const trimmed = text.trim();
   if (trimmed.startsWith("{")) {
