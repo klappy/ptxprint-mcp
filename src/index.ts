@@ -1,10 +1,11 @@
 /**
  * PTXprint MCP Worker — entry point.
  *
- * Exposes 3 MCP tools per v1.2 spec §3:
+ * Exposes 4 MCP tools (3 per v1.2 spec §3 plus the session-13 `docs` tool):
  *   submit_typeset(payload)   → job_id (or cached URL)
  *   get_job_status(job_id)    → state / progress / urls / errors
  *   cancel_job(job_id)        → set DO flag; container polls every 10s
+ *   docs(query, audience?, depth?) → in-repo canon retrieval via oddkit proxy
  *
  * Agents bring their own URLs for sources/fonts/figures — the server does
  * not host or stage input files. Hosting is the agent's concern, upstream
@@ -31,6 +32,7 @@ import {
   readJobState,
   cancelJob as cancelJobDo,
 } from "./job-state-do.js";
+import { fetchDocs } from "./docs.js";
 
 // Re-export Durable Object classes so the Workers runtime can find them.
 export { JobStateDO } from "./job-state-do.js";
@@ -307,6 +309,50 @@ export class PtxprintMcp extends McpAgent<Env> {
       },
     );
 
+    // ----- docs -----
+    //
+    // Thin proxy to oddkit MCP for in-repo canon retrieval. Reverses session-2
+    // D-004 ("no retrieval in MCP server") for one specific reason: downstream
+    // agents (BT Servant, others) want one MCP wired up, not two. The retrieval
+    // brain still lives in oddkit; this tool is a forwarding layer pinned to
+    // this repo's canon. See src/docs.ts for the vodka-boundary check.
+    this.server.tool(
+      "docs",
+      "Search the PTXprint MCP canon (in-repo documentation) and return relevant guidance. Backed by oddkit; no separate oddkit setup required by the caller. Use depth=1 for snippet-level answers, depth=2 for the full top doc, depth=3 for top doc plus the next two ranked docs in full. Audience='headless' biases toward agent-facing docs (default); 'gui' biases toward training-manual docs.",
+      {
+        query: z.string().min(1).describe("Natural-language question or topic."),
+        audience: z
+          .enum(["headless", "gui"])
+          .optional()
+          .default("headless")
+          .describe("Bias the ranking toward agent-facing (headless) or human-training (gui) docs."),
+        depth: z
+          .union([z.literal(1), z.literal(2), z.literal(3)])
+          .optional()
+          .default(1)
+          .describe("Progressive disclosure: 1 = snippet, 2 = full top doc, 3 = top doc + next two."),
+      },
+      async ({
+        query,
+        audience,
+        depth,
+      }: {
+        query: string;
+        audience?: "headless" | "gui";
+        depth?: 1 | 2 | 3;
+      }) => {
+        const result = await fetchDocs(query, audience ?? "headless", depth ?? 1);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      },
+    );
+
   }
 }
 
@@ -323,6 +369,7 @@ export default {
         service: "ptxprint-mcp",
         version: "0.1.0",
         spec: "v1.2-draft",
+        tools: ["submit_typeset", "get_job_status", "cancel_job", "docs"],
       });
     }
 
