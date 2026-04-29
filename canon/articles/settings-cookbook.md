@@ -87,6 +87,18 @@ Footnote `\f` style (in `ptxprint.sty`) controls caller appearance independently
 
 External cross-reference lists are powerful. Walk filter + placement + alignment as three orthogonal choices.
 
+## "Show / hide parallel-passage references"
+
+> **Disambiguation.** This is a different concept from "Add cross-references" above. The recipe above controls the `\x` cross-reference marker (footnote-style verse-to-verse links built from an external xref list). This recipe controls the `\r` marker (the parallel-passage line that sits under a section heading, like *(Genesis 1:1–2; Hebrews 11:1–3)*). Both are sometimes informally called "cross-references" in English; the underlying USFM markers and rendering paths are distinct. See `klappy://canon/articles/usfm-markers-headless` for the `\r` marker definition.
+
+| Section | Key | Common values | Notes |
+|---|---|---|---|
+| `[document]` | `parallelrefs` | `True` / `False` | When `True`, `\r` lines render as italic centered text under the preceding section heading. When `False`, `\r` content is silently dropped from output (no warning, no error). |
+
+Watch for: `parallelrefs = False` is the canon-grounded cause of the most-common "my section headings lost their cross-references" symptom. Easy to flip off accidentally during a config cleanup pass — once flipped, the regression is invisible without visual comparison against a known-good render. Confirmed empirically in session 12 (see `canon/encodings/transcript-encoded-session-12.md` H-026 / O-046) where the v3 → v4 → v5 cleanup iteration spent four versions trying stylesheet hacks before diff'ing the cfg and finding the one cfg-key change that mattered.
+
+The `\r` marker's appearance (italic, centered, etc.) is controlled separately by the `\Marker r` block in `ptxprint.sty`. To suppress the marker entirely, set `parallelrefs = False`. To show it but restyle, leave `parallelrefs = True` and edit the `\Marker r` block.
+
 ## "Hide / show pictures globally"
 
 Use the payload's `define` field for run-time-only override:
