@@ -39,20 +39,37 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 EOF
 
-# Install PTXprint from sillsdev/ptx2pdf upstream. Pin to a tag/sha at hardening
-# time; for Day-1 we track master.
+# Install PTXprint from sillsdev/ptx2pdf upstream.
 #
-# Upstream-pyproject patch: as of 3.0.20 (2026-04-28), pyproject.toml declares
-# a dependency named "markdown_it" which does not exist on PyPI (the real
-# package is "markdown-it-py"). We sed-fix it in place after the clone.
-# Worth filing upstream as a bug in sillsdev/ptx2pdf.
-ARG PTX2PDF_REF=master
+# Pinned to a tagged release (3.0.20, released ~2026-04-28) for reproducibility.
+# Bumping is a deliberate change.
+#
+# Upstream-pyproject patch: as of 3.0.20, pyproject.toml declares a dependency
+# named "markdown_it" which does not exist on PyPI (the real package is
+# "markdown-it-py"). We sed-fix it in place after the clone. Worth filing
+# upstream as a bug in sillsdev/ptx2pdf.
+#
+# Upstream-package-data bug: pyproject.toml's [tool.setuptools.package-data]
+# declares "ptxprint" = ["ptx2pdf/**/*", "xetex/**/*"], but those subdirs
+# don't exist under python/lib/ptxprint/ in the source tree (verified on
+# both master and 3.0.20). The actual TeX macros (paratext2.tex et al.)
+# live at src/ at the repo root and ship as zero files via pip install.
+# Workaround: copy src/ into a stable location in the image and add it to
+# TEXINPUTS so XeTeX can find paratext2.tex et al. at typeset time.
+# Also worth filing upstream.
+ARG PTX2PDF_REF=3.0.20
 RUN git clone --depth 1 --branch ${PTX2PDF_REF} \
         https://github.com/sillsdev/ptx2pdf.git /tmp/ptx2pdf \
  && cd /tmp/ptx2pdf \
  && sed -i 's/"markdown_it"/"markdown-it-py"/' pyproject.toml \
  && pip install --no-cache-dir . \
+ && mkdir -p /usr/local/share/ptx2pdf \
+ && cp -r /tmp/ptx2pdf/src/. /usr/local/share/ptx2pdf/ \
  && rm -rf /tmp/ptx2pdf /root/.cache
+
+# Make the ptx2pdf TeX macros findable by XeTeX (kpsewhich).
+# Trailing // means recursive search; trailing : means "then standard paths".
+ENV TEXINPUTS=/usr/local/share/ptx2pdf//:
 
 # FastAPI HTTP handler layer
 COPY container/requirements.txt /app/requirements.txt
