@@ -12,7 +12,7 @@ date: 2026-04-28
 status: draft
 ---
 
-> ⚠️ **Phase 1 (hackathon week, per session 7 D-025).** Phase 1's Container image bundles SIL Charis system-wide; the agent leaves the payload's `fonts` array empty and PTXprint resolves Charis via fontconfig. The strict "no system fonts; everything via payload" stance described in the rest of this article is the **Phase 2/3** target, when payload-fetched fonts replace the bundled set and multi-script support is added. For Phase 1 English-Bible work, `fonts: []` is the correct value.
+> ⚠️ **Phase 1 (hackathon week, per session 7 D-025).** Phase 1's Container image bundles SIL Charis system-wide; for projects whose `ptxprint.cfg` only references Charis, the agent leaves the payload's `fonts` array empty and PTXprint resolves Charis via fontconfig. **Empirically as of session 11 (2026-04-29)**, payload-supplied fonts also work end-to-end without any container changes — see the worked Gentium Plus example below. So the practical Phase 1 contract is: `fonts: []` for Charis-only projects, populated for anything else. The strict "no system fonts; everything via payload" stance described in the rest of this article is the **Phase 2/3** target, when Charis itself moves into the payload and multi-script support is added.
 
 # Font Resolution
 
@@ -89,6 +89,23 @@ The agent (or its host) HTTP PUTs the file to `put_url`, computes its sha256, an
 
 Any HTTPS-fetchable URL works as long as the worker can reach it without auth. Foundry CDNs, the user's own server, content-addressed CDNs. The agent verifies that the URL returns the expected content (or computes the sha256 from a known-good copy first).
 
+### 4. R2-staged fixtures (this Worker's OUTPUTS bucket)
+
+Some upstream fonts ship only as ZIPs (`silnrsi/font-gentium`'s GitHub releases, for example) — fine for desktop install, awkward for the per-file URL contract this schema requires. The pragmatic answer: stage the extracted TTFs once into the Worker's existing OUTPUTS bucket under a stable `outputs/fixtures/fonts/<family>-<version>/` prefix, then reference those URLs in payloads. Session 11 used this for Gentium Plus 6.200; the resulting URLs are content-addressed by both the bucket key and the embedded sha256, and persist as long as the bucket does. To stage:
+
+```bash
+# Extract from the upstream ZIP, then PUT into R2 via the Worker's internal upload route.
+# (Day-2 will replace this with presigned URLs; for now /internal/upload is unauthenticated
+# and accepts keys under outputs/.)
+unzip -j GentiumPlus-6.200.zip "*/GentiumPlus-Regular.ttf" -d /tmp
+curl -X PUT --data-binary @/tmp/GentiumPlus-Regular.ttf \
+  -H "Content-Type: font/ttf" \
+  "$WORKER_URL/internal/upload?key=outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Regular.ttf"
+# Then sha256sum the local file and reference both URL and sha256 in the payload.
+```
+
+This is appropriate for stable test fixtures and reusable canonical fonts. It is **not** appropriate for per-job user font supply — the `fonts` array in a normal payload should reference the user's own URL, not require pre-staging into our bucket.
+
 ## Computing the sha256
 
 The agent has a few options:
@@ -157,40 +174,46 @@ Out of scope for v1.2 hackathon (per session 1 D-002, initial scope is English B
 
 ## A worked-minimum English-Bible payload
 
+Session 11 demonstrated this concrete payload end-to-end (job `802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd`, 2026-04-29, 4.7s wall-clock, two-page PDF, all four faces embedded per `pdffonts`). Sha256s are computed from the original `GentiumPlus-6.200.zip` ZIP extract and verified to match the bytes served by these URLs:
+
 ```json
 "fonts": [
   {
-    "family_id": "charissil",
-    "version": "7.000",
-    "filename": "CharisSIL-Regular.ttf",
-    "url": "https://lff.api.languagetechnology.org/charissil/7.000/CharisSIL-Regular.ttf",
-    "sha256": "<sha256>"
+    "family_id": "gentiumplus",
+    "version": "6.200",
+    "filename": "GentiumPlus-Regular.ttf",
+    "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Regular.ttf",
+    "sha256": "2c27e7da23ba44d135685836056833b304a388d3da346813189c60656dc02019"
   },
   {
-    "family_id": "charissil",
-    "version": "7.000",
-    "filename": "CharisSIL-Bold.ttf",
-    "url": "https://lff.api.languagetechnology.org/charissil/7.000/CharisSIL-Bold.ttf",
-    "sha256": "<sha256>"
+    "family_id": "gentiumplus",
+    "version": "6.200",
+    "filename": "GentiumPlus-Bold.ttf",
+    "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Bold.ttf",
+    "sha256": "622ea9f2709d74f99d45c08d93cdf2a6d096406d3a1ec2939d02714f558b3dac"
   },
   {
-    "family_id": "charissil",
-    "version": "7.000",
-    "filename": "CharisSIL-Italic.ttf",
-    "url": "https://lff.api.languagetechnology.org/charissil/7.000/CharisSIL-Italic.ttf",
-    "sha256": "<sha256>"
+    "family_id": "gentiumplus",
+    "version": "6.200",
+    "filename": "GentiumPlus-Italic.ttf",
+    "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Italic.ttf",
+    "sha256": "fedc1acdd2f1080941ed998cabee9759456f0e486fbd8169ff4238b37d3ac60d"
   },
   {
-    "family_id": "charissil",
-    "version": "7.000",
-    "filename": "CharisSIL-BoldItalic.ttf",
-    "url": "https://lff.api.languagetechnology.org/charissil/7.000/CharisSIL-BoldItalic.ttf",
-    "sha256": "<sha256>"
+    "family_id": "gentiumplus",
+    "version": "6.200",
+    "filename": "GentiumPlus-BoldItalic.ttf",
+    "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-BoldItalic.ttf",
+    "sha256": "960e0a58ce1d7849c7a3e49f4fbc1ac4a27b58ef19a2d013ce637fe364b0a1f0"
   }
 ]
 ```
 
-Four entries, one per style. URLs are placeholder shapes — the actual LFF URL pattern may differ at fetch time; verify against the LFF API's current responses.
+For a Charis SIL payload, the same shape applies — four entries, one per style file (Regular, Bold, Italic, BoldItalic), each with its own URL and sha256. When constructing a Charis SIL fonts array, source files from `silnrsi/font-charis` GitHub releases (or any of the LFF / R2 / generic-URL paths in the previous section) and verify the hash before submitting.
+
+### What PTXprint does with materialised fonts
+
+The container materialises payload fonts into `<scratch>/<project_id>/shared/fonts/<filename>` (per `container/main.py: fetch_inputs`) before invoking PTXprint. **No `fc-cache` invocation or `OSFONTDIR` env var is required** — PTXprint's own startup logic adds the project's `shared/fonts/` directory to XeTeX's font resolution paths automatically. This was an open empirical question through session 10 and was confirmed working in session 11. Future sessions revisiting font wiring should not assume fontconfig refresh is needed unless a specific failure points there.
 
 ---
 
