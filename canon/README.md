@@ -20,12 +20,12 @@ This directory holds the project's knowledge base. Every file is intended to be:
 | Subdirectory | Purpose |
 |---|---|
 | [`specs/`](specs/) | Versioned PTXprint MCP server specifications. v1.2 is the current build target; v1.0 and v1.1 are historical. The original 17-tool PoC lives under `specs/archive/`. Don't edit published versions — create a new file and supersede. |
-| [`governance/`](governance/) | Agent-facing operational knowledge: how to construct payloads, interpret results, handle the long tail of PTXprint operational concerns. The "user manual" for the AI. **Currently incomplete** — see [`PENDING_UPLOADS.md`](PENDING_UPLOADS.md) §1. |
+| [`governance/`](governance/) | Long-form agent-facing operational knowledge. Currently holds `headless-operations.md`; most of the per-topic content has migrated to `articles/` (per the v1.2 spec split). |
 | [`handoffs/`](handoffs/) | Cross-session work-transfer documents. Not durable canon; describe what one session is asking the next session (or another collaborator) to do. |
 | [`encodings/`](encodings/) | DOLCHEO+H session encodings — Decisions, Observations, Learnings, Constraints, Handoffs, plus Open questions captured per session. The project's running ledger. |
 | [`surfaces/`](surfaces/) | ESE (Epistemic Surface Extraction) outputs: structured `.surface.md` and `.surface.json` artifacts derived from large source materials (upstream code repositories, slide decks, etc.). Non-canonical by rule — surfaces inform but do not become canon. |
-| [`articles/`](articles/) | Topic-keyed agent-facing canon articles. Currently contains `_archive/` (superseded design docs retained for history). Will hold `payload-construction.md`, `output-naming.md`, `config-construction.md`, `font-resolution.md`, `failure-mode-taxonomy.md` — the five gating articles for the v1.2 smoke test (per spec §2; see [`handoffs/documentation-cleanup-handoff.md`](handoffs/documentation-cleanup-handoff.md) §1 Track 2). |
-| [`PENDING_UPLOADS.md`](PENDING_UPLOADS.md) | List of files needed in this repo that the bootstrap session did not have direct access to. Other sessions and the operator should upload per the instructions there. |
+| [`articles/`](articles/) | Topic-keyed agent-facing canon articles — the working "user manual" for the AI. Currently 18 articles covering payload construction, output naming, config construction & inheritance, font resolution, failure modes, diagnostic patterns, file-system map, USFM markers, the four supporting-file formats (adjlist, piclist, changes.txt, stylesheet), front matter / cover periphs, settings cookbook, workflow recipes, CLI reference, and the temporary Phase-1 PoC scope article. `_archive/` retains superseded design docs. |
+| [`PENDING_UPLOADS.md`](PENDING_UPLOADS.md) | Bootstrap-era file inventory. Mostly resolved as of 2026-04-28; retained for the optional historical-archive items in §4. |
 
 ## Frontmatter convention
 

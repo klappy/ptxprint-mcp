@@ -40,11 +40,12 @@ Agent (Claude Desktop / BT Servant / etc.)
 │   1. Materialize scratch dir from inline config_files   │
 │   2. Parallel-fetch sources, fonts, figures             │
 │      (verify sha256 as bytes arrive)                    │
-│   3. Set up per-job FONTCONFIG_FILE                     │
-│   4. Run PTXprint subprocess (poll DO for cancel flag)  │
-│   5. Classify exit (hard/soft/success)                  │
-│   6. Upload PDF + log to R2                             │
-│   7. Update DO with state, URLs, log_tail               │
+│   3. Run PTXprint subprocess (poll DO for cancel flag); │
+│      payload fonts in <project>/shared/fonts/ are       │
+│      discovered by PTXprint's own startup logic         │
+│   4. Classify exit (hard/soft/success)                  │
+│   5. Upload PDF + log to R2                             │
+│   6. Update DO with state, URLs, log_tail               │
 └─────────────────────────────────────────────────────────┘
   │                                    │
   │ DO state R/W                       │ R2 PUT
