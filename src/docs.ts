@@ -87,10 +87,11 @@ export async function fetchDocs(
   let client: Client | null = null;
   try {
     client = await openOddkitClient();
+    const oddkit = client; // narrow once for closures (Promise.allSettled below).
 
     // Step 1 — search.
     const searchResult = await callOddkit<OddkitSearchResult>(
-      client,
+      oddkit,
       "search",
       query,
       SEARCH_TIMEOUT_MS,
@@ -125,7 +126,7 @@ export async function fetchDocs(
     // depth >= 2: fetch the full top doc.
     let topDoc: OddkitGetResult | null = null;
     try {
-      topDoc = await callOddkit<OddkitGetResult>(client, "get", top.uri, GET_TIMEOUT_MS);
+      topDoc = await callOddkit<OddkitGetResult>(oddkit, "get", top.uri, GET_TIMEOUT_MS);
     } catch {
       // Fall back to the depth=1 shape if the get fails — partial-credit
       // is better than total-failure here, and the search results are valid.
@@ -147,23 +148,20 @@ export async function fetchDocs(
       ...ranked.slice(1, 5).map(toSource),
     ];
 
-    // depth=3: also fetch the next 2 ranked docs in full.
+    // depth=3: also fetch the next 2 ranked docs in full, in parallel.
     if (depth === 3) {
       const neighbors = ranked.slice(1, 3);
-      for (let i = 0; i < neighbors.length; i++) {
-        try {
-          const doc = await callOddkit<OddkitGetResult>(
-            client,
-            "get",
-            neighbors[i].uri,
-            GET_TIMEOUT_MS,
-          );
-          if (doc && sources[i + 1]) {
-            sources[i + 1].snippet = doc.content;
-          }
-        } catch {
-          // Leave the snippet in place; partial enrichment is fine.
+      const results = await Promise.allSettled(
+        neighbors.map((n) =>
+          callOddkit<OddkitGetResult>(oddkit, "get", n.uri, GET_TIMEOUT_MS),
+        ),
+      );
+      for (let i = 0; i < results.length; i++) {
+        const r = results[i];
+        if (r.status === "fulfilled" && r.value && sources[i + 1]) {
+          sources[i + 1].snippet = r.value.content;
         }
+        // On rejection, leave the snippet in place; partial enrichment is fine.
       }
     }
 
@@ -246,10 +244,26 @@ async function callOddkit<T>(
     },
   );
 
-  const content = (result as { content?: Array<{ type: string; text?: string }> }).content;
-  const inner = content?.[0]?.text;
-  if (typeof inner !== "string") return null;
+  // The SDK throws on JSON-RPC errors automatically. But oddkit can also
+  // signal tool-level failures via isError: true on a successful response;
+  // surface those as exceptions too so fetchDocs's outer catch routes them
+  // to graceful-degrade rather than silently returning null.
+  const typed = result as {
+    isError?: boolean;
+    content?: Array<{ type: string; text?: string }>;
+  };
+  if (typed.isError) {
+    const errText = typed.content?.[0]?.text ?? "unknown oddkit tool error";
+    throw new Error(`oddkit tool error: ${errText.slice(0, 200)}`);
+  }
 
+  const inner = typed.content?.[0]?.text;
+  if (typeof inner !== "string") {
+    throw new Error("oddkit response missing content[0].text");
+  }
+
+  // Inner is the oddkit envelope: { action, result, assistant_text, debug, server_time }.
+  // We want .result, which is the OddkitSearchResult / OddkitGetResult.
   const parsed = JSON.parse(inner) as { result?: T };
   return parsed?.result ?? null;
 }
