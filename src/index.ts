@@ -402,10 +402,20 @@ export default {
 
     // R2 read proxy — Day-1: proxy reads through the Worker. Day-2: switch
     // to presigned GETs and remove this route.
-    if (req.method === "GET" && url.pathname.startsWith("/r2/")) {
+    //
+    // HEAD shares this branch so smoke harnesses and downstream agents can
+    // poll for object existence without paying for the body bytes. Per
+    // session-11 H-020 (was: HEAD returned 404 even when GET succeeded —
+    // misleading for any caller checking artifact presence).
+    if (
+      (req.method === "GET" || req.method === "HEAD") &&
+      url.pathname.startsWith("/r2/")
+    ) {
       const key = url.pathname.slice("/r2/".length);
-      const obj = await env.OUTPUTS.get(key);
-      if (!obj) return new Response("not found", { status: 404 });
+      const isHead = req.method === "HEAD";
+      // For HEAD, R2's head() returns just metadata — cheaper than get().
+      const obj = isHead ? await env.OUTPUTS.head(key) : await env.OUTPUTS.get(key);
+      if (!obj) return new Response(isHead ? null : "not found", { status: 404 });
       const headers = new Headers();
       obj.writeHttpMetadata(headers);
       headers.set("etag", obj.httpEtag);
@@ -415,9 +425,15 @@ export default {
           ? "application/pdf"
           : key.endsWith(".log")
             ? "text/plain; charset=utf-8"
-            : "application/octet-stream",
+            : key.endsWith(".ttf")
+              ? "font/ttf"
+              : key.endsWith(".otf")
+                ? "font/otf"
+                : "application/octet-stream",
       );
-      return new Response(obj.body, { headers });
+      // R2 head() doesn't expose body; R2 get()'s .body is a ReadableStream.
+      const body = isHead ? null : (obj as R2ObjectBody).body;
+      return new Response(body, { headers });
     }
 
     // MCP transport — streamable HTTP at /mcp; legacy SSE at /sse for compatibility.

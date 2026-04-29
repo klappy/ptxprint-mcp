@@ -110,6 +110,8 @@ fontbolditalic = Charis SIL|Bold Italic|false|false|
 
 This mitigation produces a pipeline-validation PDF, **not** a faithful render of the fixture. Phase 2 introduces the `fonts` payload field for proper font supply.
 
+**Update (session 11, 2026-04-29):** the Phase-2 path was demonstrated end-to-end via `smoke/fonts-payload.json` (job `802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd`). The minitests fixture's cfg was left **unmodified** (still references Gentium Plus); the four Gentium Plus 6.200 TTFs were staged in R2 and supplied via the payload's `fonts` array. PTXprint discovered the materialised fonts in `<project>/shared/fonts/` without any container changes — `fc-cache` and `OSFONTDIR` were not required, contradicting the session-10 handoff's prediction. The resulting PDF embeds GentiumPlus / GentiumPlus-Bold / GentiumPlus-Italic per `pdffonts` (faithful render), not Charis. Both the cfg-edit mitigation above (simpler) and the fonts-payload approach (faithful) now work for fixtures that request unbundled fonts; choose based on whether the user needs faithful rendering. See `klappy://canon/articles/font-resolution` §"A worked-minimum English-Bible payload" for the verified URLs and sha256s.
+
 ## What the Container provides
 
 For Phase 1, the Container image bundles:
