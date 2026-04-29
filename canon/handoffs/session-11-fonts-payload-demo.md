@@ -14,7 +14,9 @@ companion_to: "canon/encodings/transcript-encoded-session-11.md"
 
 ## TL;DR
 
-Session 11 closed H-018 path 2 (operator triage answer). Phase-2 fonts-payload path is now empirically demonstrated end-to-end: the minitests fixture's `ptxprint.cfg` was left **unmodified** (still references "Gentium Plus"), and the actual Gentium Plus 6.200 TTFs were supplied via the payload's `fonts` array. PDF rendered faithfully — `pdffonts` confirms GentiumPlus / GentiumPlus-Bold / GentiumPlus-Italic embedded. **No container code changes were necessary.** PR also folds in H-020 (HEAD `/r2/outputs/<key>` → 404) as a tiny opportunistic fix.
+Session 11 closed H-018 path 2 (operator triage answer). Phase-2 fonts-payload path is now empirically demonstrated end-to-end: the minitests fixture's `ptxprint.cfg` was left **unmodified** (still references "Gentium Plus"), and the actual Gentium Plus 6.200 TTFs were supplied via the payload's `fonts` array. PDF rendered faithfully — `pdffonts` confirms GentiumPlus / GentiumPlus-Bold / GentiumPlus-Italic embedded. **No container code changes were necessary.** PR also folds in H-020 (HEAD `/r2/outputs/<key>` → 404) as a tiny opportunistic fix, which auto-deployed via Workers Builds when PR #13 merged — **HEAD now returns 200 against the live worker**, verified empirically.
+
+> **Correction note (post-session, 2026-04-29).** This handoff was originally drafted with the (wrong) belief that deploys required a manual `wrangler deploy` step ("H-024"). The truth: the CF dashboard's Workers Builds GitHub integration auto-deploys every merged push to `main`. The H-020 fix shipped at PR #13 merge time without any further action. H-024 was a phantom and is closed; the original wording is preserved below for the record.
 
 ## What works right now
 
@@ -34,11 +36,10 @@ Session 11 closed H-018 path 2 (operator triage answer). Phase-2 fonts-payload p
 - `…/GentiumPlus-BoldItalic.ttf` (sha256 `960e0a58ce1d7849c7a3e49f4fbc1ac4a27b58ef19a2d013ce637fe364b0a1f0`, 957876 bytes)
 - Original ZIP: `https://github.com/silnrsi/font-gentium/releases/download/v6.200/GentiumPlus-6.200.zip` (sha256 `9b21103b79961149b6508791572acb3b2fe7eb621474c57d5e4ee37e76d7b073`).
 
-**H-020 HEAD fix** is in this PR's `src/index.ts` but **not deployed** to the live worker yet (no CI workflow; operator-deploy gated). Until that deploy, `HEAD /r2/outputs/<key>` continues to return 404 against the live URL despite the fix being in main.
+**H-020 HEAD fix** is in this PR's `src/index.ts` and **deployed live** — Cloudflare Workers Builds GitHub integration auto-deploys every merged push to `main`. `HEAD /r2/outputs/<key>` returns 200 against the live worker; verified empirically post-PR-13-merge.
 
 ## What does not yet work
 
-- **HEAD /r2/outputs/<key>** still returns 404 against the live deploy until H-024 (operator runs `wrangler deploy`). Code is fixed in main; behavior change is gated.
 - **Charis SIL canonical URLs** in `canon/articles/font-resolution.md` still cite the unverified `lff.api.languagetechnology.org` placeholder pattern — fine for documentation shape, but if an agent tries those URLs verbatim they may not resolve. H-023 is the cleanup; pairs naturally with H-022 (move fixtures into a dedicated bucket).
 - **Widget-ID-to-cfg-key mapping** (session-1 O-003 / session-10 H-019) still open. This was the leverage move the session-10 handoff said "deserves its own session" — still waiting for one.
 
@@ -46,7 +47,7 @@ Session 11 closed H-018 path 2 (operator triage answer). Phase-2 fonts-payload p
 
 ### Move 1 — Time + status sweep (≤2 min)
 
-Same as session-11's session-10 sweep, with one new check: verify the H-020 HEAD fix is deployed.
+Same as session-11's session-10 sweep, plus a deploy-state probe.
 
 ```bash
 # 1a — current time
@@ -66,13 +67,16 @@ curl -sS -A "ptxprint-smoke/0.x" -o /tmp/last.pdf \
   "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd/minitest_Default_JHN_ptxp.pdf"
 file /tmp/last.pdf
 
-# 1e — H-020 deploy state: HEAD vs GET on a known-existing PDF
+# 1e — confirm the live worker reflects the latest main (Workers Builds is automatic
+# but worth a sanity check — exercise behavior introduced by the most recent merge).
+# Example for a route change: curl that route. For a Container change: submit a smoke
+# with a unique payload to force a new instance.
 curl -sS -I -A "ptxprint-smoke/0.x" \
   "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd/minitest_Default_JHN_ptxp.pdf" \
   | head -1
 ```
 
-If 1e returns `HTTP 200`, H-020 is deployed (operator did `wrangler deploy` between sessions). If it returns `HTTP 404`, H-024 is still pending and worth pinging the operator about.
+`HEAD /r2/...` returning `HTTP 200` confirms the H-020 fix deployed correctly. (Workers Builds has auto-deployed since session 11 — this is a sanity check, not a gating step.) If it returns `HTTP 404`, check the **Workers & Pages → ptxprint-mcp → Deployments** tab in the CF dashboard for the latest build status.
 
 ### Move 2 — Pick H-019 (widget-ID-to-cfg-key mapping)
 
@@ -99,7 +103,6 @@ This is "cleanup PR" territory — meaningful but not urgent.
 | ID | Priority | Item | Lives in |
 |---|---|---|---|
 | H-019 | P1 | Widget-ID-to-cfg-key mapping (closes session-1 O-003) | Canon authoring |
-| H-024 | P2 | Operator: `wrangler deploy` to ship H-020 HEAD fix | Operator-side |
 | H-013 | P2 | Update `canon/articles/config-construction.md`'s "minimal cfg" example | Canon edit |
 | H-015 | P2 | File 3 upstream issues on `sillsdev/ptx2pdf` | Operator-side |
 | H-022 | P3 | Move stable fixtures into dedicated `ptxprint-fixtures` bucket | `wrangler.jsonc` + migration |
@@ -113,6 +116,8 @@ This is "cleanup PR" territory — meaningful but not urgent.
 | Day-2 deferred | P3 | Autofill mode | v1.2 spec |
 | Day-2 deferred | P3 | Per-pass progress streaming | v1.2 spec |
 | Operator-side | P3 | R2 lifecycle policies | CF dashboard |
+
+> **H-024 retracted.** Originally listed as "operator: `wrangler deploy` to ship H-020 HEAD fix." This was based on the incorrect belief that deploys were manual. The truth: Workers Builds GitHub integration auto-deployed the fix at PR #13 merge time. `HEAD /r2/...` returning 200 against the live worker confirms it.
 
 ## State at session end (for resuming exactly)
 
@@ -139,7 +144,7 @@ New from session 11:
 - **Payload-supplied fonts work without container changes.** Materialised at `<scratch>/<project>/shared/fonts/<filename>`; PTXprint's startup adds that to XeTeX's resolution paths. No `fc-cache` or `OSFONTDIR` invocation needed.
 - **`fonts-sil-gentium` ≠ `fonts-sil-gentiumplus`.** The Dockerfile's apt list installs the former (Gentium 1.03 from 2008, Regular only). The latter (v6.200, four Gentium Plus faces) was never installed; that explains drift 7 root-cause.
 - **`/internal/upload` accepts arbitrary content as binary-clean PUT** as long as the key starts with `outputs/`. No auth in Day-1; Day-2 will replace with presigned URLs.
-- **HEAD `/r2/outputs/<key>` returns 404 until H-024 deploys.** GET works fine and is what session-11's smoke harness uses for verification.
+- **`HEAD /r2/outputs/<key>` returns 200** — the H-020 fix landed in PR #13 and auto-deployed via Workers Builds. Both HEAD and GET work. (Pre-PR-13 it returned 404; if you ever see 404 on a known-existing key after this, suspect a deploy regression and check the Deployments tab.)
 - **Surprise downward in scope is a workflow success, not a failure.** Plan called for `fc-cache`/`OSFONTDIR`; empirical test showed not needed; PR shipped strictly less code than predicted. Encode the principle: test before pre-emptive coding.
 
 ## Cursor Agent caveat
