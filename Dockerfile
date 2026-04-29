@@ -57,6 +57,17 @@ EOF
 # Workaround: copy src/ into a stable location in the image and add it to
 # TEXINPUTS so XeTeX can find paratext2.tex et al. at typeset time.
 # Also worth filing upstream.
+#
+# Upstream-bundled fonts: ptx2pdf bundles a small fonts/ directory at the
+# repo root (Charis-{Regular,Bold,Italic,BoldItalic}.ttf, OrnamentTest.ttf,
+# SourceCodePro-Regular.ttf, empties.ttf). The upstream Dockerfile pulls
+# these in via COPY fonts/. We need at least SourceCodePro-Regular.ttf
+# because src/ptx-cropmarks.tex line 38 unconditionally does
+#     \font\idf@nt="Source Code Pro" at 8pt
+# during macro setup — meaning every Phase 1 typeset attempt would die at
+# this line without it. Apt has no fonts-source-code-pro package, so we
+# copy from /tmp/ptx2pdf/fonts/ before cleanup and run fc-cache. Total
+# image-size cost ~3.6 MB.
 ARG PTX2PDF_REF=3.0.20
 RUN git clone --depth 1 --branch ${PTX2PDF_REF} \
         https://github.com/sillsdev/ptx2pdf.git /tmp/ptx2pdf \
@@ -65,6 +76,9 @@ RUN git clone --depth 1 --branch ${PTX2PDF_REF} \
  && pip install --no-cache-dir . \
  && mkdir -p /usr/local/share/ptx2pdf \
  && cp -r /tmp/ptx2pdf/src/. /usr/local/share/ptx2pdf/ \
+ && mkdir -p /usr/local/share/fonts/ptx2pdf \
+ && cp /tmp/ptx2pdf/fonts/*.ttf /usr/local/share/fonts/ptx2pdf/ \
+ && fc-cache -fv \
  && rm -rf /tmp/ptx2pdf /root/.cache
 
 # Make the ptx2pdf TeX macros findable by XeTeX (kpsewhich).
