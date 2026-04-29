@@ -21,30 +21,38 @@ canonical_status: non_canonical
 - **Durable Objects:** `PtxprintMcp`, `JobStateDO`, `PtxprintContainer` (single migration `v1`)
 - **Container instance:** `standard-2` (1 vCPU, 6 GiB memory, 12 GB disk), `max_instances: 5`
 
-There is **no GitHub Actions workflow** in `.github/workflows/` — deploys are manual via the operator running `wrangler deploy`. PRs that change `src/` or `Dockerfile` land in `main` at merge but do not auto-deploy; the operator must redeploy for the change to take effect.
+## How deploys work
+
+**Pushes to `main` auto-deploy via Cloudflare Workers Builds.** The CF dashboard is configured with the GitHub integration: each merged commit on `main` runs `npm install` followed by `npx wrangler deploy`, which (re)builds and pushes both the Worker and the Container image.
+
+This is *not* a `.github/workflows/` GitHub Actions setup — it's the native Cloudflare Workers Builds integration, configured in the dashboard. The absence of a workflow file in the repo does not mean "no CI." Verify a deploy is live by hitting `/health` and observing the change you expect.
+
+**Do not run `wrangler deploy` manually.** It would conflict with the Workers Builds pipeline and isn't necessary.
 
 ## Deploying changes
 
-### Worker code (`src/`)
+### Worker code (`src/`), Container (`Dockerfile`, `container/main.py`), or wrangler config
 
-```bash
-git pull
-npm install
-npx wrangler deploy
-# Verify: curl https://ptxprint-mcp.klappy.workers.dev/health → {"ok":true,"version":"0.1.0",...}
+```
+git push origin <branch> → open PR → merge to main → Workers Builds runs npx wrangler deploy
 ```
 
-### Container image (`Dockerfile`, `container/main.py`)
+Verify the deploy landed:
 
-`wrangler deploy` builds and pushes the container image alongside the Worker — no separate build step required. The Container DO picks up the new image on its next cold start (it sleeps after 45m idle by default).
+```bash
+curl -A "ptxprint-ops/0.1" https://ptxprint-mcp.klappy.workers.dev/health
+# Then exercise the specific behavior the change introduced (e.g. for a route change,
+# curl the route; for a Container change, submit a smoke payload that perturbs the hash
+# so you get a fresh container instance pulling the new image).
+```
 
-To force a fresh container instance after a Dockerfile change:
-- Submit a smoke job with a unique payload (e.g. add a comment to `_comment` to perturb the hash) — this dispatches to a new container instance which pulls the new image.
-- Or wait out the 45-minute sleep window.
+If `/health` doesn't reflect the change after a few minutes, check the **Workers & Pages → ptxprint-mcp → Deployments** tab in the CF dashboard for the build status and logs.
+
+The Container DO picks up a new image on its next cold start (it sleeps after 45m idle by default). To force a fresh container instance after a Dockerfile change, submit a smoke job with a unique payload (perturb a `_comment` field to change the hash) — this dispatches to a new container instance which pulls the new image.
 
 ### Canon-only changes (`canon/`, `*.md`)
 
-No deploy needed. Canon is served by `oddkit` MCP at agent runtime, not by this Worker. Push to main and the next session's `oddkit_search` against `knowledge_base_url=https://github.com/klappy/ptxprint-mcp/tree/main` will see the change (subject to oddkit's own caching — see H-017 in recent handoffs for the indexing-URL friction).
+No deploy effect. Canon is served by `oddkit` MCP at agent runtime, not by this Worker. Push to main and the next session's `oddkit_search` against `knowledge_base_url=https://github.com/klappy/ptxprint-mcp/tree/main` will see the change (subject to oddkit's own caching — see H-017 in recent handoffs for the indexing-URL friction).
 
 ## First-time setup (re-creating the deployment from scratch)
 
@@ -67,14 +75,14 @@ Edit `wrangler.jsonc`:
 - `vars.WORKER_URL` must match the workers.dev hostname (or your custom domain).
 - `containers[0].max_instances` and `instance_type` per your CF Containers tier.
 
-### 3. Deploy
+### 3. Initial deploy
 
 ```bash
 npm install
 npx wrangler deploy
 ```
 
-The first deploy creates the Durable Object SQLite tables (per the `migrations` block) and pushes the container image.
+The first deploy creates the Durable Object SQLite tables (per the `migrations` block) and pushes the container image. **This is the only time you should run `wrangler deploy` manually.** All subsequent deploys go through Workers Builds (see "How deploys work" above) — set up the GitHub integration step (§5 below) once and never touch wrangler from the command line again.
 
 ### 4. WAF / Browser Integrity rules
 
@@ -85,6 +93,20 @@ The CF dashboard's default Browser Integrity Check treats MCP clients (and `urll
   - Action: **Skip** → Browser Integrity Check, Bot Fight Mode
 
 Or set an explicit `User-Agent` on every client request that goes through the Worker (smoke harnesses use `ptxprint-smoke/0.1` or similar; default `python-urllib/3.x` will be 1010-banned). See session-9's encoding for the original incident.
+
+### 5. Workers Builds GitHub integration (the deploy automation)
+
+In the CF dashboard, after the initial `wrangler deploy` lands:
+
+1. **Workers & Pages** → **ptxprint-mcp** → **Settings** → **Builds** → **Connect repository** → choose `klappy/ptxprint-mcp`.
+2. Build settings:
+   - Build branch: `main` (production)
+   - Build command: `npm install`
+   - Deploy command: `npx wrangler deploy`
+   - Root directory: `/`
+3. Wrangler picks up `wrangler.jsonc` automatically. Container image build happens during the Workers Builds run.
+
+Once configured, every merged commit on `main` triggers a build-and-deploy. **No further manual `wrangler deploy` invocations.** Verify by pushing a small change and watching the Deployments tab.
 
 ## Health checks
 
@@ -132,7 +154,7 @@ Both jobs are reproducible from `smoke/*.json` fixtures + the JSON-RPC harness p
 ## Observed quirks (don't relearn)
 
 - **Default `urllib` UA gets Cloudflare-1010-banned.** Always set explicit `User-Agent` on programmatic requests.
-- **`HEAD /r2/<key>` returned 404 until session-11.** Now fixed (route handler accepts both methods); deploy is gated on next `wrangler deploy`.
+- **`HEAD /r2/<key>` returned 404 until session-11.** Fixed in PR #13 (route handler now accepts both GET and HEAD; HEAD uses `env.OUTPUTS.head()` for efficiency). Live as of PR #13's merge — Workers Builds auto-deployed it.
 - **Job IDs are `sha256(canonicalize(payload))`.** Same payload → same id → same R2 path → free cache hit. Perturb a comment or any field to force fresh DO state.
 - **`define` overrides do NOT take effect** for cfg keys with the same name. PTXprint widget IDs ≠ cfg keys (session-1 O-003 still open). Edit `config_files` directly OR supply the actual font via `fonts` payload.
 - **`project_id` capped at 8 chars** by the v1.2 schema. Paratext convention is project-id = folder-name; "minitests" (9 chars) must be renamed to "minitest" when used as a payload.

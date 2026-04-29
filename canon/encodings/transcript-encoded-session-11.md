@@ -146,3 +146,18 @@ P3. Session-10 raised this as an investigation item. L-019 above suggests the si
 ---
 
 *End of session 11 encoding. Companion artifacts: `canon/handoffs/session-11-fonts-payload-demo.md` (durable handoff), `smoke/fonts-payload.json` (the demonstration fixture).*
+
+---
+
+## Correction note (added 2026-04-29 post-session, not contemporaneous)
+
+D-022, C-011, H-024, and the cross-reference table above all carry the (incorrect) belief that deploys required a manual `wrangler deploy` step. **They are wrong.** The session-11 author inferred "no CI" from the absence of `.github/workflows/`, missing that Cloudflare Workers Builds is configured via the CF dashboard's GitHub integration and auto-deploys every merged push to `main`. The H-020 fix in PR #13 deployed automatically at merge time; `HEAD /r2/outputs/<key>` returns 200 against the live worker as of 2026-04-29T02:36Z (verified empirically).
+
+The above sections are preserved unedited as the historical record of what the session-11 author believed at the time. The correction lives here to keep the encoding honest:
+
+- **D-022's last sentence** ("The deploy of this fix is gated on operator running `wrangler deploy`…"): false. Auto-deployed.
+- **C-011 in full**: false. Workers Builds GitHub integration is the CI; merged commits to `main` auto-deploy.
+- **H-024**: phantom. No operator action was needed; closing.
+- **Cross-ref table row "H-020 (HEAD /r2/ 404)"**: revised — fix is live, not gated.
+
+The truthful deploy story now lives in `BUILD.md` ("How deploys work" section) and the corrected `canon/handoffs/session-11-fonts-payload-demo.md`. Future sessions should treat those as the canonical source.
