@@ -58,7 +58,7 @@ const INITIAL_STATE: Omit<JobState, "job_id" | "payload_hash" | "submitted_at"> 
 export class JobStateDO implements DurableObject {
   constructor(
     private state: DurableObjectState,
-    private _env: unknown,
+    _env: unknown,
   ) {}
 
   async fetch(req: Request): Promise<Response> {
