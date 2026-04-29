@@ -93,7 +93,7 @@ The full schema lives in the v1.2 spec §4. This article is the agent-side const
 | `fonts` | font binaries | **URL + sha256** |
 | `figures` | image binaries (TIF/PNG) | **URL + sha256** |
 
-Rule of thumb: text goes inline; binaries go by URL. Multi-MB files in MCP envelopes are a bad idea; presigned R2 URLs (mintable via `get_upload_url`) are the right path.
+Rule of thumb: text goes inline; binaries go by URL. Multi-MB files in MCP envelopes are a bad idea. Hosting those URLs is the agent's environment concern — the typesetting MCP does not stage or upload input files.
 
 ## `config_files` keys: relative paths
 
@@ -143,7 +143,7 @@ Each entry must include a fetchable URL and the sha256 of the file at that URL. 
 
 URL stability matters for caching. Two payloads pointing at the same content via different URLs hash differently and miss the cache. Prefer:
 
-- R2 presigned GETs with long expiry (mint via `get_upload_url`)
+- Stable HTTPS endpoints the agent's host controls (a static file server, the user's own bucket)
 - Content-addressed CDNs (the sha256 is in the URL)
 - Stable Git-LFS or DBL endpoints
 
@@ -152,18 +152,18 @@ Avoid:
 - Sources that may move (a Paratext server under maintenance)
 - URLs whose host requires auth that the worker can't replay
 
-## Staging local files into URL space
+## Where do the URLs come from?
 
-When the user has a USFM or font file on their local disk that the agent needs to reference by URL, call `get_upload_url`:
+This MCP server does not host or stage input files. There is no `get_upload_url` or equivalent tool. When the user has a USFM or font file on their local disk, the agent's host environment is responsible for making it reachable at an HTTPS URL.
 
-```
-get_upload_url(filename="44JHNWSG.SFM", content_type="text/plain")
-→ { put_url, get_url, expires_at }
-```
+Practical patterns the agent's host can offer:
 
-The agent (or its host) HTTPs-PUTs the file content to `put_url`, then includes `get_url` in subsequent payloads. Uploads are pruned after 24h by R2 lifecycle policy — re-stage if a payload references a stale upload.
+- A static HTTP server backed by the user's filesystem (typical for desktop dev environments)
+- A tunnel from a local file server to a public URL (ngrok, Cloudflare tunnel, Tailscale Funnel)
+- The user storing inputs in a Git repo, an S3 bucket, or any service they already control
+- The Paratext server already hosting the project's USFM at a stable URL
 
-The `put_url` is the agent's upload destination. The `get_url` is what goes in the payload. Don't confuse them.
+Whatever pattern the agent's host supports, the agent's job is to land at a final HTTPS URL and a sha256, then include both in the payload. The typesetting MCP is intentionally indifferent to where those URLs originated.
 
 ## Canonical hashing and the cache
 

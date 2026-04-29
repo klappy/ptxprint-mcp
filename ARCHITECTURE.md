@@ -18,14 +18,13 @@ companion_to: "canon/specs/ptxprint-mcp-v1.2-spec.md"
 ```
 Agent (Claude Desktop / BT Servant / etc.)
   │
-  │ MCP/HTTP — 4 tools
+  │ MCP/HTTP — 3 tools
   ▼
 ┌─────────────────────────────────────────────────────────┐
 │ Cloudflare Worker          (the only Worker)            │
 │  • submit_typeset(payload) → job_id (or cached URL)     │
 │  • get_job_status(job_id)  → state, progress, URLs      │
 │  • cancel_job(job_id)      → SIGTERM via DO flag        │
-│  • get_upload_url(...)     → R2 presigned PUT URL       │
 └─────────────────────────────────────────────────────────┘
   │
   │ Service binding · ctx.waitUntil(fetch(...))
@@ -55,9 +54,6 @@ Agent (Claude Desktop / BT Servant / etc.)
 │ (one DO per job_id)  │    │  • outputs/<hash>/...       │
 │                      │    │    (content-addressed PDF   │
 │                      │    │     + log; long retention)  │
-│                      │    │  • uploads/<id>/<filename>  │
-│                      │    │    (presigned uploads,      │
-│                      │    │     24h lifecycle)          │
 └──────────────────────┘    └─────────────────────────────┘
 ```
 
@@ -69,7 +65,7 @@ Agent (Claude Desktop / BT Servant / etc.)
 
 **Project state is the agent's responsibility.** The user's working configs, USFM sources, fonts — wherever those live (local filesystem, Git, DBL, Paratext server) — are accessed by the agent through whatever its environment provides (Claude Desktop file access, a separate filesystem MCP, etc.). The typesetting MCP only sees the payload.
 
-**Inline text, URL'd binaries.** The payload contains config files (cfg, sty, changes.txt, FRTlocal.sfm, AdjLists, piclists, override files) inline as text. USFM sources, fonts, and figures are referenced by URL with sha256 verification. The `get_upload_url` tool exists to bridge local files into the URL-accessible world (mints presigned R2 PUT URLs).
+**Inline text, URL'd binaries.** The payload contains config files (cfg, sty, changes.txt, FRTlocal.sfm, AdjLists, piclists, override files) inline as text. USFM sources, fonts, and figures are referenced by URL with sha256 verification. Hosting those URLs is the agent's concern, not the server's — the MCP surface does not stage or upload input files.
 
 **Two-step async.** Every typesetting call returns a `job_id` immediately. Status is polled via `get_job_status`. No MCP call blocks for more than a few seconds.
 

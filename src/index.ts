@@ -1,16 +1,14 @@
 /**
  * PTXprint MCP Worker — entry point.
  *
- * Exposes 4 MCP tools per v1.2 spec §3:
+ * Exposes 3 MCP tools per v1.2 spec §3:
  *   submit_typeset(payload)   → job_id (or cached URL)
  *   get_job_status(job_id)    → state / progress / urls / errors
  *   cancel_job(job_id)        → set DO flag; container polls every 10s
- *   get_upload_url(...)       → presigned R2 PUT URL
  *
- * Day-1 PoC scope:
- *   - submit_typeset, get_job_status fully wired
- *   - cancel_job: DO flag is set; container-side SIGTERM is Day-2
- *   - get_upload_url: stubbed (presigned URL minting comes Day-2)
+ * Agents bring their own URLs for sources/fonts/figures — the server does
+ * not host or stage input files. Hosting is the agent's concern, upstream
+ * of MCP.
  *
  * Plus an internal route the container calls back to for state updates:
  *   POST /internal/job-update  — body { job_id, patch }
@@ -45,7 +43,6 @@ interface Env {
   JOB_STATE: DurableObjectNamespace;
   PTXPRINT_CONTAINER: DurableObjectNamespace;
   OUTPUTS: R2Bucket;
-  UPLOADS: R2Bucket;
   WORKER_URL: string;
   PTXPRINT_TIMEOUT_DEFAULT: string;
   RESULT_PRESIGNED_TTL: string;
@@ -310,35 +307,6 @@ export class PtxprintMcp extends McpAgent<Env> {
       },
     );
 
-    // ----- get_upload_url -----
-    this.server.tool(
-      "get_upload_url",
-      "Mint a presigned R2 PUT URL for staging a local file (USFM, font, figure) at a temporary URL the agent then references in subsequent payloads. NOT YET IMPLEMENTED in Day-1 PoC — pre-stage files in any HTTPS-accessible location and reference them by URL+sha256 in the payload directly.",
-      {
-        filename: z.string().min(1),
-        content_type: z.string().min(1),
-        expires_in: z.number().int().positive().optional(),
-      },
-      async () => {
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(
-                {
-                  error: "not_implemented",
-                  message:
-                    "get_upload_url is a Day-2 PoC scope item. For Day-1 smoke tests, host files at any HTTPS URL and reference them by URL+sha256 in the payload's sources/fonts/figures arrays.",
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-          isError: true,
-        };
-      },
-    );
   }
 }
 

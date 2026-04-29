@@ -65,9 +65,9 @@ The server does not know:
 
 The constraint test (`klappy://canon/principles/vodka-architecture`):
 
-- **Has the server grown thick?** No — 4 tools, ~250 lines of Worker code + ~200 lines of Container HTTP handler + ~100 lines of DO state machine.
+- **Has the server grown thick?** No — 3 tools, ~250 lines of Worker code + ~200 lines of Container HTTP handler + ~100 lines of DO state machine.
 - **Has the server acquired domain opinions?** No — every tool is generic action over a schema-defined payload.
-- **Can the server be removed without consequence?** No — content-addressed dispatch + DO state + R2 output + presigned URL minting is a coordinated primitive set no off-the-shelf alternative provides.
+- **Can the server be removed without consequence?** No — content-addressed dispatch + DO state + R2 output is a coordinated primitive set no off-the-shelf alternative provides.
 
 ---
 
@@ -97,7 +97,7 @@ The agent's reasoning loop: search canon → understand the change or pattern �
 
 ---
 
-## 3. Tools (4)
+## 3. Tools (3)
 
 ### `submit_typeset(payload)`
 
@@ -168,27 +168,15 @@ Behavior: set `cancel_requested: true` in the DO. The running Container's PTXpri
 
 Acknowledged latency: up to 10 seconds between cancel request and PTXprint actually stopping. Acceptable for v1.2.
 
-### `get_upload_url(filename, content_type, expires_in?)`
+### Why there is no upload tool
 
-**Inputs:**
-- `filename` — the basename the user wants the file stored under
-- `content_type` — MIME type
-- `expires_in` — seconds until the PUT URL expires (default 900 = 15 min)
+An earlier draft of this spec included a fourth tool, `get_upload_url`, that minted a presigned R2 PUT URL for agents to stage local files (USFM, fonts, figures) before referencing them in payloads. It was removed before any agent ever used it. The reasoning:
 
-**Returns:**
-```json
-{
-  "put_url": "https://r2.../uploads/<random>/<filename>?X-Amz-...",
-  "get_url": "https://r2.../uploads/<random>/<filename>",
-  "expires_at": "2026-04-28T03:56:32Z"
-}
-```
+- The agent already has the file. Forcing a separate "mint URL → HTTP PUT megabytes → reference URL in payload" round-trip is pure friction and doubles the data transfer.
+- Hosting input files is upstream of typesetting. Where USFM, fonts, and figures live (a Git repo, DBL, a Paratext server, a CDN, the user's own bucket) is the agent's environment concern, not the MCP server's.
+- A presigned-URL minting tool is a piece of infrastructure plumbing leaking into the agent contract. The MCP surface is for typesetting actions, not storage management.
 
-Behavior: mint a presigned R2 PUT URL plus the matching GET URL. Agent uploads the file directly via HTTP PUT (multi-MB binaries don't traverse the MCP envelope). The agent then includes `get_url` in subsequent payloads as a `sources[].url` or `figures[].url`.
-
-This tool earns its place specifically because minting presigned URLs requires Cloudflare credentials that should not spread to every agent. The Worker has them; agents call this tool when they need them.
-
-Sandboxing: filenames cannot contain path separators. Upload bucket is separate from output bucket; uploads are time-limited and pruned by R2 lifecycle policy.
+The contract: agents pass HTTPS URLs (with `sha256` for verification) directly in the payload's `sources`, `fonts`, and `figures` arrays. The Container fetches them at job start. If an agent's environment doesn't have a way to expose local files at a URL, that is a problem for the agent's host to solve — not for the typesetting MCP to absorb.
 
 ---
 
@@ -286,7 +274,6 @@ Agent (Claude Desktop / BT Servant / etc.)
 │                   return job_id                  │
 │  - get_job_status: read DO, return               │
 │  - cancel_job: set DO flag, return               │
-│  - get_upload_url: mint R2 presigned URL         │
 └──────────────────────────────────────────────────┘
   ↓ Worker→Container service binding
 ┌──────────────────────────────────────────────────┐
@@ -311,21 +298,19 @@ Agent (Claude Desktop / BT Servant / etc.)
 │  Container sleeps after sleepAfter timer         │
 └──────────────────────────────────────────────────┘
   ↕ DO read/write           ↓ R2 PUT (content-addressed output)
-                            ↓ R2 PUT (uploads via presigned URLs)
 Durable Objects        Cloudflare R2
-(one DO per job_id)    Two buckets:
-                         ptxprint-uploads (time-limited, lifecycle pruned)
+(one DO per job_id)    One bucket:
                          ptxprint-outputs (content-addressed, long retention)
 ```
 
 ### The Worker
 
-Single Worker handles the four MCP tools as separate routes. Implementation notes:
+Single Worker handles the three MCP tools as separate routes. Implementation notes:
 
 - Use `ctx.waitUntil(fetch(containerEndpoint, {method: 'POST', body: JSON.stringify(payload)}))` to dispatch to the Container without blocking the Worker's response to the agent. The Container request stays open as long as the Container is processing; the Worker has already returned to the agent.
 - Container service binding: declare in `wrangler.toml` as `[[containers]] binding = "PTXPRINT_CONTAINER"`, then `env.PTXPRINT_CONTAINER` is callable from the Worker.
 - DO binding for state: `[[durable_objects.bindings]] name = "JOB_STATE" class_name = "JobStateDO"`.
-- R2 bindings for both buckets: `[[r2_buckets]] binding = "OUTPUTS"` and `binding = "UPLOADS"`.
+- R2 binding for outputs: `[[r2_buckets]] binding = "OUTPUTS"`.
 
 ### The Container
 
@@ -399,12 +384,7 @@ outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.log
 
 Long retention (90 days default; tunable). Same payload → same path → cache hit on re-submission. Naming follows the governance Part 2 convention so users see filenames matching their existing mental model.
 
-**`ptxprint-uploads`** — time-limited staging:
-```
-uploads/<random_id>/<filename>
-```
-
-Lifecycle policy: delete after 24 hours. Purpose: agents stage local files here via `get_upload_url`, reference them by URL in payloads, and the references resolve while the upload is fresh. No accumulation of stale uploads.
+There is no separate uploads bucket. Agents bring their own URLs for sources, fonts, and figures; the server only stores outputs.
 
 ---
 
@@ -460,11 +440,11 @@ Risk to verify at implementation time: whether a Worker's `waitUntil` actually k
 | `cancel_job` | **Kept** — same. |
 | `install_fonts` | **Removed.** Fonts are part of the payload; Container fetches and verifies at job start. |
 
-Net: 7 → 4. Plus a new tool: `get_upload_url` for staging local files into R2-accessible URLs.
+Net: 7 → 3. The originally proposed `get_upload_url` tool was removed before deployment — see §3 "Why there is no upload tool."
 
 ### From the original 17-tool PoC
 
-Cumulative simplification: **17 → 4**, with no functionality loss — every removed tool's functionality is reachable via either canon-described agent patterns or the four primitives.
+Cumulative simplification: **17 → 3**, with no functionality loss — every removed tool's functionality is reachable via either canon-described agent patterns or the three primitives.
 
 ---
 
@@ -473,13 +453,12 @@ Cumulative simplification: **17 → 4**, with no functionality loss — every re
 The MCP server is "v1.2 done" when an agent connected to both this MCP server and oddkit MCP (pointing at the PTXprint canon repo, with at least the five gating canon articles authored — see §2) can:
 
 1. Read project state from its environment (Claude Desktop file access for the operator's local Paratext directory, or equivalent).
-2. Construct a valid payload by following canon's payload-construction article.
-3. Mint upload URLs via `get_upload_url` and PUT local USFM/font/figure files to R2 to make them URL-accessible.
-4. Submit the payload via `submit_typeset` and receive a job_id immediately.
-5. Poll job status and observe per-pass progress, then receive a presigned PDF URL on success.
-6. Cancel a long-running autofill job mid-way.
-7. Re-submit an unchanged payload and receive the cached output URL without a new typeset run.
-8. Receive a clear `failure_mode: hard | soft` classification on failures with actionable error info.
+2. Construct a valid payload by following canon's payload-construction article, referencing sources/fonts/figures by HTTPS URL with sha256 (hosting is the agent's environment concern, not the server's).
+3. Submit the payload via `submit_typeset` and receive a job_id immediately.
+4. Poll job status and observe per-pass progress, then receive a presigned PDF URL on success.
+5. Cancel a long-running autofill job mid-way.
+6. Re-submit an unchanged payload and receive the cached output URL without a new typeset run.
+7. Receive a clear `failure_mode: hard | soft` classification on failures with actionable error info.
 
 Smoke test: end-to-end on one English Bible (BSB or ULT) with the `cover` test config from `ptx2pdf/tests/`, using simple typesetting mode.
 
@@ -490,10 +469,10 @@ Smoke test: end-to-end on one English Bible (BSB or ULT) with the `cover` test c
 (For the autonomous coding run kicked off per H-003)
 
 **In scope:**
-- Implement the 4 tools listed in §3 as a Cloudflare Worker.
+- Implement the 3 tools listed in §3 as a Cloudflare Worker.
 - Implement the Container image with PTXprint + XeTeX + fontconfig + Python HTTP handler.
 - Implement the JobStateDO Durable Object class.
-- Configure both R2 buckets (outputs, uploads) with appropriate lifecycle policies.
+- Configure the outputs R2 bucket with appropriate lifecycle policies.
 - Deploy via `wrangler deploy` to a workers.dev subdomain.
 - Smoke-test end-to-end on one English Bible test project.
 

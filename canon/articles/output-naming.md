@@ -78,9 +78,8 @@ Presigned URLs are time-limited. Default windows:
 | `pdf_url` (in `get_job_status`) | 7 days | yes |
 | `log_url` (in `get_job_status`) | 7 days | yes |
 | `predicted_pdf_url` (in `submit_typeset`) | 7 days | yes |
-| `put_url` from `get_upload_url` | 15 minutes | yes (parameter `expires_in`) |
 
-After a presigned URL expires, the underlying object is still in R2 (subject to the bucket's retention policy — 90 days default for outputs, 24 hours for uploads). The agent re-mints by polling `get_job_status` again — the response will carry fresh presigned URLs.
+After a presigned URL expires, the underlying object is still in R2 (subject to the bucket's retention policy — 90 days default for outputs). The agent re-mints by polling `get_job_status` again — the response will carry fresh presigned URLs.
 
 ## When to surface the URL to the user
 
@@ -97,7 +96,6 @@ R2 object retention is set per-bucket via lifecycle policy:
 | Bucket | Default retention | Purpose |
 |---|---|---|
 | `ptxprint-outputs` | 90 days | content-addressed PDFs and logs |
-| `ptxprint-uploads` | 24 hours | agent-staged input files |
 
 Expired output objects are deleted by R2; subsequent re-submission of the same payload re-runs the typesetting (cache miss).
 

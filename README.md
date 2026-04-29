@@ -12,7 +12,7 @@
 
 This repo serves two coupled purposes:
 
-1. **An MCP server implementation** — Cloudflare Worker + Container + Durable Objects + R2, exposing four tools (`submit_typeset`, `get_job_status`, `cancel_job`, `get_upload_url`) that an AI agent uses to drive PTXprint headlessly. **Live and operational.**
+1. **An MCP server implementation** — Cloudflare Worker + Container + Durable Objects + R2, exposing three tools (`submit_typeset`, `get_job_status`, `cancel_job`) that an AI agent uses to drive PTXprint headlessly. **Live and operational.**
 
 2. **A governance knowledge base** — markdown documents under [`canon/`](canon/) that teach AI agents how to construct typesetting payloads, interpret results, and handle the long tail of PTXprint operational concerns.
 
@@ -25,7 +25,7 @@ The two are kept in one repo because they are tightly coupled: a tool surface ch
 - ✅ **Phase 1 — typeset from a fixture.** First PDF: session 10 (job `6f37b42b…`, 2026-04-29T01:00Z, 4.1s, 66966 bytes). Charis-substitution mitigation for fixtures referencing unbundled fonts.
 - ✅ **Phase 2 — payload-supplied fonts.** First demonstration: session 11 (job `802e42e7…`, 2026-04-29T01:51Z, 4.7s, 68111 bytes). Minitests fixture rendered faithfully with Gentium Plus 6.200 supplied entirely via the payload's `fonts` array — no system fonts, no cfg-edit substitution.
 - ⏳ **Phase 2 — reliable widget-ID overrides** (`-D` flag): blocked on widget-ID-to-cfg-key mapping (open as session-1 O-003 / session-10 H-019).
-- ⏳ **Day-2 features** — autofill mode, `cancel_job` SIGTERM, `get_upload_url` presigned PUTs, per-pass progress streaming. Specced; not yet built.
+- ⏳ **Day-2 features** — autofill mode, `cancel_job` SIGTERM, per-pass progress streaming. Specced; not yet built.
 
 **Live deployment:** `https://ptxprint-mcp.klappy.workers.dev` — `/health` returns 200; `/mcp` accepts streamable-HTTP MCP. Worker version 0.1.0; spec v1.2-draft.
 

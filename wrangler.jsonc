@@ -45,12 +45,6 @@
       "bucket_name": "ptxprint-outputs"
       // Lifecycle policy: configure 90-day retention in the CF dashboard or via
       // `wrangler r2 bucket lifecycle add` after first deploy.
-    },
-    {
-      "binding": "UPLOADS",
-      "bucket_name": "ptxprint-uploads"
-      // Lifecycle policy: configure 24-hour retention in the CF dashboard or via
-      // `wrangler r2 bucket lifecycle add` after first deploy.
     }
   ],
 
