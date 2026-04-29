@@ -226,8 +226,7 @@ async function callOddkit<T>(
     const inner = envelope?.result?.content?.[0]?.text;
     if (typeof inner !== "string") return null;
 
-    const parsed = JSON.parse(inner) as { result?: T };
-    return parsed?.result ?? null;
+    return JSON.parse(inner) as T;
   } finally {
     clearTimeout(timer);
   }
