@@ -68,22 +68,21 @@ When in doubt about which styles a font family ships, query the source (LFF, the
 
 ## Where fonts come from
 
-The agent has three typical paths to a font URL:
+The agent has four typical paths to a font URL:
 
 ### 1. SIL Language Font Finder (LFF)
 
 For SIL fonts and many open-script fonts, LFF (`lff.api.languagetechnology.org`) provides versioned, content-addressed downloads. The URL stays stable as long as the version is referenced. Recommended for English Bibles per session 1 D-002 (initial scope: English with Charis SIL).
 
-### 2. R2 staging via `get_upload_url`
+### 2. Hosting is the agent's concern
 
-When the user has a font on local disk that's not on a public CDN:
+When the user has a font on local disk that's not on a public CDN, the agent's host environment is responsible for making it reachable at an HTTPS URL — not the typesetting MCP server. The MCP server has no `get_upload_url` tool and does not stage input files. Common patterns:
 
-```
-get_upload_url(filename="CharisSIL-Regular.ttf", content_type="font/ttf")
-→ { put_url, get_url, expires_at }
-```
+- The agent's host already runs an HTTP server with file access (Claude Desktop's filesystem MCP plus a separate static file server, a developer machine with a tunnel, etc.).
+- The user puts the font in a Git repo, S3 bucket, or any HTTPS-reachable location they already control.
+- The font is stored alongside the Paratext project on a server the agent's host can read from.
 
-The agent (or its host) HTTP PUTs the file to `put_url`, computes its sha256, and includes `get_url` + the sha256 in the payload. Uploads expire after 24 hours.
+Whichever pattern the agent's environment provides, the agent supplies a final HTTPS URL and a sha256 in the payload. The `fonts` array does not assume any particular hosting.
 
 ### 3. Other URL sources
 
@@ -112,7 +111,7 @@ The agent has a few options:
 
 - **From a local file:** standard `sha256sum file.ttf` or equivalent in the agent's host environment.
 - **From a known-good source:** if LFF or the foundry publishes hashes, use those.
-- **By staging-then-hashing:** PUT to R2 via `get_upload_url`, then have the agent's host fetch the same URL back and compute the hash.
+- **By staging-then-hashing:** make the file reachable at an HTTPS URL via the agent's host, then fetch it back and compute the hash.
 
 The hash must be hex-encoded lowercase, 64 characters. The worker is strict about format.
 

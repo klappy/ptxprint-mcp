@@ -17,7 +17,7 @@ canonical_status: non_canonical
 - **Worker version (per `/health`):** `0.1.0`
 - **Spec target:** `v1.2-draft`
 - **Container image:** built from `./Dockerfile`; pinned to PTXprint `3.0.20` (`ARG PTX2PDF_REF=3.0.20`)
-- **R2 buckets:** `ptxprint-outputs` (binding `OUTPUTS`), `ptxprint-uploads` (binding `UPLOADS`)
+- **R2 buckets:** `ptxprint-outputs` (binding `OUTPUTS`)
 - **Durable Objects:** `PtxprintMcp`, `JobStateDO`, `PtxprintContainer` (single migration `v1`)
 - **Container instance:** `standard-2` (1 vCPU, 6 GiB memory, 12 GB disk), `max_instances: 5`
 
@@ -62,12 +62,10 @@ For a fresh Cloudflare account or a forked deployment, the steps are roughly:
 
 ```bash
 npx wrangler r2 bucket create ptxprint-outputs
-npx wrangler r2 bucket create ptxprint-uploads
 ```
 
 Set lifecycle policies in the CF dashboard → R2 → bucket → Settings → Object lifecycle:
 - `ptxprint-outputs`: 90-day expiration on prefix `outputs/<hash>/` (skip the `outputs/fixtures/` prefix if you want to retain staged test fonts; see H-022).
-- `ptxprint-uploads`: 24-hour expiration on prefix `uploads/`.
 
 ### 2. Wrangler config
 
@@ -129,8 +127,7 @@ curl -A "ptxprint-ops/0.1" -I \
 - `submit_typeset` — full flow: validate, hash, R2 cache check, DO init, container dispatch.
 - `get_job_status` — DO read with R2 proxy URL augmentation. Honest `failure_mode ∈ {hard, soft, success}`.
 - `cancel_job` — DO flag set; container-side SIGTERM polling is a stub for Day-2.
-- `get_upload_url` — explicitly returns "not implemented"; agents pre-stage files at any HTTPS URL.
-- `/internal/upload` — unauthenticated R2 PUT under the `outputs/` prefix only. Used by the container to upload artifacts; also used (manually) to stage stable test fixtures like `outputs/fixtures/fonts/...`. Day-2 will replace with presigned URLs.
+- `/internal/upload` — unauthenticated R2 PUT under the `outputs/` prefix only. Used by the container to upload its rendered artifacts (PDF + log) back to the Worker for storage. Also used (manually) to stage stable test fixtures like `outputs/fixtures/fonts/...`.
 - `/r2/<key>` — GET and HEAD proxy through the Worker (HEAD added in session 11; deploy gated). Day-2 will switch to presigned GETs.
 
 ## What's NOT in the deployment today (Day-2+)
@@ -138,7 +135,6 @@ curl -A "ptxprint-ops/0.1" -I \
 - Multi-pass autofill mode (`payload.mode = "autofill"`)
 - Streaming progress per-pass to the JobStateDO
 - Container-side cancellation (SIGTERM PTXprint when `cancel_requested` flag set)
-- Presigned R2 PUT URLs for `get_upload_url`
 - Stripping bundled fonts from the Container (session-3 C-007 — Day-2 hardening)
 - Reliable widget-ID overrides via `define` / `-D` (blocked on session-1 O-003 / H-019)
 
