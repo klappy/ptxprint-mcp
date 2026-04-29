@@ -72,6 +72,27 @@ export async function fetchDocs(
   audience: DocsAudience = "headless",
   depth: DocsDepth = 1,
 ): Promise<DocsResult> {
+  try {
+    return await fetchDocsInner(query, audience, depth);
+  } catch (err) {
+    // Contract C-013: never throw. Any unexpected runtime error (e.g. an
+    // oddkit response whose shape doesn't match our interfaces) degrades
+    // to the structured minimal-governance result.
+    return {
+      answer: null,
+      sources: [],
+      deeper: [],
+      governance_source: "minimal",
+      error: `docs internal error: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+}
+
+async function fetchDocsInner(
+  query: string,
+  audience: DocsAudience,
+  depth: DocsDepth,
+): Promise<DocsResult> {
   // Step 1 — search oddkit.
   let searchResult: OddkitSearchResult | null = null;
   try {
@@ -254,14 +275,28 @@ function parseSseOrJson(text: string): {
   if (trimmed.startsWith("{")) {
     return JSON.parse(trimmed);
   }
-  // SSE: find the data: line.
+  // SSE: a stream may interleave notification events before the final
+  // JSON-RPC response. Scan every `data:` line and return the first one
+  // that actually carries a response envelope (`result` or `error`).
+  // Fall back to the last parseable data line if none match, so a
+  // malformed-but-singular event still surfaces a useful parse error
+  // upstream rather than a silent null.
+  let lastParsed: ReturnType<typeof JSON.parse> | null = null;
   for (const line of trimmed.split("\n")) {
     const m = line.match(/^data:\s*(.+)$/);
-    if (m) {
-      return JSON.parse(m[1]);
+    if (!m) continue;
+    let parsed: ReturnType<typeof JSON.parse>;
+    try {
+      parsed = JSON.parse(m[1]);
+    } catch {
+      continue;
     }
+    if (parsed && (parsed.result !== undefined || parsed.error !== undefined)) {
+      return parsed;
+    }
+    lastParsed = parsed;
   }
-  return null;
+  return lastParsed;
 }
 
 /**
