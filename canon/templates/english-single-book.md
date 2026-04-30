@@ -31,7 +31,7 @@ caller_may_override:
 derived_from: "smoke/bsb-jhn-empirical.json (purified — caller-owned fields stripped)"
 companion_to:
   - "canon/articles/composition-and-templates.md"
-  - "canon/templates/README.md"
+  - "canon/articles/composition-and-templates.md"
 canonical_status: non_canonical
 date: 2026-04-30
 status: draft_for_operator_review
