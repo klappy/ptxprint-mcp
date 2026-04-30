@@ -139,7 +139,7 @@ Optional. Defaults are sensible for English-language content.
 
 **Fonts** (in `[document]` and the `fonts` array):
 - Gentium Plus regular / bold / italic / bolditalic
-- Supplied via the payload's `fonts` array (Phase-2 pattern, no container apt-install dependency)
+- Supplied via the payload's `fonts` array (URLs + sha256 verified per `klappy://canon/articles/font-resolution`; no container apt-install dependency)
 
 **Stylesheet** (in `config_files["shared/ptxprint/Default/ptxprint.sty"]`):
 - Inherits from the minitests fixture
