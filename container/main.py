@@ -347,8 +347,14 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             failure_mode = classify_exit(exit_code, pdf_path is not None)
 
             # --- v1.3 telemetry: typesetting phase complete ---
-            typesetting_ms = (time.time() - phase_start) * 1000
-            await emit_phase_event(callback, job_id, consumer_label, "typesetting", payload_hash_prefix, typesetting_ms)
+            # On timeout the subprocess was killed mid-pass; emitting a phase
+            # event here would record the full timeout duration as if the
+            # phase completed normally, skewing AVG(duration_ms) analytics.
+            # Phase events carry no success/failure indicator, so the only
+            # truthful option is to omit the event on timeout.
+            if not timed_out:
+                typesetting_ms = (time.time() - phase_start) * 1000
+                await emit_phase_event(callback, job_id, consumer_label, "typesetting", payload_hash_prefix, typesetting_ms)
 
             # Silent-bail diagnostic: when both PDF and log are absent the
             # agent receives an opaque failure (empty log_tail, empty errors,
@@ -411,10 +417,13 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             # (governance §"Job Lifecycle Events": failure_mode enum includes timeout)
             telemetry_fm = "timeout" if timed_out else failure_mode
             pdf_size = pdf_path.stat().st_size if (pdf_path and pdf_path.exists()) else None
+            # On timeout the pass was killed mid-execution, so passes_completed
+            # is unknown — omit it (matches the exception-handler terminal
+            # event below, which also omits passes_completed for hard failures).
             await emit_terminal_event(
                 callback, job_id, consumer_label, telemetry_fm,
                 payload_hash_prefix, elapsed * 1000,
-                passes_completed=1,
+                passes_completed=None if timed_out else 1,
                 overfull_count=overfull,
                 pages_count=None,  # v1.4 candidate: parse page count from XeTeX log
                 bytes_out=pdf_size if failure_mode == "success" else None,
