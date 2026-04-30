@@ -12,7 +12,7 @@ date: 2026-04-28
 status: draft
 ---
 
-> ⚠️ **Phase 1 (hackathon week, per session 7 D-025).** Phase 1 agents do not construct `ptxprint.cfg` content. PTXprint runs with built-in defaults; the payload's `config_files` map is empty. This article is the **Phase 2** reference — used once preset templates ship and agents start customizing configs. For Phase 1, ignore everything below.
+> **When this article applies.** The Container ships with a publication-quality default cfg (see `klappy://canon/articles/bundled-default-cfg`), so a payload of `{books, sources}` produces a finished A5 two-column Bible book without the agent authoring any cfg content at all. Read this article when the user wants something the bundled cfg does not give them — a different page size, a different layout, multi-book mode, or any change that requires the agent to construct or replace `config_files["shared/ptxprint/<config>/ptxprint.cfg"]`. That is **Level 2** of the customization ladder (`klappy://canon/articles/progressive-customization`); the levels below (`define`-only tweaks, font swaps) do not require the content below. The cfg-replacement contract this article describes is live, not a future target.
 
 # Config Construction
 

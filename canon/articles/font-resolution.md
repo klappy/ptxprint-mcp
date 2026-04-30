@@ -12,7 +12,7 @@ date: 2026-04-28
 status: draft
 ---
 
-> ⚠️ **Phase 1 (hackathon week, per session 7 D-025).** Phase 1's Container image bundles SIL Charis system-wide; for projects whose `ptxprint.cfg` only references Charis, the agent leaves the payload's `fonts` array empty and PTXprint resolves Charis via fontconfig. **Empirically as of session 11 (2026-04-29)**, payload-supplied fonts also work end-to-end without any container changes — see the worked Gentium Plus example below. So the practical Phase 1 contract is: `fonts: []` for Charis-only projects, populated for anything else. The strict "no system fonts; everything via payload" stance described in the rest of this article is the **Phase 2/3** target, when Charis itself moves into the payload and multi-script support is added.
+> **Live behavior (validated 2026-04-30).** Payload-supplied fonts work end-to-end on the live deploy — the BSB Psalms render uses Gentium Plus + SourceCodePro supplied entirely via the payload's `fonts` array, no system fonts required (session 11 / 2026-04-29; reproduced and re-verified 2026-04-30). The Container additionally bundles SIL Charis system-wide as a convenience floor: a payload that only references Charis may leave `fonts: []` and PTXprint resolves Charis via fontconfig. For anything else — different family, different version, multi-script — populate the `fonts` array as described below. The per-payload, content-addressed font contract is the live contract, not a future target. Multi-script support is the next horizon, built on top of this same contract; nothing below is "not yet implemented."
 
 # Font Resolution
 
