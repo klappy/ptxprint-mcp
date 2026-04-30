@@ -255,6 +255,10 @@ Per `klappy://canon/principles/verification-requires-fresh-context`. Same-sessio
 
 Implementation is specced as either a v1.2 amendment or a v1.3 spec — decision deferred to operator at implementation-start time, depending on whether the v1.2 build is still fluid.
 
+**Resolution (2026-04-30, post-H-T2):** **v1.3 spec.** Operator: *"Specs shouldn't be changed after implementation. V1.3 is the right call."* By the time this resolution was made, v1.2 was already implemented (Worker at `src/index.ts`, Container at `container/main.py`, four tools live: `submit_typeset`, `get_job_status`, `cancel_job`, `docs`). Amending the v1.2 spec retroactively to add telemetry tools would have changed the contract under a working implementation. The telemetry feature is therefore specced in a new `canon/specs/ptxprint-mcp-v1.3-spec.md` that supersedes v1.2 and adds the telemetry surface as a forward-looking layer. The schema documented in §Schema above remains the implementation contract; its home is now the v1.3 spec.
+
+The principle resolved here ("specs shouldn't be changed after implementation") is generalizable beyond this feature and is a candidate for canon promotion as a separate principle article.
+
 ### H-T4 — Update tool count claims
 
 Two new MCP tools (`telemetry_public`, `telemetry_policy`) added to v1.2 surface. Update:
