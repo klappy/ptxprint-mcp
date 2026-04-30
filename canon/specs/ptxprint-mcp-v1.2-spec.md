@@ -67,7 +67,7 @@ The server does not know:
 
 The constraint test (`klappy://canon/principles/vodka-architecture`):
 
-- **Has the server grown thick?** No — 3 tools, ~250 lines of Worker code + ~200 lines of Container HTTP handler + ~100 lines of DO state machine.
+- **Has the server grown thick?** No — 6 tools, ~250 lines of Worker code + ~200 lines of Container HTTP handler + ~100 lines of DO state machine + ~150 lines of telemetry module (split across writer, redactor, public-query, and policy-fetch helpers).
 - **Has the server acquired domain opinions?** No — every tool is generic action over a schema-defined payload.
 - **Can the server be removed without consequence?** No — content-addressed dispatch + DO state + R2 output is a coordinated primitive set no off-the-shelf alternative provides.
 
@@ -99,7 +99,7 @@ The agent's reasoning loop: search canon → understand the change or pattern �
 
 ---
 
-## 3. Tools (4)
+## 3. Tools (6)
 
 ### `submit_typeset(payload)`
 
@@ -199,6 +199,41 @@ Behavior: HTTP POST to `https://oddkit.klappy.dev/mcp` with `action: "search"` a
 Failure mode: graceful. On oddkit unreachable or timeout (5s search / 10s get), returns `{ answer: null, sources: [], governance_source: "minimal", error: "..." }`. Agent can degrade.
 
 Vodka boundary check: the tool knows two URLs (this repo, oddkit). It holds zero PTXprint domain semantics. The retrieval logic, the BM25 scoring, the index — all in oddkit. This file is forwarding plus an audience-tiebreaker. If `docs` ever grows a PTXprint-flavored taxonomy (Shape C from the session-13 plan), that taxonomy moves into canon governance docs that oddkit retrieves, not into this server.
+
+### `telemetry_public(sql)`
+
+Added by the telemetry-feature planning ledger (2026-04-30). Forwarder over the `ptxprint_telemetry` Cloudflare Workers Analytics Engine dataset.
+
+**Inputs:**
+
+| Param | Type | Default | Meaning |
+|---|---|---|---|
+| `sql` | string (required) | — | A read-only SQL query against `ptxprint_telemetry` |
+
+**Returns:** Analytics Engine result rows (passthrough), or a sanitized error message on failure.
+
+Behavior: validate the query targets only the allowlisted dataset (`ptxprint_telemetry`); rate-limit per consumer label; forward to the Analytics Engine SQL API with the read-only token; sanitize errors before returning. The data is public by design — the schema, the dimensions, and a library of canned queries are documented in `canon/governance/telemetry-governance.md`.
+
+Three guards (mirroring oddkit's pattern verbatim per H-T5 of the planning ledger): dataset allowlist, per-consumer rate limit, error sanitization. No column restriction, no SQL keyword blocking — the API token is read-only and the data is public.
+
+### `telemetry_policy()`
+
+Added alongside `telemetry_public`. Returns the runtime-fetched governance policy and the self-report header dictionary.
+
+**Inputs:** none.
+
+**Returns:**
+```json
+{
+  "policy": "(full markdown content of canon/governance/telemetry-governance.md)",
+  "governance_uri": "klappy://canon/governance/telemetry-governance",
+  "governance_source": "knowledge_base | bundled | minimal",
+  "self_report_headers": { "x-ptxprint-client": "...", ... },
+  "generated_at": "..."
+}
+```
+
+Behavior: fetch `canon/governance/telemetry-governance.md` from this repo at runtime; fall back to bundled minimal text if the canon fetch fails. Same three-tier fallback pattern as oddkit's `telemetry_policy`. The server holds no governance opinions in code — the document IS the policy.
 
 ### Why there is no upload tool
 
@@ -337,7 +372,7 @@ Durable Objects        Cloudflare R2
 
 ### The Worker
 
-Single Worker handles the three MCP tools as separate routes. Implementation notes:
+Single Worker handles the six MCP tools as separate routes. Implementation notes:
 
 - Use `ctx.waitUntil(fetch(containerEndpoint, {method: 'POST', body: JSON.stringify(payload)}))` to dispatch to the Container without blocking the Worker's response to the agent. The Container request stays open as long as the Container is processing; the Worker has already returned to the agent.
 - Container service binding: declare in `wrangler.toml` as `[[containers]] binding = "PTXPRINT_CONTAINER"`, then `env.PTXPRINT_CONTAINER` is callable from the Worker.
@@ -501,7 +536,7 @@ Smoke test: end-to-end on one English Bible (BSB or ULT) with the `cover` test c
 (For the autonomous coding run kicked off per H-003)
 
 **In scope:**
-- Implement the 3 tools listed in §3 as a Cloudflare Worker.
+- Implement the 3 original tools (`submit_typeset`, `get_job_status`, `cancel_job`) listed in §3 as a Cloudflare Worker. (`docs` was added in session 13 (2026-04-29); `telemetry_public` and `telemetry_policy` were added by the telemetry-feature planning ledger and are specced in `canon/governance/telemetry-governance.md` — neither is in the kickoff scope.)
 - Implement the Container image with PTXprint + XeTeX + fontconfig + Python HTTP handler.
 - Implement the JobStateDO Durable Object class.
 - Configure the outputs R2 bucket with appropriate lifecycle policies.

@@ -18,13 +18,16 @@ companion_to: "canon/specs/ptxprint-mcp-v1.2-spec.md"
 ```
 Agent (Claude Desktop / BT Servant / etc.)
   │
-  │ MCP/HTTP — 3 tools
+  │ MCP/HTTP — 6 tools
   ▼
 ┌─────────────────────────────────────────────────────────┐
 │ Cloudflare Worker          (the only Worker)            │
 │  • submit_typeset(payload) → job_id (or cached URL)     │
 │  • get_job_status(job_id)  → state, progress, URLs      │
 │  • cancel_job(job_id)      → SIGTERM via DO flag        │
+│  • docs(query, ...)        → oddkit canon (forwarder)   │
+│  • telemetry_public(sql)   → Analytics Engine query     │
+│  • telemetry_policy()      → governance from canon      │
 └─────────────────────────────────────────────────────────┘
   │
   │ Service binding · ctx.waitUntil(fetch(...))
