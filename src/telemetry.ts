@@ -446,7 +446,11 @@ export async function forwardTelemetryQuery(
   }
 
   // Guard 2: rate limit
-  const limit = parseInt(env.TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR ?? "60", 10);
+  const parsedLimit = parseInt(
+    env.TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR ?? "60",
+    10,
+  );
+  const limit = Number.isFinite(parsedLimit) ? parsedLimit : 60;
   if (rateLimitExceeded(consumerLabel, limit)) {
     return sanitizedError("Query rate limit exceeded; retry later");
   }

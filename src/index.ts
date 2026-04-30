@@ -620,10 +620,10 @@ export default {
     // The docs tool query string is NEVER logged per the privacy floor.
 
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
-      return handleMcpWithTelemetry(req, env, ctx, "/mcp", false);
+      return handleMcpWithTelemetry(req, env, ctx, false);
     }
     if (url.pathname === "/sse" || url.pathname.startsWith("/sse/")) {
-      return handleMcpWithTelemetry(req, env, ctx, "/sse", true);
+      return handleMcpWithTelemetry(req, env, ctx, true);
     }
 
     return new Response("not found", { status: 404 });
@@ -632,11 +632,16 @@ export default {
 
 // ---------- Telemetry-instrumented MCP handler ----------
 
+// Handlers are created once at module scope and reused across requests.
+// basePath and binding are constant, so the returned handler objects are
+// identical on every call — no need to allocate per-request.
+const mcpHandler = PtxprintMcp.serve("/mcp", { binding: "MCP_AGENT" });
+const mcpSseHandler = PtxprintMcp.serveSSE("/sse", { binding: "MCP_AGENT" });
+
 async function handleMcpWithTelemetry(
   req: Request,
   env: Env,
   ctx: ExecutionContext,
-  basePath: string,
   isSSE: boolean,
 ): Promise<Response> {
   const startMs = Date.now();
@@ -665,9 +670,7 @@ async function handleMcpWithTelemetry(
   const consumer = resolveConsumer(urlObj, req.headers, clientInfoName);
 
   // Pass through to the MCP handler
-  const handler = isSSE
-    ? PtxprintMcp.serveSSE(basePath, { binding: "MCP_AGENT" })
-    : PtxprintMcp.serve(basePath, { binding: "MCP_AGENT" });
+  const handler = isSSE ? mcpSseHandler : mcpHandler;
   const response = await handler.fetch(req, env, ctx);
 
   // Emit telemetry after getting the response (non-blocking enrichment)
