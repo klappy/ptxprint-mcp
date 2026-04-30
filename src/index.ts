@@ -481,8 +481,9 @@ export default {
     //
     // Embedded as a TS template literal in src/homepage.ts to avoid pulling
     // in the assets binding for a single static file.
-    if (req.method === "GET" && url.pathname === "/") {
-      return new Response(HOMEPAGE_HTML, {
+    if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/") {
+      const isHead = req.method === "HEAD";
+      return new Response(isHead ? null : HOMEPAGE_HTML, {
         headers: {
           "content-type": "text/html; charset=utf-8",
           // Short browser cache; the page is live-data-driven so we don't
