@@ -375,9 +375,20 @@ Implements `telemetry_public`:
 
 ```typescript
 async function forwardTelemetryQuery(env, sql, consumerLabel): Promise<TelemetryQueryResult> {
-  // Guard 1: dataset allowlist
-  if (!sql.toLowerCase().includes('from ptxprint_telemetry')) {
-    return sanitizedError('Query must reference dataset ptxprint_telemetry');
+  // Guard 1: dataset allowlist — reject queries that reference any dataset
+  // other than ptxprint_telemetry. A substring check is not sufficient: a
+  // query like `SELECT * FROM secret_dataset UNION SELECT * FROM ptxprint_telemetry`
+  // would pass it. Strip comments and string literals first so the substring
+  // cannot be smuggled in via a literal/comment, then require every FROM/JOIN
+  // target to be ptxprint_telemetry.
+  const stripped = sql
+    .replace(/--[^\n]*/g, ' ')          // line comments
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')  // block comments
+    .replace(/'(?:''|[^'])*'/g, "''")   // string literals
+    .toLowerCase();
+  const datasetRefs = [...stripped.matchAll(/\b(?:from|join)\s+([a-z_][a-z0-9_]*)/g)].map(m => m[1]);
+  if (datasetRefs.length === 0 || datasetRefs.some(name => name !== 'ptxprint_telemetry')) {
+    return sanitizedError('Query must reference only dataset ptxprint_telemetry');
   }
 
   // Guard 2: rate limit (per-consumer, 60/hour default)
