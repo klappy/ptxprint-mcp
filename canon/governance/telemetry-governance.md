@@ -11,7 +11,9 @@ derives_from: "klappy://canon/constraints/telemetry-governance (klappy.dev / odd
 companion_to: "canon/specs/ptxprint-mcp-v1.2-spec.md, canon/articles/failure-mode-taxonomy.md"
 canonical_status: canonical
 governs: "All telemetry collection in the PTXprint MCP server (Worker + Container + Durable Objects + R2)"
-status: draft_pending_fresh_review
+status: reviewed
+reviewed_by: "managed-agent fresh session, PR #25 (commit bec765d)"
+revisions_applied: "B-1, B-2, N-1, N-2 of the H-T2 review applied in fix/h-t2-revisions"
 ---
 
 # Telemetry Governance — What PTXprint MCP Tracks and Why
@@ -102,7 +104,7 @@ All writes go to the `ptxprint_telemetry` Cloudflare Workers Analytics Engine da
 | 2 | `method` | mcp_request, tool_call | `tools/call`, `initialize` |
 | 3 | `tool_name` | mcp_request, tool_call | `submit_typeset \| get_job_status \| cancel_job \| docs \| telemetry_public \| telemetry_policy` |
 | 4 | `consumer_label` | all | `claude-desktop`, `bt-servant`, `unknown` |
-| 5 | `consumer_source` | all | `header \| query \| client_info \| user_agent` |
+| 5 | `consumer_source` | all | `header \| query \| client_info \| user_agent \| oauth` (the last reserved for future authenticated deployments; v1.2 has no auth so this value is never emitted today) |
 | 6 | `worker_version` | all | `1.2.3` |
 | 7 | `phase` | job_* | `queued \| fetching_inputs \| typesetting \| autofill \| uploading \| done` |
 | 8 | `failure_mode` | job_terminal | `success \| soft \| hard \| cancelled \| timeout` |
@@ -162,14 +164,14 @@ The Container fills the gap by emitting two kinds of events:
 
 ### `job_phase` — written at every phase transition
 
-The phases match the `progress.current_phase` values returned by `get_job_status`:
+The phase enum is a superset of `progress.current_phase` from `get_job_status`. The spec exposes four in-flight phases the agent polls (`fetching_inputs | typesetting | autofill | uploading`); telemetry adds `queued` (written by the Worker on dispatch, before the Container picks the job up) and `done` (written by the Container as the terminal phase) so dashboards can reason about end-to-end wall-clock from submission to release, not just the in-flight portion. Full enum:
 
-1. `queued` — job is in the Durable Object, Container has not picked it up yet (Worker writes this on dispatch, not the Container)
+1. `queued` — telemetry-only. Worker has dispatched to the Container; the Container has not picked it up yet
 2. `fetching_inputs` — Container is parallel-fetching `sources`, `fonts`, `figures` from URLs
 3. `typesetting` — PTXprint is running the simple-typeset pass
 4. `autofill` — PTXprint is running optimization passes (only present when the payload requested autofill)
 5. `uploading` — Container is uploading the PDF and run log to R2
-6. `done` — terminal; the Container is releasing the job
+6. `done` — telemetry-only. Terminal phase; the Container is releasing the job
 
 `duration_ms` on a `job_phase` event records how long the **just-completed** phase took.
 
@@ -177,7 +179,7 @@ The phases match the `progress.current_phase` values returned by `get_job_status
 
 Carries the final outcome and the totals worth keeping:
 
-- `failure_mode` ∈ `{success, soft, hard, cancelled, timeout}` per `klappy://canon/articles/failure-mode-taxonomy`
+- `failure_mode` ∈ `{success, soft, hard, cancelled, timeout}` — the three values `success | soft | hard` per `klappy://canon/articles/failure-mode-taxonomy`, extended with two terminal states (`cancelled`, `timeout`) per planning-ledger D-T1. The taxonomy's three-value enum is what `get_job_status.failure_mode` returns to the agent (and is null when the job ended in a non-typesetting terminal state); the telemetry blob flattens the typesetting classification and the terminal state into one queryable dimension so dashboards can ask "of dispatched jobs, what fraction succeeded vs. soft-failed vs. hard-failed vs. were cancelled vs. timed out?" in a single `GROUP BY`.
 - `passes_completed` — for autofill jobs, the count when the job ended
 - `overfull_count` — count of `Overfull \hbox` warnings in the run log
 - `pages_count` — populated only when `failure_mode = success`
@@ -262,6 +264,16 @@ Telemetry data points are written via `env.PTXPRINT_TELEMETRY.writeDataPoint()`.
 ### Long-Term Retention
 
 Analytics Engine data expires after 3 months. Ad-hoc aggregate snapshots may be persisted to a durable store (KV, R2, or a canon article) before expiration if long-term trend analysis is wanted. No automated weekly snapshot job exists in v1; this matches the oddkit retention model.
+
+### Policy Resolution at Runtime
+
+`telemetry_policy` returns this document, but it does not hardcode it. The tool resolves the policy through a three-tier fallback chain (per planning-ledger D-T7, mirroring oddkit's `telemetry_policy` pattern verbatim):
+
+1. **`knowledge_base`** — fetch this document live from `klappy/ptxprint-mcp` via the canon retrieval path. This is the primary source; if it succeeds the response carries `governance_source: "knowledge_base"` and the freshest text the maintainer has shipped.
+2. **`bundled`** — if the canon fetch fails (network error, 404, malformed response), serve a copy bundled into the Worker at deploy time. Marked `governance_source: "bundled"`. Slightly stale by definition; never silently misleading.
+3. **`minimal`** — if even the bundled copy is missing or unreadable, return a one-paragraph minimal policy that lists the dataset name, the privacy-floor non-negotiables, and a pointer to this document's URI. Marked `governance_source: "minimal"`.
+
+The fallback chain is observable: every `telemetry_policy` response includes the `governance_source` field, so a consumer can tell which tier served their copy and how stale it might be. The server holds no governance opinions in code at any tier — even the `minimal` tier is a static string defined in the deploy artifact, not derived from server logic.
 
 ---
 
