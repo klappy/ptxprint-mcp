@@ -94,7 +94,7 @@ Not gated on the v1.2 smoke test landing first.
 
 ### D-T7 — Telemetry governance is a canonical artifact in this repo
 
-The PTXprint MCP telemetry feature derives from oddkit's pattern (`klappy://canon/constraints/telemetry-governance` on klappy.dev) but is its own canonical artifact. Governance lives at `canon/constraints/telemetry-governance.md` in `klappy/ptxprint-mcp`, fetched at runtime by the new `telemetry_policy` tool. Two new MCP tools: `telemetry_public(sql)` and `telemetry_policy()`. Same three-tier governance fallback (`knowledge_base → bundled → minimal`) as oddkit.
+The PTXprint MCP telemetry feature derives from oddkit's pattern (`klappy://canon/constraints/telemetry-governance` on klappy.dev) but is its own canonical artifact. Governance lives at `canon/governance/telemetry-governance.md` in `klappy/ptxprint-mcp`, fetched at runtime by the new `telemetry_policy` tool. Two new MCP tools: `telemetry_public(sql)` and `telemetry_policy()`. Same three-tier governance fallback (`knowledge_base → bundled → minimal`) as oddkit.
 
 ---
 
@@ -217,7 +217,7 @@ Two new MCP tools, mirroring oddkit. Both are pure-Worker; never reach the Conta
 
 ### `telemetry_policy()`
 
-Fetches `canon/constraints/telemetry-governance.md` at runtime; returns governance text + self-report header dictionary. Falls back to bundled minimal text if canon unreachable.
+Fetches `canon/governance/telemetry-governance.md` at runtime; returns governance text + self-report header dictionary. Falls back to bundled minimal text if canon unreachable.
 
 ### `telemetry_public(sql)`
 
@@ -232,7 +232,7 @@ No column restriction, no SQL keyword blocking — the data is public, the API t
 
 ## H — Handoffs
 
-### H-T1 — Draft `canon/constraints/telemetry-governance.md`
+### H-T1 — Draft `canon/governance/telemetry-governance.md`
 
 Fork from the oddkit version verbatim, then apply four targeted edits:
 
