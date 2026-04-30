@@ -12,20 +12,20 @@ date: 2026-04-28
 status: draft
 ---
 
-> ⚠️ **Phase 1 (hackathon week, per session 7 D-025).** Phase 1 ships with a USFM-only payload — no `config_files`, no `fonts`, no `figures`, no `define`. PTXprint runs with built-in defaults; the Container has Charis SIL pre-installed. The minimum Phase 1 payload is:
+> **Quickstart.** The smallest valid payload is `{schema_version, project_id, books, sources}` — the Container's bundled default cfg fills in everything else and produces a publication-quality A5 two-column Bible book in Charis. Levels of customization stack on top of this from there:
 >
 > ```json
 > {
 >   "schema_version": "1.0",
->   "project_id": "DEFAULT",
+>   "project_id": "BSB",
 >   "books": ["JHN"],
 >   "sources": [
->     { "book": "JHN", "filename": "44JHNDEFAULT.SFM", "url": "...", "sha256": "..." }
+>     { "book": "JHN", "filename": "44JHNBSB.usfm", "url": "...", "sha256": "..." }
 >   ]
 > }
 > ```
 >
-> Everything else this article describes (`config_files`, `fonts` array, `define`, figures, content-addressed cache nuance, override coordination) is **Phase 2/3** material — implemented by the server, but not used by Phase 1 agents. Read the rest of this article when Phase 2 lands. See `klappy://canon/articles/phase-1-poc-scope` for the current scope boundary.
+> The full progression — when to add `define`, when to replace the cfg, when to supply fonts, etc. — lives in `klappy://canon/articles/progressive-customization`. The bundled cfg itself is documented at `klappy://canon/articles/bundled-default-cfg`. The rest of this article is the schema reference.
 
 # Payload Construction
 

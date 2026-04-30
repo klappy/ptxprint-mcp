@@ -4,15 +4,25 @@ audience: agent
 exposure: working
 voice: instructional
 stability: working
-tags: ["ptxprint", "mcp", "agent-kb", "v1.2-aligned", "non-canonical", "phase-1", "hackathon", "scope", "poc"]
+tags: ["ptxprint", "mcp", "agent-kb", "v1.2-aligned", "non-canonical", "phase-1", "hackathon", "scope", "poc", "superseded", "historical-reference"]
 derives_from: "transcript-encoded-session-7.md (D-025); revised per session-8 H-011, session-9 H-016, session-10 D-019/O-036"
 companion_to: "canon/specs/ptxprint-mcp-v1-2-spec.md"
 canonical_status: non_canonical
 date: 2026-04-29
-status: draft_revised_post_first_pdf
+status: superseded
+superseded_by: "klappy://canon/articles/progressive-customization"
+supersession_reason: "Phase 1's anticipated bundling work has been completed. The default-behavior surface (Level 0 in the new ladder) is now publication-quality, not bare-defaults. The progressive-customization article is the live reference for {books, sources} → Level 4+ progression."
 ---
 
 # Phase 1 PoC Scope
+
+> 🛈 **Superseded.** This article describes the Phase 1 PoC scope as defined on 2026-04-28 (transcript-encoded-session-7 D-025). At that time, the Container was expected to ship with PTXprint's compiled defaults serving as the bundle, with everything else as Phase 2/3 work. Empirical testing on 2026-04-30 found the Container had no usable bundled defaults — Phase 1 strict payloads failed with `"PTXprint produced no output (silent exit)"`. The bundling work is being completed (see `klappy://canon/handoffs/bundle-default-cfg-handoff`), and the new default-behavior surface (Level 0 in `klappy://canon/articles/progressive-customization`) is publication-quality.
+>
+> **For current default behavior, see `klappy://canon/articles/progressive-customization`.**
+>
+> **For what the bundle contains, see `klappy://canon/articles/bundled-default-cfg`.**
+>
+> The historical content below is preserved for traceability — the session-7 D-025 boundary, the drift-isolation work in sessions 8–10, and the BSB-render iteration trail are referenced from downstream encodings.
 
 > **What this answers.** What does the agent actually do during hackathon week? What's deferred? When does this article become obsolete?
 >
