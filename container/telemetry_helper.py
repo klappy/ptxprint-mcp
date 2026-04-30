@@ -94,10 +94,9 @@ async def _post_telemetry(worker_callback_url: str | None, envelope: dict[str, A
         log.debug("no callback_url; skipping telemetry for %s", envelope.get("event_type"))
         return
 
-    _validate_envelope(envelope)
-    url = _derive_telemetry_url(worker_callback_url)
-
     try:
+        _validate_envelope(envelope)
+        url = _derive_telemetry_url(worker_callback_url)
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(url, json=envelope)
             if resp.status_code != 200:
