@@ -74,7 +74,6 @@ interface Env {
   CF_ACCOUNT_ID: string;
   CF_API_TOKEN: string;
   TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR: string;
-  TELEMETRY_VERIFIED_CLIENTS: string;
 }
 
 // ---------- Helpers ----------
@@ -642,20 +641,28 @@ async function handleMcpWithTelemetry(
 ): Promise<Response> {
   const startMs = Date.now();
   const urlObj = new URL(req.url);
-  const consumer = resolveConsumer(urlObj, req.headers);
 
   // Parse request body for telemetry (non-destructive via clone)
   let rpc: ParsedRpc | null = null;
   let bytesIn = 0;
+  let clientInfoName: string | undefined;
   if (req.method === "POST") {
     try {
       const bodyText = await req.clone().text();
       bytesIn = new TextEncoder().encode(bodyText).length;
       rpc = tryParseJsonRpc(bodyText);
+      // Extract MCP initialize → clientInfo.name for consumer resolution
+      // priority tier 3 (per spec §6.1).
+      if (rpc?.method === "initialize") {
+        const ci = (rpc.params as { clientInfo?: { name?: string } }).clientInfo;
+        if (ci?.name) clientInfoName = ci.name;
+      }
     } catch {
       // Not parseable — still pass through
     }
   }
+
+  const consumer = resolveConsumer(urlObj, req.headers, clientInfoName);
 
   // Pass through to the MCP handler
   const handler = isSSE

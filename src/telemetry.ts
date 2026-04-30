@@ -123,7 +123,6 @@ export interface TelemetryEnv {
   CF_ACCOUNT_ID?: string;
   CF_API_TOKEN?: string;
   TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR?: string;
-  TELEMETRY_VERIFIED_CLIENTS?: string;
 }
 
 export interface TelemetryQueryResult {
