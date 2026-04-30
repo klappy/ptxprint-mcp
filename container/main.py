@@ -39,6 +39,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from telemetry_helper import emit_phase_event, emit_terminal_event
+
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ptxprint-container")
 
@@ -89,6 +91,10 @@ class JobRequestModel(BaseModel):
     pdf_r2_key: str
     log_r2_key: str
     worker_callback_url: str | None = None
+    # v1.3 telemetry: consumer_label forwarded by the Worker.
+    # Currently NOT sent by the v1.2 Worker dispatch — defaults to "unknown".
+    # v1.4 candidate: Worker should forward consumer_label from request context.
+    consumer_label: str = "unknown"
 
 
 # ---------- Worker callback helpers ----------
@@ -282,6 +288,10 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
     started_at = time.time()
     log.info("job %s starting; mode=%s books=%s", job_id, payload.mode, payload.books)
 
+    # v1.3 telemetry context
+    payload_hash_prefix = (req.payload_hash or "")[:8] or "unknown"
+    consumer_label = req.consumer_label or "unknown"
+
     await patch_state(callback, job_id, {
         "state": "running",
         "started_at": _iso_now(),
@@ -292,18 +302,25 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
     with tempfile.TemporaryDirectory(prefix="ptx-") as tmpdir:
         scratch = Path(tmpdir)
         try:
+            phase_start = time.time()
             write_config_files(scratch, payload.project_id, payload.config_files)
             await fetch_inputs(scratch, payload.project_id, payload)
+
+            # --- v1.3 telemetry: fetching_inputs phase complete ---
+            fetching_ms = (time.time() - phase_start) * 1000
+            await emit_phase_event(callback, job_id, consumer_label, "fetching_inputs", payload_hash_prefix, fetching_ms)
 
             await patch_state(callback, job_id, {
                 "progress": {"current_phase": "typesetting"},
                 "human_summary": "Running PTXprint.",
             })
 
+            phase_start = time.time()
             argv = build_ptxprint_argv(payload, scratch)
             log.info("running: %s", " ".join(argv))
 
             timeout_s = int(os.environ.get("PTXPRINT_TIMEOUT", "1200"))
+            timed_out = False
             try:
                 proc = subprocess.run(
                     argv,
@@ -317,8 +334,10 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
                 stderr_tail = (proc.stderr or "")[-2000:]
             except subprocess.TimeoutExpired as exc:
                 exit_code = -1
+                timed_out = True
                 stderr_tail = f"TIMEOUT after {timeout_s}s\n{(exc.stderr or '')[-1000:]}"
                 log.error("job %s timed out", job_id)
+            typesetting_ms = (time.time() - phase_start) * 1000
 
             effective_config = payload.config_name if payload.config_files else None
             pdf_path = find_output_pdf(scratch, payload.project_id, effective_config)
@@ -327,6 +346,15 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             errors, overfull = parse_log_for_errors(log_text)
             log_tail = "\n".join(log_text.splitlines()[-100:])
             failure_mode = classify_exit(exit_code, pdf_path is not None)
+
+            # --- v1.3 telemetry: typesetting phase complete ---
+            # On timeout the subprocess was killed mid-pass; emitting a phase
+            # event here would record the full timeout duration as if the
+            # phase completed normally, skewing AVG(duration_ms) analytics.
+            # Phase events carry no success/failure indicator, so the only
+            # truthful option is to omit the event on timeout.
+            if not timed_out:
+                await emit_phase_event(callback, job_id, consumer_label, "typesetting", payload_hash_prefix, typesetting_ms)
 
             # Silent-bail diagnostic: when both PDF and log are absent the
             # agent receives an opaque failure (empty log_tail, empty errors,
@@ -354,10 +382,15 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             })
 
             # Upload artifacts
+            phase_start = time.time()
             if log_path and log_path.exists():
                 await upload_to_worker(callback, req.log_r2_key, log_path.read_bytes(), "text/plain; charset=utf-8")
             if pdf_path and pdf_path.exists():
                 await upload_to_worker(callback, req.pdf_r2_key, pdf_path.read_bytes(), "application/pdf")
+
+            # --- v1.3 telemetry: uploading phase complete ---
+            uploading_ms = (time.time() - phase_start) * 1000
+            await emit_phase_event(callback, job_id, consumer_label, "uploading", payload_hash_prefix, uploading_ms)
 
             elapsed = time.time() - started_at
             final_state = "succeeded" if failure_mode == "success" else "failed"
@@ -379,6 +412,23 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
                 ),
             })
 
+            # --- v1.3 telemetry: terminal event (success path) ---
+            # Use "timeout" for telemetry failure_mode when subprocess timed out
+            # (governance §"Job Lifecycle Events": failure_mode enum includes timeout)
+            telemetry_fm = "timeout" if timed_out else failure_mode
+            pdf_size = pdf_path.stat().st_size if (pdf_path and pdf_path.exists()) else None
+            # On timeout the pass was killed mid-execution, so passes_completed
+            # is unknown — omit it (matches the exception-handler terminal
+            # event below, which also omits passes_completed for hard failures).
+            await emit_terminal_event(
+                callback, job_id, consumer_label, telemetry_fm,
+                payload_hash_prefix, elapsed * 1000,
+                passes_completed=None if timed_out else 1,
+                overfull_count=None if timed_out else overfull,
+                pages_count=None,  # v1.4 candidate: parse page count from XeTeX log
+                bytes_out=pdf_size if failure_mode == "success" else None,
+            )
+
             return JSONResponse({
                 "job_id": job_id,
                 "exit_code": exit_code,
@@ -398,6 +448,12 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
                 "log_tail": tb,
                 "human_summary": f"Container handler error: {exc}",
             })
+            # --- v1.3 telemetry: terminal event (exception/hard-failure path) ---
+            exc_elapsed = time.time() - started_at
+            await emit_terminal_event(
+                callback, job_id, consumer_label, "hard",
+                payload_hash_prefix, exc_elapsed * 1000,
+            )
             return JSONResponse({"error": str(exc)}, status_code=500)
 
 
