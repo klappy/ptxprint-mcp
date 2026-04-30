@@ -411,8 +411,10 @@ export function validateDatasetAllowlist(sql: string): boolean {
     .toLowerCase();
 
   const datasetRefs = [
-    ...stripped.matchAll(/\b(?:from|join)\s+([a-z_][a-z0-9_]*)/g),
-  ].map((m) => m[1]);
+    ...stripped.matchAll(
+      /\b(?:from|join)\s+([a-z_][a-z0-9_]*(?:\s*,\s*[a-z_][a-z0-9_]*)*)/g,
+    ),
+  ].flatMap((m) => m[1].split(/\s*,\s*/));
 
   return (
     datasetRefs.length > 0 &&
