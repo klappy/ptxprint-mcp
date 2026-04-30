@@ -1,18 +1,25 @@
 /**
  * PTXprint MCP Worker — entry point.
  *
- * Exposes 4 MCP tools (3 per v1.2 spec §3 plus the session-13 `docs` tool):
+ * Exposes 6 MCP tools (4 per v1.2 spec §3 plus 2 new telemetry tools per v1.3):
  *   submit_typeset(payload)   → job_id (or cached URL)
  *   get_job_status(job_id)    → state / progress / urls / errors
  *   cancel_job(job_id)        → set DO flag; container polls every 10s
  *   docs(query, audience?, depth?) → in-repo canon retrieval via oddkit proxy
+ *   telemetry_policy()        → governance policy from canon (three-tier fallback)
+ *   telemetry_public(sql)     → public Analytics Engine query forwarder
  *
  * Agents bring their own URLs for sources/fonts/figures — the server does
  * not host or stage input files. Hosting is the agent's concern, upstream
  * of MCP.
  *
- * Plus an internal route the container calls back to for state updates:
- *   POST /internal/job-update  — body { job_id, patch }
+ * Internal routes:
+ *   POST /internal/job-update   — container state patches (v1.2)
+ *   POST /internal/telemetry    — container telemetry forwarding (v1.3)
+ *
+ * Telemetry hooks (v1.3):
+ *   - mcp_request event emitted at every MCP request
+ *   - tool_call event emitted when method == "tools/call"
  *
  * Streamable HTTP MCP transport is mounted at /mcp.
  */
@@ -33,6 +40,20 @@ import {
   cancelJob as cancelJobDo,
 } from "./job-state-do.js";
 import { fetchDocs } from "./docs.js";
+import { BUNDLED_POLICY } from "./bundled-policy.js";
+import {
+  writeTelemetry,
+  resolveConsumer,
+  redactAndValidate,
+  resolveTelemetryPolicy,
+  forwardTelemetryQuery,
+  tryParseJsonRpc,
+  SELF_REPORT_HEADERS,
+  WORKER_VERSION,
+  type TelemetryEnv,
+  type ConsumerInfo,
+  type ParsedRpc,
+} from "./telemetry.js";
 
 // Re-export Durable Object classes so the Workers runtime can find them.
 export { JobStateDO } from "./job-state-do.js";
@@ -48,6 +69,12 @@ interface Env {
   WORKER_URL: string;
   PTXPRINT_TIMEOUT_DEFAULT: string;
   RESULT_PRESIGNED_TTL: string;
+  // v1.3 telemetry bindings
+  PTXPRINT_TELEMETRY: AnalyticsEngineDataset;
+  CF_ACCOUNT_ID: string;
+  CF_API_TOKEN: string;
+  TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR: string;
+  TELEMETRY_VERIFIED_CLIENTS: string;
 }
 
 // ---------- Helpers ----------
@@ -69,7 +96,7 @@ function jobIdFromHash(payloadHash: string): string {
 export class PtxprintMcp extends McpAgent<Env> {
   server = new McpServer({
     name: "ptxprint-mcp",
-    version: "0.1.0",
+    version: WORKER_VERSION,
   });
 
   async init() {
@@ -353,6 +380,90 @@ export class PtxprintMcp extends McpAgent<Env> {
       },
     );
 
+    // ----- telemetry_policy ----- (v1.3)
+    //
+    // Returns the runtime-fetched governance policy plus the self-report header
+    // dictionary. Three-tier fallback: knowledge_base → bundled → minimal.
+    // Authority: klappy://canon/specs/ptxprint-mcp-v1.3-spec §3 telemetry_policy
+    this.server.tool(
+      "telemetry_policy",
+      "Returns the PTXprint MCP telemetry governance policy, the self-report header dictionary, and the three-tier fallback chain status. No parameters required.",
+      {},
+      async () => {
+        const { policy, source } = await resolveTelemetryPolicy(BUNDLED_POLICY);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  policy,
+                  policy_uri: "klappy://canon/governance/telemetry-governance",
+                  governance_source: source,
+                  self_report_headers: SELF_REPORT_HEADERS,
+                  fallback_chain: [
+                    {
+                      tier: "knowledge_base",
+                      source:
+                        "https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/canon/governance/telemetry-governance.md",
+                    },
+                    {
+                      tier: "bundled",
+                      source: "compiled into Worker at deploy time",
+                    },
+                    {
+                      tier: "minimal",
+                      source:
+                        "static string in Worker; lists dataset name + privacy non-negotiables + policy URI",
+                    },
+                  ],
+                  generated_at: new Date().toISOString(),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      },
+    );
+
+    // ----- telemetry_public ----- (v1.3)
+    //
+    // Public SQL query forwarder over the ptxprint_telemetry Analytics Engine
+    // dataset. Three guards: dataset allowlist, rate limit, error sanitization.
+    // Authority: klappy://canon/specs/ptxprint-mcp-v1.3-spec §3 telemetry_public
+    this.server.tool(
+      "telemetry_public",
+      "Query the ptxprint_telemetry Analytics Engine dataset with SQL. The data is public — this is the same dashboard the maintainer sees. Use SUM(_sample_interval) instead of COUNT(*) for sample-correct totals. Rate-limited to 60 queries/consumer/hour. See telemetry_policy() for canned query examples.",
+      {
+        sql: z
+          .string()
+          .min(1)
+          .describe("A read-only SQL query against ptxprint_telemetry."),
+      },
+      async ({ sql }: { sql: string }) => {
+        // Use the DO session ID as the rate-limit key. Inside the McpAgent DO,
+        // we don't have access to HTTP request headers; per-DO-session limiting
+        // is the closest approximation to per-consumer limiting here.
+        const rateLimitKey = this.ctx.id.toString();
+        const result = await forwardTelemetryQuery(
+          this.env as TelemetryEnv,
+          sql,
+          rateLimitKey,
+        );
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          ...(result.error ? { isError: true } : {}),
+        };
+      },
+    );
+
   }
 }
 
@@ -367,9 +478,16 @@ export default {
       return Response.json({
         ok: true,
         service: "ptxprint-mcp",
-        version: "0.1.0",
-        spec: "v1.2-draft",
-        tools: ["submit_typeset", "get_job_status", "cancel_job", "docs"],
+        version: WORKER_VERSION,
+        spec: "v1.3-draft",
+        tools: [
+          "submit_typeset",
+          "get_job_status",
+          "cancel_job",
+          "docs",
+          "telemetry_public",
+          "telemetry_policy",
+        ],
       });
     }
 
@@ -390,6 +508,46 @@ export default {
         status: res.status,
         headers: { "content-type": "application/json" },
       });
+    }
+
+    // ---------- v1.3: Internal telemetry forwarding endpoint ----------
+    //
+    // Container POSTs telemetry envelopes here. The Worker validates via the
+    // redactor (strict schema + prohibited-field check) and writes to AE.
+    //
+    // Service-binding enforcement: v1.2's /internal/job-update route also lacks
+    // service-binding–only enforcement (Container calls via the public Worker URL).
+    // Consistent with that pattern, this route validates the envelope strictly
+    // but does not enforce origin. A v1.4 enhancement could add a shared-secret
+    // header check once the Container-to-Worker path moves to a true service binding.
+    if (req.method === "POST" && url.pathname === "/internal/telemetry") {
+      let body: unknown;
+      try {
+        body = await req.json();
+      } catch {
+        return Response.json({ error: "invalid JSON" }, { status: 400 });
+      }
+
+      const result = redactAndValidate(body);
+      if (!result.ok) {
+        return Response.json({ error: result.error }, { status: 400 });
+      }
+
+      const envelope = result.envelope;
+      writeTelemetry(env as unknown as TelemetryEnv, envelope.event_type, {
+        phase: envelope.phase,
+        failure_mode: envelope.failure_mode,
+        payload_hash_prefix: envelope.payload_hash_prefix,
+        consumer_label: envelope.consumer_label ?? "container",
+        consumer_source: "unknown",
+        duration_ms: envelope.duration_ms,
+        passes_completed: envelope.passes_completed,
+        overfull_count: envelope.overfull_count,
+        pages_count: envelope.pages_count,
+        bytes_out: envelope.bytes_out,
+      });
+
+      return Response.json({ ok: true });
     }
 
     // Internal: container polls for cancellation status.
@@ -451,28 +609,164 @@ export default {
       return new Response(body, { headers });
     }
 
-    // MCP transport — streamable HTTP at /mcp; legacy SSE at /sse for compatibility.
+    // ---------- MCP transport with v1.3 telemetry hooks ----------
     //
-    // The `binding` option is REQUIRED here. agents@0.2.x defaults `binding` to
-    // "MCP_OBJECT" inside `McpAgent.serve`, but our DO binding is named
-    // "MCP_AGENT" in wrangler.jsonc — so without this option the SDK throws
-    // `Could not find McpAgent binding for MCP_OBJECT` and the Worker returns
-    // a Cloudflare 1101 (uncaught JS exception) on every /mcp and /sse hit.
+    // For /mcp and /sse routes, we intercept the request to:
+    //   1. Parse the JSON-RPC body (non-destructive clone)
+    //   2. Pass through to the MCP handler
+    //   3. Extract enrichment from the response (best-effort)
+    //   4. Emit mcp_request and (if tools/call) tool_call events
     //
-    // (The previous version also passed `{ props: ctorProps }` here. ServeOptions
-    // does not include a `props` field — it accepts only `binding`, `corsOptions`,
-    // `transport`, `jurisdiction` — so that property was silently dropped and
-    // `workerUrl` never reached the agent. Plumbing workerUrl is a separate fix:
-    // it has to flow through `ctx.props`, which is OAuth-Provider-managed in this
-    // SDK; for now `r2PublicUrl` returns relative `/r2/...` paths from the tools,
-    // which is acceptable for the smoke tests.)
+    // The telemetry writes are non-blocking (writeDataPoint returns void).
+    // The docs tool query string is NEVER logged per the privacy floor.
+
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
-      return PtxprintMcp.serve("/mcp", { binding: "MCP_AGENT" }).fetch(req, env, ctx);
+      return handleMcpWithTelemetry(req, env, ctx, "/mcp", false);
     }
     if (url.pathname === "/sse" || url.pathname.startsWith("/sse/")) {
-      return PtxprintMcp.serveSSE("/sse", { binding: "MCP_AGENT" }).fetch(req, env, ctx);
+      return handleMcpWithTelemetry(req, env, ctx, "/sse", true);
     }
 
     return new Response("not found", { status: 404 });
   },
 };
+
+// ---------- Telemetry-instrumented MCP handler ----------
+
+async function handleMcpWithTelemetry(
+  req: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  basePath: string,
+  isSSE: boolean,
+): Promise<Response> {
+  const startMs = Date.now();
+  const urlObj = new URL(req.url);
+  const consumer = resolveConsumer(urlObj, req.headers);
+
+  // Parse request body for telemetry (non-destructive via clone)
+  let rpc: ParsedRpc | null = null;
+  let bytesIn = 0;
+  if (req.method === "POST") {
+    try {
+      const bodyText = await req.clone().text();
+      bytesIn = new TextEncoder().encode(bodyText).length;
+      rpc = tryParseJsonRpc(bodyText);
+    } catch {
+      // Not parseable — still pass through
+    }
+  }
+
+  // Pass through to the MCP handler
+  const handler = isSSE
+    ? PtxprintMcp.serveSSE(basePath, { binding: "MCP_AGENT" })
+    : PtxprintMcp.serve(basePath, { binding: "MCP_AGENT" });
+  const response = await handler.fetch(req, env, ctx);
+
+  // Emit telemetry after getting the response (non-blocking enrichment)
+  if (rpc?.method) {
+    ctx.waitUntil(
+      emitTelemetryForMcp(env, rpc, consumer, response.clone(), startMs, bytesIn),
+    );
+  }
+
+  return response;
+}
+
+/**
+ * Emit mcp_request and tool_call telemetry events.
+ * Runs inside ctx.waitUntil so it doesn't add latency to the response.
+ */
+async function emitTelemetryForMcp(
+  env: Env,
+  rpc: ParsedRpc,
+  consumer: ConsumerInfo,
+  resClone: Response,
+  startMs: number,
+  bytesIn: number,
+): Promise<void> {
+  const durationMs = Date.now() - startMs;
+  const telEnv = env as unknown as TelemetryEnv;
+
+  // Best-effort response parsing for enrichment
+  let cacheOutcome = "";
+  let docsAudience = "";
+  let docsTopUri = "";
+  let payloadHashPrefix = "";
+  let bytesOut = 0;
+  let sourcesCount = 0;
+  let fontsCount = 0;
+  let figuresCount = 0;
+
+  if (rpc.method === "tools/call") {
+    try {
+      const contentType = resClone.headers.get("content-type") ?? "";
+      // Only parse JSON responses (skip SSE streams)
+      if (contentType.includes("json") || contentType === "") {
+        const resText = await resClone.text();
+        bytesOut = new TextEncoder().encode(resText).length;
+        const resJson = JSON.parse(resText) as {
+          result?: { content?: Array<{ type: string; text?: string }> };
+        };
+        const resultText = resJson?.result?.content?.[0]?.text;
+        if (resultText) {
+          const toolResult = JSON.parse(resultText) as Record<string, unknown>;
+          if (rpc.toolName === "submit_typeset") {
+            cacheOutcome = toolResult.cached === true ? "hit" : "miss";
+            payloadHashPrefix = String(toolResult.payload_hash ?? "").slice(0, 8);
+            // Count inputs from the request params (safe metadata, not content)
+            const payload = rpc.params.payload as Record<string, unknown> | undefined;
+            if (payload) {
+              sourcesCount = Array.isArray(payload.sources) ? payload.sources.length : 0;
+              fontsCount = Array.isArray(payload.fonts) ? payload.fonts.length : 0;
+              figuresCount = Array.isArray(payload.figures) ? payload.figures.length : 0;
+            }
+          }
+          if (rpc.toolName === "docs") {
+            // docs_audience from request params (safe metadata)
+            docsAudience = String(rpc.params.audience ?? "headless");
+            // docs_top_uri from response (canon URIs are public)
+            const sources = toolResult.sources as Array<{ uri?: string }> | undefined;
+            docsTopUri = String(sources?.[0]?.uri ?? "");
+            // NOTE: rpc.params.query is NEVER logged — treated as content per
+            // canon/governance/telemetry-governance §"Privacy Floor"
+          }
+        }
+      }
+    } catch {
+      // Best-effort enrichment — failures are silently swallowed
+    }
+  }
+
+  // Emit mcp_request event
+  writeTelemetry(telEnv, "mcp_request", {
+    method: rpc.method,
+    tool_name: rpc.toolName,
+    consumer_label: consumer.label,
+    consumer_source: consumer.source,
+    cache_outcome:
+      rpc.toolName === "submit_typeset" ? cacheOutcome || "n/a" : "",
+    payload_hash_prefix: payloadHashPrefix,
+    docs_audience: docsAudience,
+    docs_top_uri: docsTopUri,
+    bytes_in: bytesIn,
+    bytes_out: bytesOut,
+    duration_ms: durationMs,
+    sources_count: sourcesCount,
+    fonts_count: fontsCount,
+    figures_count: figuresCount,
+  });
+
+  // Emit tool_call event if applicable
+  if (rpc.method === "tools/call") {
+    writeTelemetry(telEnv, "tool_call", {
+      method: "tools/call",
+      tool_name: rpc.toolName,
+      consumer_label: consumer.label,
+      consumer_source: consumer.source,
+      docs_audience: docsAudience,
+      docs_top_uri: docsTopUri,
+      duration_ms: durationMs,
+    });
+  }
+}
