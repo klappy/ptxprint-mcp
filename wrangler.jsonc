@@ -59,6 +59,12 @@
     }
   ],
 
+  // Analytics Engine dataset for v1.3 telemetry.
+  // Authority: klappy://canon/specs/ptxprint-mcp-v1.3-spec §5
+  "analytics_engine_datasets": [
+    { "binding": "PTXPRINT_TELEMETRY", "dataset": "ptxprint_telemetry" }
+  ],
+
   // Build command for `wrangler deploy` — none needed, TS is bundled by Wrangler/esbuild.
 
   "vars": {
@@ -72,6 +78,14 @@
     // the real workers.dev (or custom) hostname this Worker is deployed at.
     "WORKER_URL": "https://ptxprint-mcp.klappy.workers.dev",
     "PTXPRINT_TIMEOUT_DEFAULT": "300",
-    "RESULT_PRESIGNED_TTL": "604800"
+    "RESULT_PRESIGNED_TTL": "604800",
+    // v1.3 telemetry: per-consumer rate limit for telemetry_public queries.
+    // Protects the Analytics Engine 10K/day free-tier query quota.
+    "TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR": "60"
   }
+
+  // v1.3 secrets (set via `wrangler secret put` — NOT committed to source):
+  //   CF_ACCOUNT_ID               — Cloudflare account ID (used by telemetry_public)
+  //   CF_API_TOKEN                — read-only AE query token (used by telemetry_public)
+  //   TELEMETRY_VERIFIED_CLIENTS  — optional comma-separated consumer label allowlist
 }

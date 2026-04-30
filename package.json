@@ -8,7 +8,10 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "tsc": "tsc --noEmit",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bundle-policy": "node --import tsx/esm scripts/bundle-telemetry-policy.ts"
   },
   "engines": {
     "node": ">=20"
@@ -21,7 +24,9 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251024.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
+    "vitest": "^4.1.5",
     "wrangler": "^4.20.0"
   }
 }
