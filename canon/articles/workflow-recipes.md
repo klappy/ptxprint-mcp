@@ -18,6 +18,8 @@ status: draft
 >
 > **Related articles.** `klappy://canon/articles/payload-construction` · `klappy://canon/articles/diagnostic-patterns` · `klappy://canon/articles/settings-cookbook`
 
+> **Worked example for English Bibles (BSB).** A copy-pasteable, fully-working `submit_typeset` payload for any BSB book — John, Psalms, Romans, Genesis, etc. — lives at `klappy://canon/articles/render-bsb-book-recipe`. Three-line diff to switch books. Use that as the starting point for any English-Bible render before adapting recipes below.
+
 ---
 
 ## Recipe: Draft PDF for review
