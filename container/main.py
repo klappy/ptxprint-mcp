@@ -337,6 +337,7 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
                 timed_out = True
                 stderr_tail = f"TIMEOUT after {timeout_s}s\n{(exc.stderr or '')[-1000:]}"
                 log.error("job %s timed out", job_id)
+            typesetting_ms = (time.time() - phase_start) * 1000
 
             effective_config = payload.config_name if payload.config_files else None
             pdf_path = find_output_pdf(scratch, payload.project_id, effective_config)
@@ -353,7 +354,6 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             # Phase events carry no success/failure indicator, so the only
             # truthful option is to omit the event on timeout.
             if not timed_out:
-                typesetting_ms = (time.time() - phase_start) * 1000
                 await emit_phase_event(callback, job_id, consumer_label, "typesetting", payload_hash_prefix, typesetting_ms)
 
             # Silent-bail diagnostic: when both PDF and log are absent the
@@ -424,7 +424,7 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
                 callback, job_id, consumer_label, telemetry_fm,
                 payload_hash_prefix, elapsed * 1000,
                 passes_completed=None if timed_out else 1,
-                overfull_count=overfull,
+                overfull_count=None if timed_out else overfull,
                 pages_count=None,  # v1.4 candidate: parse page count from XeTeX log
                 bytes_out=pdf_size if failure_mode == "success" else None,
             )
