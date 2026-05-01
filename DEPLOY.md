@@ -158,4 +158,15 @@ curl -X POST https://ptxprint.klappy.dev/internal/snapshot/run \
 
 13 weeks ≈ 90 days. The route caps `weeks_back` at 26.
 
+### Verify wiring with the smoke script
+
+Once the bucket is created and the token is set, [`smoke/verify-snapshot.sh`](smoke/verify-snapshot.sh) walks the full pipeline (probe → bootstrap one week → re-probe → lifetime). Run it after step 2 to confirm everything is wired correctly:
+
+```bash
+export SNAPSHOT_BOOTSTRAP_TOKEN=<the token from above>
+smoke/verify-snapshot.sh
+```
+
+It is safe to re-run; snapshots are idempotent.
+
 For the full operations doc (smoke test, recovery, lifetime composite recipe), see [`canon/articles/snapshot-operations.md`](canon/articles/snapshot-operations.md) (uri `klappy://canon/articles/snapshot-operations`).
