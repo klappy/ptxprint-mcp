@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Verifies that telemetry_public is wired correctly on ptxprint.klappy.dev/mcp.
-# Run AFTER:
-#   npx wrangler secret put CF_ACCOUNT_ID --name ptxprint-mcp
-#   npx wrangler secret put CF_API_TOKEN  --name ptxprint-mcp
+#
+# Setup (only ONE secret to set since cae57a0 — CF_ACCOUNT_ID lives in
+# wrangler.jsonc as a public var, see DEPLOY.md):
+#
+#   npx wrangler secret put CF_API_TOKEN --name ptxprint-mcp
+#
+# Quick pre-check (boolean state of every required env var, no secrets exposed):
+#
+#   curl https://ptxprint.klappy.dev/diagnostics/telemetry | jq
 set -euo pipefail
 URL='https://ptxprint.klappy.dev/mcp'
 
