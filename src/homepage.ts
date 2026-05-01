@@ -258,9 +258,11 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <p class="text-paper-2 text-base leading-[1.7] mt-6">
           The opinions live next door, in a canon repository served by
           <a href="https://oddkit.klappy.dev" class="text-gilt ed-link" target="_blank" rel="noopener">oddkit</a>.
-          The agent searches canon to learn what to change, then uses this server's actions to apply it.
-          Two MCPs in concert: one for knowing, one for doing. Vodka architecture &mdash; each server holds opinions
-          about exactly one concern.
+          But the agent doesn't talk to two MCPs — it talks to one. The
+          <span class="font-mono text-paper">docs(query)</span> tool on this server proxies canon retrieval upstream,
+          so the agent's loop is <span class="smallcaps text-paper">ask docs &middot; understand &middot; act &middot; observe</span>
+          across a single MCP connection. Vodka architecture &mdash; each server holds opinions about exactly one concern,
+          even when one borrows the other's.
         </p>
       </div>
     </div>
@@ -654,63 +656,99 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <p class="text-paper-2 mt-4 leading-relaxed">
           Each MCP server holds opinions about exactly one concern. The PTXprint server holds <span class="text-paper">none</span>
           about typesetting craft &mdash; only about subprocess lifecycle, content-addressed caching, and sandboxed
-          file IO. Domain knowledge lives next door, in canon, served by oddkit.
+          file IO. Domain knowledge lives next door, in canon. Agents see <span class="text-paper">one MCP</span>;
+          PTXprint delegates canon retrieval to oddkit upstream when serving <span class="font-mono text-gilt">docs()</span>.
         </p>
         <p class="text-paper-2 mt-4 leading-relaxed">
-          The agent's reasoning loop becomes legible: <span class="smallcaps text-paper">search canon</span> &rarr;
+          The agent's reasoning loop is one MCP wide:
+          <span class="smallcaps text-paper">ask docs</span> &rarr;
           <span class="smallcaps text-paper">understand</span> &rarr;
           <span class="smallcaps text-paper">act</span> &rarr;
-          <span class="smallcaps text-paper">observe</span>. Two MCPs in concert. Each thin enough to maintain by one
-          person indefinitely.
+          <span class="smallcaps text-paper">observe</span>. Two services in concert &mdash; one of them invisible to
+          the agent. Each thin enough to maintain by one person indefinitely.
         </p>
       </div>
 
       <div class="col-span-12 lg:col-span-7">
         <div class="specimen p-6">
           <div class="folio mb-4">flow</div>
-          <svg viewBox="0 0 720 360" class="w-full">
+          <svg viewBox="0 0 720 380" class="w-full">
             <defs>
               <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D9A93E"/></marker>
-              <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8331A"/></marker>
+              <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8A7E66"/></marker>
             </defs>
+
+            <!-- Agent (left) -->
             <g>
-              <rect x="20" y="140" width="140" height="80" fill="#15110B" stroke="#3A2F1F"/>
-              <text x="90" y="175" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="20">Agent</text>
-              <text x="90" y="195" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">CLAUDE / GEMMA / GPT</text>
+              <rect x="20" y="140" width="140" height="100" fill="#15110B" stroke="#3A2F1F"/>
+              <text x="90" y="178" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9" letter-spacing="2">CALLER</text>
+              <text x="90" y="200" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="22">Agent</text>
+              <text x="90" y="220" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">CLAUDE / GEMMA / GPT</text>
             </g>
+
+            <!-- ptxprint MCP (center, prominent — the one MCP the agent sees) -->
             <g>
-              <rect x="280" y="40" width="180" height="100" fill="#15110B" stroke="#C8331A"/>
-              <text x="370" y="78" text-anchor="middle" fill="#C8331A" font-family="JetBrains Mono" font-size="9" letter-spacing="2">KNOWING</text>
-              <text x="370" y="102" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="20">oddkit MCP</text>
-              <text x="370" y="124" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">canon · search · get</text>
+              <rect x="240" y="120" width="240" height="140" fill="#15110B" stroke="#D9A93E" stroke-width="2"/>
+              <text x="360" y="156" text-anchor="middle" fill="#D9A93E" font-family="JetBrains Mono" font-size="9" letter-spacing="2">THE ONE MCP THE AGENT SEES</text>
+              <text x="360" y="186" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="24">ptxprint MCP</text>
+              <text x="360" y="210" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">submit · status · cancel</text>
+              <text x="360" y="226" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">docs · telemetry · policy</text>
+              <text x="360" y="246" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">vodka layer · zero domain opinions</text>
             </g>
+
+            <!-- Container (right, dispatched via service binding) -->
             <g>
-              <rect x="280" y="220" width="180" height="100" fill="#15110B" stroke="#D9A93E"/>
-              <text x="370" y="258" text-anchor="middle" fill="#D9A93E" font-family="JetBrains Mono" font-size="9" letter-spacing="2">DOING</text>
-              <text x="370" y="282" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="20">ptxprint MCP</text>
-              <text x="370" y="304" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">submit · status · cancel</text>
+              <rect x="560" y="40" width="140" height="100" fill="#15110B" stroke="#3A2F1F" stroke-dasharray="3,3"/>
+              <text x="630" y="74" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9" letter-spacing="2">CONTAINER</text>
+              <text x="630" y="98" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="18">PTXprint</text>
+              <text x="630" y="118" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">XeTeX · fonts</text>
             </g>
+
+            <!-- DO + R2 (right, state + outputs) -->
             <g>
-              <rect x="540" y="220" width="160" height="100" fill="#15110B" stroke="#3A2F1F" stroke-dasharray="3,3"/>
-              <text x="620" y="258" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9" letter-spacing="2">CONTAINER</text>
-              <text x="620" y="282" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="18">PTXprint</text>
-              <text x="620" y="304" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">XeTeX · fonts</text>
+              <rect x="560" y="160" width="140" height="80" fill="#15110B" stroke="#3A2F1F" stroke-dasharray="3,3"/>
+              <text x="630" y="190" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9" letter-spacing="2">STATE · OUTPUTS</text>
+              <text x="630" y="212" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="16">DO &nbsp;·&nbsp; R2</text>
+              <text x="630" y="228" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9">SHA-256 cache key</text>
             </g>
-            <line x1="160" y1="170" x2="278" y2="100" stroke="#C8331A" stroke-width="1.5" marker-end="url(#arrR)"/>
-            <line x1="160" y1="190" x2="278" y2="260" stroke="#D9A93E" stroke-width="1.5" marker-end="url(#arr)"/>
-            <line x1="460" y1="270" x2="538" y2="270" stroke="#D9A93E" stroke-width="1.5" marker-end="url(#arr)"/>
-            <text x="220" y="125" fill="#C8331A" font-family="JetBrains Mono" font-size="10">search canon</text>
-            <text x="220" y="245" fill="#D9A93E" font-family="JetBrains Mono" font-size="10">submit_typeset</text>
-            <text x="500" y="263" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">service binding</text>
+
+            <!-- oddkit MCP (right-bottom, dim — internal upstream for docs()) -->
             <g>
-              <rect x="540" y="40" width="160" height="100" fill="#15110B" stroke="#3A2F1F" stroke-dasharray="3,3"/>
-              <text x="620" y="78" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9" letter-spacing="2">STATE / OUTPUTS</text>
-              <text x="620" y="102" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="16">DO &nbsp;·&nbsp; R2</text>
-              <text x="620" y="124" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">SHA-256 cache key</text>
+              <rect x="560" y="260" width="140" height="100" fill="#0E0C08" stroke="#3A2F1F" stroke-dasharray="3,3"/>
+              <text x="630" y="294" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9" letter-spacing="2">UPSTREAM · INTERNAL</text>
+              <text x="630" y="316" text-anchor="middle" fill="#BFB294" font-family="Fraunces" font-size="18">oddkit MCP</text>
+              <text x="630" y="336" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">canon retrieval</text>
+              <text x="630" y="350" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">(invisible to agent)</text>
             </g>
-            <line x1="460" y1="80" x2="538" y2="80" stroke="#3A2F1F" stroke-width="1" stroke-dasharray="2,2"/>
-            <line x1="460" y1="280" x2="538" y2="120" stroke="#3A2F1F" stroke-width="1" stroke-dasharray="2,2"/>
+
+            <!-- Single agent → ptxprint arrow (the only thing the agent talks to) -->
+            <line x1="160" y1="190" x2="238" y2="190" stroke="#D9A93E" stroke-width="2" marker-end="url(#arr)"/>
+            <text x="180" y="180" fill="#D9A93E" font-family="JetBrains Mono" font-size="10">all calls</text>
+
+            <!-- ptxprint → container (typesetting dispatch) -->
+            <line x1="480" y1="150" x2="558" y2="90" stroke="#D9A93E" stroke-width="1.5" marker-end="url(#arr)"/>
+            <text x="490" y="120" fill="#D9A93E" font-family="JetBrains Mono" font-size="9">typeset</text>
+
+            <!-- ptxprint ↔ DO/R2 (state + outputs) -->
+            <line x1="480" y1="200" x2="558" y2="200" stroke="#D9A93E" stroke-width="1.5" marker-end="url(#arr)"/>
+            <text x="490" y="194" fill="#D9A93E" font-family="JetBrains Mono" font-size="9">persist</text>
+
+            <!-- ptxprint → oddkit (internal canon fetch — dim grey) -->
+            <line x1="480" y1="240" x2="558" y2="305" stroke="#8A7E66" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arrG)"/>
+            <text x="488" y="275" fill="#8A7E66" font-family="JetBrains Mono" font-size="9">docs() upstream</text>
           </svg>
+
+          <!-- Legend -->
+          <div class="mt-4 flex flex-wrap gap-4 text-[11px]" style="font-family:'JetBrains Mono',monospace;">
+            <div class="flex items-center gap-2">
+              <div style="width:18px; height:2px; background:#D9A93E;"></div>
+              <span class="text-paper-2">agent-visible MCP traffic</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div style="width:18px; height:1px; background:#8A7E66; border-top:1px dashed #8A7E66;"></div>
+              <span class="text-paper-mute">internal · agent never sees</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1353,9 +1391,10 @@ async function loadOddkitCompanion() {
           <div class="counter text-paper-2 text-[42px] leading-none">\${fmt(totalNum)}</div>
           <div class="folio text-paper-mute mt-1">\${(totalNum / 7).toFixed(0)} avg / day</div>
           <div class="text-paper-mute text-[11px] mt-3 leading-relaxed">
-            For context: this is the related <a href="https://oddkit.klappy.dev"
+            For context: this is the upstream <a href="https://oddkit.klappy.dev"
               target="_blank" rel="noopener" class="text-gilt ed-link">canon-retrieval service</a>
-            an agent uses alongside ptxprint MCP. Vodka architecture: knowing &amp; doing on separate servers.
+            ptxprint MCP delegates to when serving <code class="font-mono text-paper">docs()</code>.
+            Two services, one MCP from the agent's view.
           </div>
         </div>
         <div class="col-span-12 md:col-span-8">
