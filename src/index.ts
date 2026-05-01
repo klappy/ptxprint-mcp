@@ -535,6 +535,88 @@ export default {
       );
     }
 
+    // ---------- /diagnostics/telemetry ----------
+    //
+    // Public diagnostic for telemetry_public tool wiring. Reports BOOLEAN
+    // presence of every env var the tool needs — never the values themselves.
+    // Designed so a single curl tells you exactly what's missing without
+    // having to read code or wade through MCP error messages.
+    //
+    //   curl https://ptxprint.klappy.dev/diagnostics/telemetry
+    //
+    // The token-shape check is a length sanity probe (Cloudflare API tokens
+    // are 40 chars). It catches the most common mistake — pasting a partial
+    // token — without ever returning the value.
+    if (url.pathname === "/diagnostics/telemetry") {
+      if (req.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "access-control-allow-origin": "*",
+            "access-control-allow-methods": "GET, OPTIONS",
+            "access-control-allow-headers": "Content-Type",
+            "access-control-max-age": "86400",
+          },
+        });
+      }
+      const accountIdSet = !!env.CF_ACCOUNT_ID;
+      const apiTokenSet = !!env.CF_API_TOKEN;
+      const apiTokenShapeOk = apiTokenSet && env.CF_API_TOKEN.length >= 40;
+      const datasetBindingPresent = !!env.PTXPRINT_TELEMETRY;
+      const writesEnabled = datasetBindingPresent;
+      const queriesEnabled = accountIdSet && apiTokenSet;
+
+      const missing: string[] = [];
+      if (!accountIdSet)
+        missing.push(
+          "CF_ACCOUNT_ID (add to wrangler.jsonc 'vars' — public 32-char id, not a secret)",
+        );
+      if (!apiTokenSet)
+        missing.push(
+          "CF_API_TOKEN (run: wrangler secret put CF_API_TOKEN — see DEPLOY.md)",
+        );
+      if (apiTokenSet && !apiTokenShapeOk)
+        missing.push(
+          "CF_API_TOKEN looks too short (Cloudflare tokens are 40 chars; re-run wrangler secret put with the full value)",
+        );
+      if (!datasetBindingPresent)
+        missing.push(
+          "PTXPRINT_TELEMETRY (add to wrangler.jsonc 'analytics_engine_datasets')",
+        );
+
+      return Response.json(
+        {
+          ok: queriesEnabled && writesEnabled && apiTokenShapeOk,
+          service: "ptxprint-mcp",
+          version: WORKER_VERSION,
+          dataset: "ptxprint_telemetry",
+          writes_enabled: writesEnabled,
+          queries_enabled: queriesEnabled && apiTokenShapeOk,
+          env: {
+            CF_ACCOUNT_ID_set: accountIdSet,
+            CF_API_TOKEN_set: apiTokenSet,
+            CF_API_TOKEN_shape_ok: apiTokenShapeOk,
+            PTXPRINT_TELEMETRY_binding_present: datasetBindingPresent,
+            TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR:
+              env.TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR ?? "60 (default)",
+          },
+          missing,
+          fix_url: "https://github.com/klappy/ptxprint-mcp/blob/main/DEPLOY.md",
+          notes: [
+            "This endpoint never reveals secret values — only their presence.",
+            "CF_ACCOUNT_ID is a public 32-character identifier and belongs in wrangler.jsonc as a var, not a secret.",
+            "CF_API_TOKEN is the only actual secret. Token scope: Account → Account Analytics → Read.",
+          ],
+        },
+        {
+          headers: {
+            "access-control-allow-origin": "*",
+            "cache-control": "no-store",
+          },
+        },
+      );
+    }
+
     // Internal: container calls back to update job state.
     // Exposed at the Worker URL because the container can reach the public
     // Worker but cannot directly stub.fetch a Durable Object (different

@@ -455,9 +455,19 @@ export async function forwardTelemetryQuery(
     return sanitizedError("Query rate limit exceeded; retry later");
   }
 
-  // Env check
-  if (!env.CF_ACCOUNT_ID || !env.CF_API_TOKEN) {
-    return sanitizedError("Telemetry query service not configured");
+  // Env check — emit a specific diagnostic so operators know which var to set.
+  // Both vars are required; CF_ACCOUNT_ID is a public 32-char identifier (set
+  // in wrangler.jsonc as a `var`, see DEPLOY.md), CF_API_TOKEN is the only
+  // actual secret and must be set via `wrangler secret put CF_API_TOKEN`.
+  const missing: string[] = [];
+  if (!env.CF_ACCOUNT_ID) missing.push("CF_ACCOUNT_ID");
+  if (!env.CF_API_TOKEN) missing.push("CF_API_TOKEN");
+  if (missing.length > 0) {
+    return sanitizedError(
+      `Telemetry query service not configured: missing ${missing.join(", ")} ` +
+        `on this Worker. See DEPLOY.md for one-shot setup commands. ` +
+        `GET /diagnostics/telemetry on this Worker reports current config status.`,
+    );
   }
 
   // Forward to Analytics Engine SQL API with error sanitization (Guard 3)

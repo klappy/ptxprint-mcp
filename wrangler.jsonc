@@ -81,11 +81,20 @@
     "RESULT_PRESIGNED_TTL": "604800",
     // v1.3 telemetry: per-consumer rate limit for telemetry_public queries.
     // Protects the Analytics Engine 10K/day free-tier query quota.
-    "TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR": "60"
+    "TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR": "60",
+    // v1.3 telemetry: Cloudflare account ID (used by telemetry_public to call
+    // the Analytics Engine SQL API). NOT a secret — this is the public
+    // 32-character account identifier visible in any Cloudflare dashboard URL
+    // (`dash.cloudflare.com/<account_id>/...`). Cloudflare's own docs treat
+    // it as a public identifier. Living here means one less secret-set step
+    // during deploy. The actual secret is CF_API_TOKEN, set separately via
+    // `wrangler secret put` (see DEPLOY.md).
+    "CF_ACCOUNT_ID": "b03e6ea242724c05eb97eb732cceb21d"
   }
 
   // v1.3 secrets (set via `wrangler secret put` — NOT committed to source):
-  //   CF_ACCOUNT_ID               — Cloudflare account ID (used by telemetry_public)
-  //   CF_API_TOKEN                — read-only AE query token (used by telemetry_public)
+  //   CF_API_TOKEN                — read-only Analytics Engine query token. REQUIRED for telemetry_public.
+  //                                 Token scope: Account → Account Analytics → Read.
+  //                                 One-shot setup: see DEPLOY.md.
   //   TELEMETRY_VERIFIED_CLIENTS  — optional comma-separated consumer label allowlist
 }
