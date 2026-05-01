@@ -1173,7 +1173,10 @@ document.querySelectorAll('.docs-suggestion').forEach(b => {
 const SQL_TOP    = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY AND tool_name IS NOT NULL AND tool_name != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
 const SQL_24H    = \`SELECT toStartOfHour(timestamp) AS hour, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '24' HOUR GROUP BY hour ORDER BY hour ASC\`;
 const SQL_7D_TOT = \`SELECT SUM(_sample_interval) AS total FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY\`;
-const PTX_SQL_TOP   = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND tool_name != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
+const PTX_SQL_TOTAL = \`SELECT SUM(_sample_interval) AS total FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY\`;
+const PTX_SQL_TOOLS = \`SELECT blob3 AS tool_name, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND blob1 = 'tool_call' AND blob3 != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
+const PTX_SQL_24H   = \`SELECT toStartOfHour(timestamp) AS hour, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '24' HOUR GROUP BY hour ORDER BY hour ASC\`;
+const PTX_SQL_CONS  = \`SELECT blob4 AS consumer, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND blob4 != '' GROUP BY consumer ORDER BY calls DESC LIMIT 6\`;
 
 function fmt(n) { return Number(n).toLocaleString('en-US'); }
 async function runOddkitSQL(sql) { return (await oddkit.tool('telemetry_public', { sql }))?.result?.data; }
@@ -1218,7 +1221,7 @@ function renderSparkline(values) {
 async function loadOddkitTelemetry() {
   const stamp = document.getElementById('t-stamp');
   document.getElementById('t-sql').textContent =
-    \`-- oddkit_telemetry  (live, via oddkit MCP)\\n\\n\${SQL_7D_TOT};\\n\\n\${SQL_24H};\\n\\n\${SQL_TOP};\\n\\n-- ptxprint_telemetry  (live, via ptxprint MCP)\\n\\n\${PTX_SQL_TOP};\`;
+    \`-- oddkit_telemetry  (live, via oddkit MCP)\\n\\n\${SQL_7D_TOT};\\n\\n\${SQL_24H};\\n\\n\${SQL_TOP};\\n\\n-- ptxprint_telemetry  (live, via ptxprint MCP — uses blobN slots per the telemetry-governance canon)\\n\\n\${PTX_SQL_TOTAL};\\n\\n\${PTX_SQL_TOOLS};\\n\\n\${PTX_SQL_24H};\\n\\n\${PTX_SQL_CONS};\`;
   try {
     const [tot, hourly, top] = await Promise.all([ runOddkitSQL(SQL_7D_TOT), runOddkitSQL(SQL_24H), runOddkitSQL(SQL_TOP) ]);
     const totalNum = +(tot?.data?.[0]?.total || 0);
@@ -1237,45 +1240,102 @@ async function loadPtxTelemetry() {
   const target = document.getElementById('ptx-t-content');
   const stamp  = document.getElementById('ptx-t-stamp');
   try {
-    const out = await runPtxSQL(PTX_SQL_TOP);
-    if (out?.error) {
+    const [tot, tools, hourly, consumers] = await Promise.all([
+      runPtxSQL(PTX_SQL_TOTAL),
+      runPtxSQL(PTX_SQL_TOOLS),
+      runPtxSQL(PTX_SQL_24H),
+      runPtxSQL(PTX_SQL_CONS),
+    ]);
+
+    if (tot?.error || tools?.error) {
+      // Surface the underlying error AND link to the live diagnostic so the
+      // visitor can see exactly what's wrong without reading code.
+      const errMsg = (tot?.error || tools?.error || 'unknown').replace(/</g, '&lt;');
       target.innerHTML = \`
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <div class="folio mb-2 text-rubric">! \${out.error}</div>
-            <p class="text-paper-2 text-[13px] leading-relaxed">
-              The Worker requires a Cloudflare API token to forward telemetry queries to Analytics Engine.
-              The token is not yet wired on this deployment. The data IS being written
-              (every <code class="font-mono text-paper">tools/call</code> emits a data point); it just isn't
-              queryable through this tool yet. See the policy below for the full schema.
-            </p>
-          </div>
-          <div class="border border-rule rounded p-4 bg-ink/40">
-            <div class="folio mb-2">in the meantime</div>
-            <ul class="text-paper-2 text-[13px] space-y-1.5 leading-relaxed">
-              <li>· every call from this page emits one <code class="font-mono text-gilt">tools/call</code> data point</li>
-              <li>· this page identifies as <code class="font-mono text-gilt">ptxprint-mcp-homepage</code></li>
-              <li>· the policy below documents what is and isn't tracked</li>
-            </ul>
-          </div>
+        <div class="space-y-3">
+          <div class="folio text-rubric">! \${errMsg}</div>
+          <p class="text-paper-2 text-[13px] leading-relaxed">
+            Visit <a href="https://ptxprint.klappy.dev/diagnostics/telemetry"
+              target="_blank" rel="noopener" class="text-gilt ed-link font-mono">
+              /diagnostics/telemetry</a> for a boolean breakdown of every required env var,
+            or read <a href="https://github.com/klappy/ptxprint-mcp/blob/main/DEPLOY.md"
+              target="_blank" rel="noopener" class="text-gilt ed-link">DEPLOY.md</a> for setup.
+          </p>
         </div>\`;
-      stamp.textContent = 'service-not-configured · transparent';
+      stamp.textContent = 'error · see diagnostic';
       return;
     }
-    const rows = out?.result?.data?.data || [];
-    if (!rows.length) {
-      target.innerHTML = '<div class="text-paper-mute font-mono text-[12px]">No data points yet — be the first to call a tool.</div>';
-    } else {
-      target.innerHTML = \`
-        <div class="grid grid-cols-1 md:grid-cols-\${Math.min(rows.length, 5)} gap-3">
-          \${rows.slice(0, 5).map(r => \`
-            <div class="border border-rule rounded p-3">
-              <div class="folio">\${r.tool_name}</div>
-              <div class="counter text-paper text-[36px] mt-1">\${fmt(r.calls)}</div>
-            </div>\`).join('')}
-        </div>\`;
-    }
-    stamp.textContent = 'live · ' + new Date().toLocaleTimeString();
+
+    const totalNum = +(tot?.rows?.[0]?.total || 0);
+    const toolRows = tools?.rows || [];
+    const hourlyRows = hourly?.rows || [];
+    const consumerRows = consumers?.rows || [];
+    const hours24 = hourlyRows.reduce((a, r) => a + (+r.calls || 0), 0);
+
+    const maxTool = Math.max(...toolRows.map(r => +r.calls), 1);
+    const maxCons = Math.max(...consumerRows.map(r => +r.calls), 1);
+
+    // Build a 24h sparkline from the same data the oddkit chart uses
+    const sparkW = 600, sparkH = 60, padS = 3;
+    const valuesH = hourlyRows.map(r => +r.calls);
+    const maxH = Math.max(...valuesH, 1);
+    const stepS = (sparkW - padS * 2) / Math.max(valuesH.length - 1, 1);
+    const ptsH = valuesH.map((v, i) =>
+      \`\${(padS + i * stepS).toFixed(1)},\${(sparkH - padS - (v / maxH) * (sparkH - padS * 2)).toFixed(1)}\`
+    );
+
+    target.innerHTML = \`
+      <div class="grid grid-cols-12 gap-5">
+        <!-- 30d total + sparkline -->
+        <div class="col-span-12 md:col-span-5">
+          <div class="folio mb-2">last 30 days · all events</div>
+          <div class="counter text-paper text-[64px] leading-none">\${fmt(totalNum)}</div>
+          <div class="folio text-paper-mute mt-1">
+            \${(totalNum / 30).toFixed(0)} avg / day · \${fmt(hours24)} in last 24h
+          </div>
+          <svg viewBox="0 0 \${sparkW} \${sparkH}" class="w-full h-[60px] mt-3" preserveAspectRatio="none">
+            <polyline points="\${ptsH.join(' ')}" fill="none" stroke="#D9A93E" stroke-width="1.5" />
+          </svg>
+        </div>
+
+        <!-- Tool leaderboard -->
+        <div class="col-span-12 md:col-span-7">
+          <div class="folio mb-3">tool_call leaderboard · last 30d</div>
+          <div class="space-y-2">
+            \${toolRows.map(r => {
+              const w = (+r.calls / maxTool * 100).toFixed(1);
+              return \`
+                <div class="flex items-center gap-3">
+                  <code class="text-[12px] text-paper-2 w-32 shrink-0 truncate">\${r.tool_name}</code>
+                  <div class="flex-1 h-5 bg-ink/60 rounded-sm overflow-hidden border border-rule/60">
+                    <div class="bar h-full" style="width:\${w}%; background: linear-gradient(90deg,#D9A93E,#C8331A);"></div>
+                  </div>
+                  <code class="text-[12px] text-gilt w-12 text-right tabular-nums">\${fmt(r.calls)}</code>
+                </div>\`;
+            }).join('') || '<div class="text-paper-mute font-mono text-[12px]">no tool_call events yet — first agent to call a tool wins</div>'}
+          </div>
+        </div>
+
+        <!-- Consumer leaderboard -->
+        <div class="col-span-12">
+          <div class="hr-thin mb-3 mt-3"></div>
+          <div class="folio mb-3">consumer leaderboard · last 30d · self-declared</div>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            \${consumerRows.map(r => {
+              const pct = (+r.calls / maxCons * 100).toFixed(0);
+              return \`
+                <div class="border border-rule rounded p-3 bg-ink/40">
+                  <code class="text-[11px] text-paper truncate block">\${r.consumer}</code>
+                  <div class="counter text-gilt text-[24px] mt-1">\${fmt(r.calls)}</div>
+                  <div class="h-1 bg-ink mt-2 rounded-sm overflow-hidden">
+                    <div style="width:\${pct}%; height:100%; background:#D9A93E;"></div>
+                  </div>
+                </div>\`;
+            }).join('') || '<div class="text-paper-mute font-mono text-[12px]">no labeled consumers yet</div>'}
+          </div>
+        </div>
+      </div>\`;
+    stamp.textContent = \`live · \${new Date().toLocaleTimeString()} · \${fmt(totalNum)} events\`;
   } catch (e) {
     target.innerHTML = \`<div class="text-rubric font-mono text-[12px]">! \${e.message}</div>\`;
     stamp.textContent = 'error';
