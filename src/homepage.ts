@@ -880,6 +880,12 @@ class MCPClient {
     this.extraHeaders = extraHeaders;
     this.session = null;
     this.initPromise = null;
+    // Monotonic JSON-RPC id counter. Crucial: Date.now() COLLIDES under
+    // Promise.all() because all parallel calls execute in the same
+    // millisecond, which causes the MCP transport to cross-wire the
+    // responses (tools/list response delivered to a tools/call promise,
+    // etc.). A simple incrementing integer guarantees uniqueness.
+    this.nextId = 100;
   }
   _headers() {
     return {
@@ -921,7 +927,7 @@ class MCPClient {
     const r = await fetch(this.endpoint, {
       method: 'POST',
       headers: this._headers(),
-      body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
+      body: JSON.stringify({ jsonrpc: '2.0', id: ++this.nextId, method, params }),
     });
     return MCPClient.parseSse(await r.text());
   }
