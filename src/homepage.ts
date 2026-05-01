@@ -1,6 +1,5 @@
 // Auto-generated homepage for the PTXprint MCP Worker.
 // Source bytes mirror the HTML this string produces at runtime.
-// Edit this file (or regenerate from the artifact) and re-deploy.
 //
 // Backslashes, backticks, and ${} sequences inside the HTML are escaped
 // for the outer template literal; the runtime string is byte-identical
@@ -348,6 +347,9 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         </button>
         <button data-font="comicneue" class="font-btn btn btn-ghost btn-sm">
           <span>Comic Neue</span> <span class="folio text-paper-mute ml-1">2.5</span>
+        </button>
+        <button data-font="imfell" class="font-btn btn btn-ghost btn-sm">
+          <span>IM Fell DW Pica</span> <span class="folio text-paper-mute ml-1">Oxford 1670</span>
         </button>
       </div>
       <div class="flex flex-wrap items-baseline gap-3 pt-2 border-t border-rule">
@@ -1027,6 +1029,28 @@ const FONTS = {
       { family_id:'comicneue', version:'2.5', filename:'ComicNeue-BoldItalic.ttf',
         url:'https://raw.githubusercontent.com/google/fonts/main/ofl/comicneue/ComicNeue-BoldItalic.ttf',
         sha256:'5c312c2a2fa64eee82f3b87fcfab8f3b12a5e59b043124401d322eb323cfbf16' },
+    ],
+  },
+  imfell: {
+    label: 'IM Fell DW Pica',
+    sub: 'Google Fonts · v2.000 · John Fell types · Oxford 1670 (the "scan of an old Bible" look)',
+    cfg: {
+      // The imfelldwpica family ships only Roman + Italic. PTXprint requires all
+      // four fontXXX keys set; per canon/articles/using-custom-fonts.md worked
+      // example 2, bold maps to Roman and bold-italic maps to Italic. Better
+      // than letting XeTeX try to synthesize a faux-bold (smudgy artifacts).
+      fontregular:    'IM FELL DW Pica||false|false|',
+      fontbold:       'IM FELL DW Pica||false|false|',
+      fontitalic:     'IM FELL DW Pica|Italic|false|false|',
+      fontbolditalic: 'IM FELL DW Pica|Italic|false|false|',
+    },
+    fonts: [
+      { family_id:'imfelldwpica', version:'2.000', filename:'IMFePIrm28P.ttf',
+        url:'https://raw.githubusercontent.com/google/fonts/main/ofl/imfelldwpica/IMFePIrm28P.ttf',
+        sha256:'f65e54016dfab4222ba552cfb82260b14a7df6527cce66430f5f66022addb052' },
+      { family_id:'imfelldwpica', version:'2.000', filename:'IMFePIit28P.ttf',
+        url:'https://raw.githubusercontent.com/google/fonts/main/ofl/imfelldwpica/IMFePIit28P.ttf',
+        sha256:'e09a00654b5dd266aee743c0c43d129c8404a2d5e0ebf27e5a0e472bd1900b8d' },
     ],
   },
 };
