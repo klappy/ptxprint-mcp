@@ -226,11 +226,11 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <div class="mt-4 specimen p-4">
           <div class="flex items-baseline justify-between">
             <div>
-              <div class="folio">canon ops · 7d</div>
+              <div class="folio">tool calls · 30d</div>
               <div class="counter text-paper text-[42px] mt-1" id="mini-7d">—</div>
             </div>
             <div class="text-right">
-              <div class="folio">via oddkit</div>
+              <div class="folio">this server</div>
               <div class="text-[11px] text-gilt mt-1 font-mono">live</div>
             </div>
           </div>
@@ -541,30 +541,35 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   <div class="max-w-[1280px] mx-auto px-6 py-20 lg:py-28">
     <div class="flex items-end justify-between mb-12">
       <div>
-        <div class="eyebrow mb-3"><span class="text-rubric">§ V.</span> &nbsp; Live telemetry · two sources</div>
+        <div class="eyebrow mb-3"><span class="text-rubric">§ V.</span> &nbsp; Live telemetry · this server</div>
         <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">No information asymmetry.</h2>
         <p class="text-paper-2 max-w-[680px] mt-4 leading-relaxed">
-          The same data the maintainer sees, served live from two MCP endpoints &mdash; oddkit (the canon side)
-          and PTXprint MCP itself. Cloudflare Analytics Engine, queried over MCP from this page in your
-          browser, right now.
+          Every tool call against <span class="font-mono text-paper">ptxprint.klappy.dev</span> writes one
+          structural data point to <span class="font-mono text-paper">ptxprint_telemetry</span>. Same data
+          the maintainer sees, queried over MCP from this page in your browser, right now.
+          Identify yourself with <a href="https://github.com/klappy/ptxprint-mcp/blob/main/canon/governance/telemetry-governance.md"
+            target="_blank" rel="noopener" class="text-gilt ed-link">an x-ptxprint-client header</a> and you'll
+          appear on the consumer leaderboard below.
         </p>
       </div>
       <div class="folio hidden md:block text-right">
-        <div>SOURCES</div>
-        <div class="text-paper-2 mt-1">oddkit_telemetry · ptxprint_telemetry</div>
+        <div>DATASET</div>
+        <div class="text-paper-2 mt-1 font-mono">ptxprint_telemetry</div>
+        <div class="text-paper-mute mt-1">cloudflare AE</div>
       </div>
     </div>
 
+    <!-- Hero numbers: 30d total + 24h sparkline (PTXPRINT) -->
     <div class="grid grid-cols-12 gap-5 mb-8">
       <div class="col-span-12 md:col-span-4 specimen p-6">
-        <div class="folio mb-2">canon ops · last 7d</div>
+        <div class="folio mb-2">events · last 30d</div>
         <div class="counter text-paper text-[88px]" id="t-7d">—</div>
         <div class="text-paper-mute text-[12px] mt-2 font-mono" id="t-7d-rate">—</div>
       </div>
 
       <div class="col-span-12 md:col-span-8 specimen p-6">
         <div class="flex items-baseline justify-between mb-2">
-          <div class="folio">activity · last 24h · oddkit</div>
+          <div class="folio">activity · last 24h · this server</div>
           <div class="folio text-paper-mute" id="t-24h-total">—</div>
         </div>
         <svg id="spark" viewBox="0 0 600 140" class="w-full h-[140px]" preserveAspectRatio="none">
@@ -581,19 +586,21 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       </div>
     </div>
 
+    <!-- Tool leaderboard (PTXPRINT) -->
     <div class="specimen p-6 mb-5">
       <div class="flex items-baseline justify-between mb-5">
-        <div class="folio">top oddkit actions · last 7d</div>
-        <div class="folio text-paper-mute">SUM(_sample_interval)</div>
+        <div class="folio">tool_call leaderboard · last 30d · ptxprint</div>
+        <div class="folio text-paper-mute">SUM(_sample_interval) on blob3</div>
       </div>
       <div id="t-tools" class="space-y-2.5">
         <div class="text-paper-mute font-mono text-[12px]">loading…</div>
       </div>
     </div>
 
+    <!-- Consumer leaderboard (PTXPRINT) -->
     <div class="specimen p-6 mb-5">
       <div class="flex items-baseline justify-between mb-3">
-        <div class="folio">ptxprint_telemetry · this server's own usage</div>
+        <div class="folio">consumer leaderboard · who is calling this server</div>
         <div class="folio text-paper-mute" id="ptx-t-stamp">—</div>
       </div>
       <div class="hr-thin mb-4"></div>
@@ -601,6 +608,19 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <div class="text-paper-mute font-mono text-[12px]">querying…</div>
       </div>
     </div>
+
+    <!-- Companion: oddkit canon traffic (smaller, contextual) -->
+    <details class="specimen p-5 group mb-5">
+      <summary class="flex items-center justify-between cursor-pointer list-none">
+        <div class="folio">companion · oddkit_telemetry — for context, the related canon service</div>
+        <div class="folio text-paper-mute group-open:hidden">show</div>
+        <div class="folio text-paper-mute hidden group-open:block">hide</div>
+      </summary>
+      <div class="mt-4 hr-thin"></div>
+      <div id="oddkit-companion" class="mt-4">
+        <div class="text-paper-mute font-mono text-[12px]">loading…</div>
+      </div>
+    </details>
 
     <details class="specimen p-5 group mb-5">
       <summary class="flex items-center justify-between cursor-pointer list-none">
@@ -1169,14 +1189,14 @@ document.querySelectorAll('.docs-suggestion').forEach(b => {
   b.addEventListener('click', () => { docsQ.value = b.dataset.q; runDocs(b.dataset.q); });
 });
 
-// 5. Telemetry
-const SQL_TOP    = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY AND tool_name IS NOT NULL AND tool_name != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
+// 5. Telemetry — PTXprint is the subject; oddkit is the companion.
+const SQL_TOP    = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY AND tool_name IS NOT NULL AND tool_name != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 5\`;
 const SQL_24H    = \`SELECT toStartOfHour(timestamp) AS hour, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '24' HOUR GROUP BY hour ORDER BY hour ASC\`;
 const SQL_7D_TOT = \`SELECT SUM(_sample_interval) AS total FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY\`;
 const PTX_SQL_TOTAL = \`SELECT SUM(_sample_interval) AS total FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY\`;
 const PTX_SQL_TOOLS = \`SELECT blob3 AS tool_name, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND blob1 = 'tool_call' AND blob3 != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
 const PTX_SQL_24H   = \`SELECT toStartOfHour(timestamp) AS hour, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '24' HOUR GROUP BY hour ORDER BY hour ASC\`;
-const PTX_SQL_CONS  = \`SELECT blob4 AS consumer, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND blob4 != '' GROUP BY consumer ORDER BY calls DESC LIMIT 6\`;
+const PTX_SQL_CONS  = \`SELECT blob4 AS consumer, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND blob4 != '' GROUP BY consumer ORDER BY calls DESC LIMIT 8\`;
 
 function fmt(n) { return Number(n).toLocaleString('en-US'); }
 async function runOddkitSQL(sql) { return (await oddkit.tool('telemetry_public', { sql }))?.result?.data; }
@@ -1215,30 +1235,21 @@ function renderSparkline(values) {
     grid.push(\`<line x1="\${x}" y1="0" x2="\${x}" y2="\${h}" stroke="#3A2F1F" stroke-width="0.5" opacity="0.4"/>\`);
   }
   document.getElementById('spark-grid').innerHTML = grid.join('');
-  document.getElementById('t-24h-total').textContent = fmt(values.reduce((a,b)=>a+(+b||0),0)) + ' calls';
+  document.getElementById('t-24h-total').textContent = fmt(values.reduce((a,b)=>a+(+b||0),0)) + ' calls in last 24h';
 }
 
-async function loadOddkitTelemetry() {
-  const stamp = document.getElementById('t-stamp');
-  document.getElementById('t-sql').textContent =
-    \`-- oddkit_telemetry  (live, via oddkit MCP)\\n\\n\${SQL_7D_TOT};\\n\\n\${SQL_24H};\\n\\n\${SQL_TOP};\\n\\n-- ptxprint_telemetry  (live, via ptxprint MCP — uses blobN slots per the telemetry-governance canon)\\n\\n\${PTX_SQL_TOTAL};\\n\\n\${PTX_SQL_TOOLS};\\n\\n\${PTX_SQL_24H};\\n\\n\${PTX_SQL_CONS};\`;
-  try {
-    const [tot, hourly, top] = await Promise.all([ runOddkitSQL(SQL_7D_TOT), runOddkitSQL(SQL_24H), runOddkitSQL(SQL_TOP) ]);
-    const totalNum = +(tot?.data?.[0]?.total || 0);
-    document.getElementById('t-7d').textContent = fmt(totalNum);
-    document.getElementById('mini-7d').textContent = fmt(totalNum);
-    document.getElementById('t-7d-rate').textContent = (totalNum / 7).toFixed(0) + ' avg / day';
-    renderSparkline((hourly?.data || []).map(r => +r.calls));
-    renderTopTools((top?.data || []).slice(0, 10));
-    stamp.textContent = 'live · queried ' + new Date().toLocaleTimeString();
-  } catch (e) { stamp.textContent = 'error: ' + e.message; }
-}
-loadOddkitTelemetry();
-setInterval(loadOddkitTelemetry, 60000);
-
+// PTXprint drives the hero numbers, sparkline, tool leaderboard, AND the
+// consumer leaderboard. This is the page about THIS server, after all.
 async function loadPtxTelemetry() {
-  const target = document.getElementById('ptx-t-content');
-  const stamp  = document.getElementById('ptx-t-stamp');
+  const consumerTarget = document.getElementById('ptx-t-content');
+  const stamp          = document.getElementById('ptx-t-stamp');
+  const sqlTarget      = document.getElementById('t-sql');
+  const sqlStamp       = document.getElementById('t-stamp');
+
+  // Audit panel SQL (always rendered, even before queries return)
+  sqlTarget.textContent =
+    \`-- ptxprint_telemetry  (the subject — this server)\\n\\n\${PTX_SQL_TOTAL};\\n\\n\${PTX_SQL_24H};\\n\\n\${PTX_SQL_TOOLS};\\n\\n\${PTX_SQL_CONS};\\n\\n-- oddkit_telemetry  (companion — the related canon service)\\n\\n\${SQL_7D_TOT};\\n\\n\${SQL_24H};\\n\\n\${SQL_TOP};\`;
+
   try {
     const [tot, tools, hourly, consumers] = await Promise.all([
       runPtxSQL(PTX_SQL_TOTAL),
@@ -1248,101 +1259,122 @@ async function loadPtxTelemetry() {
     ]);
 
     if (tot?.error || tools?.error) {
-      // Surface the underlying error AND link to the live diagnostic so the
-      // visitor can see exactly what's wrong without reading code.
       const errMsg = (tot?.error || tools?.error || 'unknown').replace(/</g, '&lt;');
-      target.innerHTML = \`
-        <div class="space-y-3">
+      // Surface the underlying error AND link to the live diagnostic.
+      document.getElementById('t-7d').textContent = '!';
+      document.getElementById('mini-7d').textContent = '!';
+      document.getElementById('t-7d-rate').textContent = 'see diagnostic';
+      document.getElementById('t-tools').innerHTML = \`
+        <div class="space-y-2">
           <div class="folio text-rubric">! \${errMsg}</div>
-          <p class="text-paper-2 text-[13px] leading-relaxed">
+          <p class="text-paper-2 text-[12px] leading-relaxed">
             Visit <a href="https://ptxprint.klappy.dev/diagnostics/telemetry"
-              target="_blank" rel="noopener" class="text-gilt ed-link font-mono">
-              /diagnostics/telemetry</a> for a boolean breakdown of every required env var,
-            or read <a href="https://github.com/klappy/ptxprint-mcp/blob/main/DEPLOY.md"
-              target="_blank" rel="noopener" class="text-gilt ed-link">DEPLOY.md</a> for setup.
+              target="_blank" rel="noopener" class="text-gilt ed-link font-mono">/diagnostics/telemetry</a>
+            for a boolean breakdown of every required env var; or read
+            <a href="https://github.com/klappy/ptxprint-mcp/blob/main/DEPLOY.md"
+              target="_blank" rel="noopener" class="text-gilt ed-link">DEPLOY.md</a>.
           </p>
         </div>\`;
+      consumerTarget.innerHTML = '';
       stamp.textContent = 'error · see diagnostic';
+      sqlStamp.textContent = 'error';
       return;
     }
 
-    const totalNum = +(tot?.rows?.[0]?.total || 0);
-    const toolRows = tools?.rows || [];
-    const hourlyRows = hourly?.rows || [];
+    const totalNum     = +(tot?.rows?.[0]?.total || 0);
+    const toolRows     = tools?.rows || [];
+    const hourlyRows   = hourly?.rows || [];
     const consumerRows = consumers?.rows || [];
-    const hours24 = hourlyRows.reduce((a, r) => a + (+r.calls || 0), 0);
+    const hours24      = hourlyRows.reduce((a, r) => a + (+r.calls || 0), 0);
 
-    const maxTool = Math.max(...toolRows.map(r => +r.calls), 1);
+    // Hero numbers — PTXprint's own data
+    document.getElementById('t-7d').textContent = fmt(totalNum);
+    document.getElementById('mini-7d').textContent = fmt(totalNum);
+    document.getElementById('t-7d-rate').textContent = (totalNum / 30).toFixed(0) + ' avg / day · ptxprint events';
+
+    // Big sparkline — PTXprint's 24h hourly buckets
+    renderSparkline(hourlyRows.map(r => +r.calls));
+
+    // Tool leaderboard — PTXprint's tool_call counts
+    renderTopTools(toolRows);
+
+    // Consumer leaderboard — who is identifying themselves to this server
     const maxCons = Math.max(...consumerRows.map(r => +r.calls), 1);
-
-    // Build a 24h sparkline from the same data the oddkit chart uses
-    const sparkW = 600, sparkH = 60, padS = 3;
-    const valuesH = hourlyRows.map(r => +r.calls);
-    const maxH = Math.max(...valuesH, 1);
-    const stepS = (sparkW - padS * 2) / Math.max(valuesH.length - 1, 1);
-    const ptsH = valuesH.map((v, i) =>
-      \`\${(padS + i * stepS).toFixed(1)},\${(sparkH - padS - (v / maxH) * (sparkH - padS * 2)).toFixed(1)}\`
-    );
-
-    target.innerHTML = \`
-      <div class="grid grid-cols-12 gap-5">
-        <!-- 30d total + sparkline -->
-        <div class="col-span-12 md:col-span-5">
-          <div class="folio mb-2">last 30 days · all events</div>
-          <div class="counter text-paper text-[64px] leading-none">\${fmt(totalNum)}</div>
-          <div class="folio text-paper-mute mt-1">
-            \${(totalNum / 30).toFixed(0)} avg / day · \${fmt(hours24)} in last 24h
-          </div>
-          <svg viewBox="0 0 \${sparkW} \${sparkH}" class="w-full h-[60px] mt-3" preserveAspectRatio="none">
-            <polyline points="\${ptsH.join(' ')}" fill="none" stroke="#D9A93E" stroke-width="1.5" />
-          </svg>
+    consumerTarget.innerHTML = consumerRows.length
+      ? \`<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          \${consumerRows.map(r => {
+            const pct = (+r.calls / maxCons * 100).toFixed(0);
+            const verified = (r.consumer === 'ptxprint-mcp-homepage' || r.consumer === 'bt-servant-worker');
+            return \`
+              <div class="border \${verified ? 'border-gilt/60' : 'border-rule'} rounded p-3 bg-ink/40">
+                <code class="text-[11px] \${verified ? 'text-gilt' : 'text-paper'} truncate block">\${r.consumer}</code>
+                <div class="counter text-paper text-[24px] mt-1">\${fmt(r.calls)}</div>
+                <div class="h-1 bg-ink mt-2 rounded-sm overflow-hidden">
+                  <div style="width:\${pct}%; height:100%; background:\${verified ? '#D9A93E' : '#8A7E66'};"></div>
+                </div>
+              </div>\`;
+          }).join('')}
         </div>
+        <div class="folio text-paper-mute mt-3">
+          \${consumerRows.length} labeled consumers · gold = identified via x-ptxprint-client header · grey = inferred from User-Agent
+        </div>\`
+      : '<div class="text-paper-mute font-mono text-[12px]">no labeled consumers yet — be the first by setting x-ptxprint-client</div>';
 
-        <!-- Tool leaderboard -->
-        <div class="col-span-12 md:col-span-7">
-          <div class="folio mb-3">tool_call leaderboard · last 30d</div>
-          <div class="space-y-2">
-            \${toolRows.map(r => {
-              const w = (+r.calls / maxTool * 100).toFixed(1);
-              return \`
-                <div class="flex items-center gap-3">
-                  <code class="text-[12px] text-paper-2 w-32 shrink-0 truncate">\${r.tool_name}</code>
-                  <div class="flex-1 h-5 bg-ink/60 rounded-sm overflow-hidden border border-rule/60">
-                    <div class="bar h-full" style="width:\${w}%; background: linear-gradient(90deg,#D9A93E,#C8331A);"></div>
-                  </div>
-                  <code class="text-[12px] text-gilt w-12 text-right tabular-nums">\${fmt(r.calls)}</code>
-                </div>\`;
-            }).join('') || '<div class="text-paper-mute font-mono text-[12px]">no tool_call events yet — first agent to call a tool wins</div>'}
-          </div>
-        </div>
-
-        <!-- Consumer leaderboard -->
-        <div class="col-span-12">
-          <div class="hr-thin mb-3 mt-3"></div>
-          <div class="folio mb-3">consumer leaderboard · last 30d · self-declared</div>
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            \${consumerRows.map(r => {
-              const pct = (+r.calls / maxCons * 100).toFixed(0);
-              return \`
-                <div class="border border-rule rounded p-3 bg-ink/40">
-                  <code class="text-[11px] text-paper truncate block">\${r.consumer}</code>
-                  <div class="counter text-gilt text-[24px] mt-1">\${fmt(r.calls)}</div>
-                  <div class="h-1 bg-ink mt-2 rounded-sm overflow-hidden">
-                    <div style="width:\${pct}%; height:100%; background:#D9A93E;"></div>
-                  </div>
-                </div>\`;
-            }).join('') || '<div class="text-paper-mute font-mono text-[12px]">no labeled consumers yet</div>'}
-          </div>
-        </div>
-      </div>\`;
-    stamp.textContent = \`live · \${new Date().toLocaleTimeString()} · \${fmt(totalNum)} events\`;
+    stamp.textContent = \`live · \${new Date().toLocaleTimeString()} · \${fmt(totalNum)} events in 30d\`;
+    sqlStamp.textContent = 'live · queried ' + new Date().toLocaleTimeString();
   } catch (e) {
-    target.innerHTML = \`<div class="text-rubric font-mono text-[12px]">! \${e.message}</div>\`;
+    consumerTarget.innerHTML = \`<div class="text-rubric font-mono text-[12px]">! \${e.message}</div>\`;
     stamp.textContent = 'error';
   }
 }
 loadPtxTelemetry();
 setInterval(loadPtxTelemetry, 60000);
+
+// Companion view — oddkit data, smaller, tucked behind a details disclosure.
+// This is contextual ("here's what's happening on the related canon service")
+// but does not lead the page.
+async function loadOddkitCompanion() {
+  const target = document.getElementById('oddkit-companion');
+  try {
+    const [tot, top] = await Promise.all([ runOddkitSQL(SQL_7D_TOT), runOddkitSQL(SQL_TOP) ]);
+    const totalNum = +(tot?.data?.[0]?.total || 0);
+    const rows = (top?.data || []).slice(0, 5);
+    const max = Math.max(...rows.map(r => +r.calls), 1);
+    target.innerHTML = \`
+      <div class="grid grid-cols-12 gap-5">
+        <div class="col-span-12 md:col-span-4">
+          <div class="folio mb-1">oddkit canon ops · 7d</div>
+          <div class="counter text-paper-2 text-[42px] leading-none">\${fmt(totalNum)}</div>
+          <div class="folio text-paper-mute mt-1">\${(totalNum / 7).toFixed(0)} avg / day</div>
+          <div class="text-paper-mute text-[11px] mt-3 leading-relaxed">
+            For context: this is the related <a href="https://oddkit.klappy.dev"
+              target="_blank" rel="noopener" class="text-gilt ed-link">canon-retrieval service</a>
+            an agent uses alongside ptxprint MCP. Vodka architecture: knowing &amp; doing on separate servers.
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-8">
+          <div class="folio mb-3">top oddkit actions · 7d</div>
+          <div class="space-y-1.5">
+            \${rows.map(r => {
+              const w = (+r.calls / max * 100).toFixed(0);
+              return \`
+                <div class="flex items-center gap-3">
+                  <code class="text-[11px] text-paper-mute w-32 shrink-0">\${r.tool_name}</code>
+                  <div class="flex-1 h-3 bg-ink/60 rounded-sm overflow-hidden border border-rule/40">
+                    <div style="width:\${w}%; height:100%; background:#8A7E66;"></div>
+                  </div>
+                  <code class="text-[11px] text-paper-mute w-12 text-right tabular-nums">\${fmt(r.calls)}</code>
+                </div>\`;
+            }).join('')}
+          </div>
+        </div>
+      </div>\`;
+  } catch (e) {
+    target.innerHTML = \`<div class="text-rubric font-mono text-[12px]">! \${e.message}</div>\`;
+  }
+}
+loadOddkitCompanion();
+setInterval(loadOddkitCompanion, 60000);
 
 // 6. telemetry_policy
 async function loadPolicy() {
