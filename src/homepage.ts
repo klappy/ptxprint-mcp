@@ -644,12 +644,34 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
 
     <details class="specimen p-5 group">
       <summary class="flex items-center justify-between cursor-pointer list-none">
-        <div class="folio">audit · the SQL this page just ran</div>
+        <div class="folio">audit · the SQL this page just ran (submitted &amp; rewritten)</div>
         <div class="folio text-paper-mute group-open:hidden">show</div>
         <div class="folio text-paper-mute hidden group-open:block">hide</div>
       </summary>
       <div class="mt-4 hr-thin"></div>
-      <pre id="t-sql" class="code mt-4 text-[12px] text-paper-2 whitespace-pre-wrap"></pre>
+      <p class="mt-4 text-paper-2 text-[12px] leading-relaxed max-w-[760px]">
+        The page submits SQL with <span class="font-mono text-paper">semantic field names</span>
+        (<code class="font-mono">event_type</code>, <code class="font-mono">tool_name</code>,
+        <code class="font-mono">consumer_label</code>, &hellip;). The
+        <a href="https://github.com/klappy/ptxprint-mcp/blob/main/src/telemetry-schema.ts"
+           target="_blank" rel="noopener" class="text-gilt ed-link">worker</a>
+        rewrites them to the positional <code class="font-mono">blob<em>N</em></code> /
+        <code class="font-mono">double<em>N</em></code> form Cloudflare Analytics Engine actually
+        accepts, and returns the rewritten SQL on each response so this audit can show both
+        sides. The <a href="/diagnostics/schema" target="_blank" rel="noopener" class="text-gilt ed-link font-mono">/diagnostics/schema</a>
+        endpoint is the canonical mapping; it's the same data the
+        <code class="font-mono">telemetry_schema</code> MCP tool returns.
+      </p>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <div>
+          <div class="folio text-paper-mute mb-1.5">submitted &mdash; semantic</div>
+          <pre id="t-sql" class="code text-[12px] text-paper-2 whitespace-pre-wrap"></pre>
+        </div>
+        <div>
+          <div class="folio text-paper-mute mb-1.5">executed at AE &mdash; positional (rewriter output)</div>
+          <pre id="t-sql-rewritten" class="code text-[12px] text-paper-mute whitespace-pre-wrap">waiting for query responses&hellip;</pre>
+        </div>
+      </div>
       <div class="mt-3 text-paper-mute text-[11px] font-mono" id="t-stamp">—</div>
     </details>
   </div>
@@ -1296,9 +1318,12 @@ async function loadPtxTelemetry() {
   const consumerTarget = document.getElementById('ptx-t-content');
   const stamp          = document.getElementById('ptx-t-stamp');
   const sqlTarget      = document.getElementById('t-sql');
+  const sqlRewritten   = document.getElementById('t-sql-rewritten');
   const sqlStamp       = document.getElementById('t-stamp');
 
-  // Audit panel SQL (always rendered, even before queries return)
+  // Audit panel — submitted (semantic) SQL is shown immediately, even before
+  // queries return. The rewritten (positional) form is filled in from the
+  // query_rewritten field of each telemetry_public response below.
   sqlTarget.textContent =
     \`-- ptxprint_telemetry  (the subject — this server)\\n\\n\${PTX_SQL_TOTAL};\\n\\n\${PTX_SQL_24H};\\n\\n\${PTX_SQL_TOOLS};\\n\\n\${PTX_SQL_CONS};\\n\\n-- oddkit_telemetry  (companion — the related canon service)\\n\\n\${SQL_7D_TOT};\\n\\n\${SQL_24H};\\n\\n\${SQL_TOP};\`;
 
@@ -1309,6 +1334,33 @@ async function loadPtxTelemetry() {
       runPtxSQL(PTX_SQL_24H),
       runPtxSQL(PTX_SQL_CONS),
     ]);
+
+    // Surface the rewriter's actual output. Each telemetry_public response
+    // carries query_rewritten ONLY when the rewriter changed the SQL; if the
+    // submitted query was already positional (or had no schema names to
+    // rewrite), the field is undefined and we fall back to the submitted
+    // form so the side-by-side stays aligned and honest.
+    const rewrittenBlock = (label, original, response) => {
+      const actuallyRan = response?.query_rewritten || original;
+      const tag = response?.query_rewritten
+        ? '-- rewritten by worker'
+        : '-- (already positional / nothing to rewrite)';
+      return \`\${label}\\n\${tag}\\n\${actuallyRan};\`;
+    };
+    sqlRewritten.textContent = [
+      '-- ptxprint_telemetry  (the subject — this server)',
+      '',
+      rewrittenBlock('-- 30d total events', PTX_SQL_TOTAL, tot),
+      '',
+      rewrittenBlock('-- 24h hourly buckets', PTX_SQL_24H, hourly),
+      '',
+      rewrittenBlock('-- tool_call leaderboard', PTX_SQL_TOOLS, tools),
+      '',
+      rewrittenBlock('-- consumer leaderboard', PTX_SQL_CONS, consumers),
+      '',
+      '-- oddkit_telemetry  (companion · this audit pane shows ptxprint',
+      '-- only; oddkit telemetry rewriter status would live on its own page)',
+    ].join('\\n');
 
     if (tot?.error || tools?.error) {
       const errMsg = (tot?.error || tools?.error || 'unknown').replace(/</g, '&lt;');
