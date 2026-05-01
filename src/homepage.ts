@@ -558,6 +558,14 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <div>DATASET</div>
         <div class="text-paper-2 mt-1 font-mono">ptxprint_telemetry</div>
         <div class="text-paper-mute mt-1">cloudflare AE</div>
+        <div class="text-paper-mute mt-3 text-[10px] leading-snug max-w-[180px]">
+          Write SQL with semantic field names<br>
+          (<span class="font-mono text-paper-2">event_type</span>, <span class="font-mono text-paper-2">tool_name</span>, &hellip;)<br>
+          &mdash; the worker rewrites them to<br>
+          positional refs. Schema:<br>
+          <a href="/diagnostics/schema" target="_blank" rel="noopener"
+            class="font-mono text-gilt ed-link">/diagnostics/schema</a>
+        </div>
       </div>
     </div>
 
