@@ -8,7 +8,7 @@ stability: working
 tags: ["canon", "governance", "constraint", "telemetry", "transparency", "privacy", "vodka-architecture", "maintainability", "analytics-engine", "ptxprint", "mcp", "v1.2-aligned", "ptxprint_telemetry"]
 date: 2026-04-30
 derives_from: "klappy://canon/constraints/telemetry-governance (klappy.dev / oddkit), canon/encodings/telemetry-feature-planning-ledger.md"
-companion_to: "canon/specs/ptxprint-mcp-v1.2-spec.md, canon/articles/failure-mode-taxonomy.md"
+companion_to: "canon/specs/ptxprint-mcp-v1.2-spec.md, canon/articles/failure-mode-taxonomy.md, canon/articles/hero-metrics-and-storytelling.md"
 canonical_status: canonical
 governs: "All telemetry collection in the PTXprint MCP server (Worker + Container + Durable Objects + R2)"
 status: reviewed
@@ -491,6 +491,7 @@ The non-negotiable: project metadata that could identify a translation team's wo
 ### PTXprint canon
 
 - [v1.2 Specification](klappy://canon/specs/ptxprint-mcp-v1-2-spec) — the tool surface telemetry observes
+- [Hero Metrics & Storytelling](klappy://canon/articles/hero-metrics-and-storytelling) — derived-practice sibling: how the data this article governs is composed into the public hero stat, X-Ray waterfall, and snapshot strategy
 - [Failure Mode Taxonomy](klappy://canon/articles/failure-mode-taxonomy) — the source of the `failure_mode` enum
 - [Headless Operations Overview](klappy://canon/governance/headless-operations) — the agent-facing operational KB
 - [Telemetry Feature Planning Ledger](klappy://canon/encodings/telemetry-feature-planning-ledger) — the DOLCHEO+H encoding of the design conversation that produced this article
