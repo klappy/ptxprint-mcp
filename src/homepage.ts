@@ -261,8 +261,8 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           But the agent doesn't talk to two MCPs — it talks to one. The
           <span class="font-mono text-paper">docs(query)</span> tool on this server proxies canon retrieval upstream,
           so the agent's loop is <span class="smallcaps text-paper">ask docs &middot; understand &middot; act &middot; observe</span>
-          across a single MCP connection. Vodka architecture &mdash; each server holds opinions about exactly one concern,
-          even when one borrows the other's.
+          across a single MCP connection. One server, one concern &mdash; the design rationale is in
+          <a href="#architecture" class="text-gilt ed-link">§VI</a>.
         </p>
       </div>
     </div>
@@ -422,18 +422,18 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           <div class="folio mb-3">docs(query, audience=headless)</div>
           <div class="hr-thin mb-4"></div>
           <div class="flex gap-2 flex-wrap">
-            <input id="docs-q" placeholder="e.g. vodka architecture, payload schema, font resolution"
-                   value="vodka architecture"
+            <input id="docs-q" placeholder="e.g. payload schema, font resolution, AdjList format, failure modes"
+                   value="submit_typeset payload schema"
                    class="flex-1 min-w-[220px] bg-ink border border-rule rounded px-3 py-2 font-mono text-[13px] text-paper focus:outline-none focus:border-gilt" />
             <button id="docs-go" class="btn btn-primary"><span>ask</span></button>
           </div>
           <div class="mt-4 flex flex-wrap gap-2 items-baseline">
             <span class="folio">try:</span>
-            <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="vodka architecture">vodka architecture</button>
-            <span class="text-rule">·</span>
             <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="submit_typeset payload schema">payload schema</button>
             <span class="text-rule">·</span>
             <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="font resolution">font resolution</button>
+            <span class="text-rule">·</span>
+            <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="AdjList format">AdjList format</button>
             <span class="text-rule">·</span>
             <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="failure mode taxonomy">failure modes</button>
           </div>
@@ -723,7 +723,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
               <text x="360" y="186" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="24">ptxprint MCP</text>
               <text x="360" y="210" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">submit · status · cancel</text>
               <text x="360" y="226" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">docs · telemetry · policy</text>
-              <text x="360" y="246" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">vodka layer · zero domain opinions</text>
+              <text x="360" y="246" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">thin layer · zero domain opinions</text>
             </g>
 
             <!-- Container (right, dispatched via service binding) -->
