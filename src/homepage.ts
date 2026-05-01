@@ -319,17 +319,47 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-3 mb-6">
-      <span class="folio mr-2">payload</span>
-      <button data-payload="jhn" class="payload-btn btn btn-ghost btn-sm">
-        <span>BSB · Gospel of John</span>
-      </button>
-      <button data-payload="psa" class="payload-btn btn btn-ghost btn-sm">
-        <span>BSB · Book of Psalms</span>
-      </button>
-      <a id="payload-source" href="#" target="_blank" rel="noopener" class="folio text-paper-mute hover:text-gilt ml-auto ed-link">
-        view the JSON source on github →
-      </a>
+    <div class="specimen p-4 mb-6 space-y-3">
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span class="folio mr-1 w-12">book</span>
+        <button data-book="jhn" class="book-btn btn btn-ghost btn-sm">
+          <span>John</span> <span class="folio text-paper-mute ml-1">21 ch</span>
+        </button>
+        <button data-book="psa" class="book-btn btn btn-ghost btn-sm">
+          <span>Psalms</span> <span class="folio text-paper-mute ml-1">150 ch</span>
+        </button>
+        <button data-book="jas" class="book-btn btn btn-ghost btn-sm">
+          <span>James</span> <span class="folio text-paper-mute ml-1">5 ch</span>
+        </button>
+        <button data-book="jud" class="book-btn btn btn-ghost btn-sm">
+          <span>Jude</span> <span class="folio text-paper-mute ml-1">1 ch</span>
+        </button>
+        <button data-book="rev" class="book-btn btn btn-ghost btn-sm">
+          <span>Revelation</span> <span class="folio text-paper-mute ml-1">22 ch</span>
+        </button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2.5">
+        <span class="folio mr-1 w-12">font</span>
+        <button data-font="gentium" class="font-btn btn btn-ghost btn-sm">
+          <span>Gentium Plus</span> <span class="folio text-paper-mute ml-1">6.200</span>
+        </button>
+        <button data-font="charis" class="font-btn btn btn-ghost btn-sm">
+          <span>Charis SIL</span> <span class="folio text-paper-mute ml-1">bundled</span>
+        </button>
+        <button data-font="comicneue" class="font-btn btn btn-ghost btn-sm">
+          <span>Comic Neue</span> <span class="folio text-paper-mute ml-1">2.5</span>
+        </button>
+      </div>
+      <div class="flex flex-wrap items-baseline gap-3 pt-2 border-t border-rule">
+        <div class="folio">
+          <span id="combo-label" class="text-paper-2">BSB &middot; John &middot; Gentium Plus</span>
+          <span class="text-paper-mute mx-2">&middot;</span>
+          <span id="combo-cache" class="text-gilt">cache hit &mdash; instant PDF</span>
+        </div>
+        <a id="payload-source" href="#" target="_blank" rel="noopener" class="folio text-paper-mute hover:text-gilt ml-auto ed-link">
+          view book fixture on github &rarr;
+        </a>
+      </div>
     </div>
 
     <div class="grid grid-cols-12 gap-6">
@@ -888,21 +918,126 @@ const SELF_REPORT_HEADERS = {
   'x-ptxprint-capabilities': 'submit,poll,cancel,docs,telemetry',
 };
 
-const PAYLOADS = {
+// Each BOOK has its own fixture file under smoke/. The default font in every
+// fixture is Gentium Plus 6.200 (payload-supplied via R2). When the user picks
+// a different font the homepage mutates the payload client-side: replaces the
+// four font* cfg lines under [document] and swaps the fonts[] array. The
+// mutated payload hashes to a new sha256, so it gets its own R2 cache slot.
+const BOOKS = {
   jhn: {
-    label: 'BSB · Gospel of John',
-    url: 'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-jhn-empirical.json',
+    label: 'John',
+    long: 'Gospel of John',
+    chapters: 21,
+    url:    'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-jhn-empirical.json',
     source: 'https://github.com/klappy/ptxprint-mcp/blob/main/smoke/bsb-jhn-empirical.json',
-    expected: { label: '21 chapters · ~360 KB' },
+    expected: { label: '21 chapters · ~115 KB USFM' },
   },
   psa: {
-    label: 'BSB · Book of Psalms',
-    url: 'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-psa-empirical.json',
+    label: 'Psalms',
+    long: 'Book of Psalms',
+    chapters: 150,
+    url:    'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-psa-empirical.json',
     source: 'https://github.com/klappy/ptxprint-mcp/blob/main/smoke/bsb-psa-empirical.json',
-    expected: { label: '150 chapters' },
+    expected: { label: '150 chapters · ~283 KB USFM' },
+  },
+  jas: {
+    label: 'James',
+    long: 'Letter of James',
+    chapters: 5,
+    url:    'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-jas-empirical.json',
+    source: 'https://github.com/klappy/ptxprint-mcp/blob/main/smoke/bsb-jas-empirical.json',
+    expected: { label: '5 chapters · ~15 KB USFM' },
+  },
+  jud: {
+    label: 'Jude',
+    long: 'Letter of Jude',
+    chapters: 1,
+    url:    'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-jud-empirical.json',
+    source: 'https://github.com/klappy/ptxprint-mcp/blob/main/smoke/bsb-jud-empirical.json',
+    expected: { label: '25 verses · the smallest book on the menu' },
+  },
+  rev: {
+    label: 'Revelation',
+    long: 'Revelation to John',
+    chapters: 22,
+    url:    'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-rev-empirical.json',
+    source: 'https://github.com/klappy/ptxprint-mcp/blob/main/smoke/bsb-rev-empirical.json',
+    expected: { label: '22 chapters · ~70 KB USFM' },
   },
 };
-let activePayload = 'jhn';
+
+// Font overlays. \`cfg\` holds the four [document] fontXXX values; \`fonts\` is the
+// fonts[] array to splice in (empty for container-bundled fonts). The R2 prefix
+// for Gentium fixtures matches what the smoke fixtures already ship with.
+const FONTS = {
+  gentium: {
+    label: 'Gentium Plus',
+    sub: 'SIL · v6.200 · payload-supplied',
+    cfg: {
+      fontregular:    'Gentium Plus||false|false|',
+      fontbold:       'Gentium Plus| Bold|false|false|',
+      fontitalic:     'Gentium Plus| Italic|false|false|',
+      fontbolditalic: 'Gentium Plus| Italic Bold|false|false|',
+    },
+    fonts: [
+      { family_id:'gentiumplus', version:'6.200', filename:'GentiumPlus-Regular.ttf',
+        url:'https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Regular.ttf',
+        sha256:'2c27e7da23ba44d135685836056833b304a388d3da346813189c60656dc02019' },
+      { family_id:'gentiumplus', version:'6.200', filename:'GentiumPlus-Bold.ttf',
+        url:'https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Bold.ttf',
+        sha256:'622ea9f2709d74f99d45c08d93cdf2a6d096406d3a1ec2939d02714f558b3dac' },
+      { family_id:'gentiumplus', version:'6.200', filename:'GentiumPlus-Italic.ttf',
+        url:'https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Italic.ttf',
+        sha256:'fedc1acdd2f1080941ed998cabee9759456f0e486fbd8169ff4238b37d3ac60d' },
+      { family_id:'gentiumplus', version:'6.200', filename:'GentiumPlus-BoldItalic.ttf',
+        url:'https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-BoldItalic.ttf',
+        sha256:'960e0a58ce1d7849c7a3e49f4fbc1ac4a27b58ef19a2d013ce637fe364b0a1f0' },
+    ],
+  },
+  charis: {
+    label: 'Charis SIL',
+    sub: 'SIL · container-bundled · no fixtures needed',
+    cfg: {
+      fontregular:    'Charis SIL||false|false|',
+      fontbold:       'Charis SIL| Bold|false|false|',
+      fontitalic:     'Charis SIL| Italic|false|false|',
+      fontbolditalic: 'Charis SIL| Bold Italic|false|false|',
+    },
+    fonts: [], // container provides Charis via fontconfig
+  },
+  comicneue: {
+    label: 'Comic Neue',
+    sub: 'Google Fonts · v2.5 · payload-supplied (Comic Sans surrogate)',
+    cfg: {
+      fontregular:    'Comic Neue||false|false|',
+      fontbold:       'Comic Neue|Bold|false|false|',
+      fontitalic:     'Comic Neue|Italic|false|false|',
+      fontbolditalic: 'Comic Neue|Bold Italic|false|false|',
+    },
+    fonts: [
+      { family_id:'comicneue', version:'2.5', filename:'ComicNeue-Regular.ttf',
+        url:'https://raw.githubusercontent.com/google/fonts/main/ofl/comicneue/ComicNeue-Regular.ttf',
+        sha256:'a0ee5a37c8b27c4db0700137d928598b1e23b0089e1546a8961909176b779360' },
+      { family_id:'comicneue', version:'2.5', filename:'ComicNeue-Bold.ttf',
+        url:'https://raw.githubusercontent.com/google/fonts/main/ofl/comicneue/ComicNeue-Bold.ttf',
+        sha256:'3e7e5fccfd7e0788f317b43312151c1bd5cf058c9697a8d83eac3939050bd61e' },
+      { family_id:'comicneue', version:'2.5', filename:'ComicNeue-Italic.ttf',
+        url:'https://raw.githubusercontent.com/google/fonts/main/ofl/comicneue/ComicNeue-Italic.ttf',
+        sha256:'e06bfd1552f5c9464c5665733ffd69239b0593885dbb9e059688a5900f78cf98' },
+      { family_id:'comicneue', version:'2.5', filename:'ComicNeue-BoldItalic.ttf',
+        url:'https://raw.githubusercontent.com/google/fonts/main/ofl/comicneue/ComicNeue-BoldItalic.ttf',
+        sha256:'5c312c2a2fa64eee82f3b87fcfab8f3b12a5e59b043124401d322eb323cfbf16' },
+    ],
+  },
+};
+
+// Combinations known to be pre-warmed in R2 — instant cache hits. Anything else
+// dispatches a live container job (~30s for short books, minutes for big ones).
+// As live-dispatched combos finish, they ALSO become cache hits for next time.
+const KNOWN_CACHED = new Set(['jhn:gentium', 'psa:gentium']);
+
+let activeBook = 'jhn';
+let activeFont = 'gentium';
 let lastJobId = null;
 let lastPdfUrl = null;
 
@@ -1047,15 +1182,32 @@ function termComment(s) { termWriteHTML(\`<div class="mt-1 tok-com">// \${s}</di
 function termJSON(o)    { termWriteHTML(\`<pre class="mt-1">\${jsonHL(o)}</pre>\`); }
 function termError(m)   { termWriteHTML(\`<div class="mt-2 text-rubric">! \${String(m).replace(/</g,'&lt;')}</div>\`); }
 
-async function loadPayload(which) {
-  const meta = PAYLOADS[which];
-  termSection(\`fetch \${meta.label} payload\`);
-  termComment(meta.url);
-  const r = await fetch(meta.url, { cache: 'force-cache' });
+async function loadPayload(book, font) {
+  const bookMeta = BOOKS[book];
+  const fontMeta = FONTS[font];
+  termSection(\`fetch BSB · \${bookMeta.label} fixture, overlay font: \${fontMeta.label}\`);
+  termComment(bookMeta.url);
+  const r = await fetch(bookMeta.url, { cache: 'force-cache' });
   if (!r.ok) throw new Error('payload fetch failed: HTTP ' + r.status);
   const json = await r.json();
-  termComment(\`\${(JSON.stringify(json).length / 1024).toFixed(1)} KB · sha256 keyed at server\`);
+  applyFontOverlay(json, fontMeta);
+  termComment(\`\${(JSON.stringify(json).length / 1024).toFixed(1)} KB · sha256 keyed at server · font: \${fontMeta.label} (\${fontMeta.fonts.length} TTFs)\`);
   return json;
+}
+
+// Mutate the payload's [document] fontXXX cfg keys + fonts[] array to match the
+// chosen font. The cfg block is plain INI text; we splice 4 lines and replace
+// the array. Anything else in the payload (sources, custom.sty, etc.) stays.
+function applyFontOverlay(payload, fontMeta) {
+  const cfgKey = 'shared/ptxprint/Default/ptxprint.cfg';
+  const cfgText = payload.config_files?.[cfgKey];
+  if (!cfgText) return;
+  let out = cfgText;
+  for (const [key, val] of Object.entries(fontMeta.cfg)) {
+    out = out.replace(new RegExp('^' + key + '\\\\s*=.*$', 'm'), \`\${key} = \${val}\`);
+  }
+  payload.config_files[cfgKey] = out;
+  payload.fonts = JSON.parse(JSON.stringify(fontMeta.fonts)); // deep copy
 }
 
 async function doSubmit() {
@@ -1063,7 +1215,7 @@ async function doSubmit() {
   setPill('init', 'connecting');
   hidePdf();
   try {
-    const payload = await loadPayload(activePayload);
+    const payload = await loadPayload(activeBook, activeFont);
     termSection('tools/call · submit_typeset');
     termJSON({ jsonrpc:'2.0', method:'tools/call', params:{ name:'submit_typeset', arguments:{ payload:'<…elided in log…>' } } });
     setPill('queued');
@@ -1078,7 +1230,7 @@ async function doSubmit() {
     if (result.cached) {
       setPill('cached', 'cache hit');
       termComment('cache hit — payload sha256 already typeset; PDF served from R2');
-      await showPdf(result, PAYLOADS[activePayload].expected);
+      await showPdf(result, BOOKS[activeBook].expected);
     } else {
       setPill('running', 'dispatched');
       termComment('cache MISS — container dispatched. Polling get_job_status…');
@@ -1139,7 +1291,7 @@ async function pollUntilDone(jobId, predicted) {
       termJSON({ state: status.state, progress: status.progress, human_summary: status.human_summary });
       if (status.state === 'succeeded') {
         setPill('succeeded');
-        await showPdf({ predicted_pdf_url: predicted, job_id: jobId, cached: false }, PAYLOADS[activePayload].expected);
+        await showPdf({ predicted_pdf_url: predicted, job_id: jobId, cached: false }, BOOKS[activeBook].expected);
         return;
       }
       if (status.state === 'failed' || status.state === 'cancelled') {
@@ -1208,18 +1360,46 @@ btnCancel.addEventListener('click', doCancel);
 btnTools.addEventListener('click', doToolsList);
 btnClear.addEventListener('click', () => { term.innerHTML = ''; });
 
-function refreshPayloadButtons() {
-  document.querySelectorAll('.payload-btn').forEach(b => {
-    const active = b.dataset.payload === activePayload;
+function refreshPickers() {
+  document.querySelectorAll('.book-btn').forEach(b => {
+    const active = b.dataset.book === activeBook;
     b.classList.toggle('btn-primary', active);
     b.classList.toggle('btn-ghost', !active);
   });
-  document.getElementById('payload-source').href = PAYLOADS[activePayload].source;
+  document.querySelectorAll('.font-btn').forEach(b => {
+    const active = b.dataset.font === activeFont;
+    b.classList.toggle('btn-primary', active);
+    b.classList.toggle('btn-ghost', !active);
+  });
+  const bookMeta = BOOKS[activeBook];
+  const fontMeta = FONTS[activeFont];
+  document.getElementById('combo-label').textContent = \`BSB · \${bookMeta.long} · \${fontMeta.label}\`;
+  document.getElementById('payload-source').href = bookMeta.source;
+  // Cache-status hint: known-cached combos light up gold; everything else is
+  // shown as a live-dispatch warning. Once you submit a live combo, the worker
+  // caches it and subsequent submits become hits — we don't track that
+  // client-side because the truth lives at the server.
+  const isCached = KNOWN_CACHED.has(\`\${activeBook}:\${activeFont}\`);
+  const cacheEl = document.getElementById('combo-cache');
+  if (isCached) {
+    cacheEl.className = 'text-gilt';
+    cacheEl.textContent = 'cache hit · instant PDF from R2';
+  } else {
+    cacheEl.className = 'text-rubric';
+    const isCharis = activeFont === 'charis';
+    const sizeHint = bookMeta.chapters >= 50 ? '~2-5 min' :
+                     bookMeta.chapters >= 20 ? '~30-90 s' :
+                                               '~10-30 s';
+    cacheEl.textContent = \`cache MISS · live dispatch (\${sizeHint})\${isCharis ? ' · uses container-bundled font' : ''}\`;
+  }
 }
-document.querySelectorAll('.payload-btn').forEach(b => {
-  b.addEventListener('click', () => { activePayload = b.dataset.payload; refreshPayloadButtons(); });
+document.querySelectorAll('.book-btn').forEach(b => {
+  b.addEventListener('click', () => { activeBook = b.dataset.book; refreshPickers(); });
 });
-refreshPayloadButtons();
+document.querySelectorAll('.font-btn').forEach(b => {
+  b.addEventListener('click', () => { activeFont = b.dataset.font; refreshPickers(); });
+});
+refreshPickers();
 
 termWriteHTML(\`<div class="text-paper-mute">[\${ts()}] $ ready · click <span class="text-gilt">submit_typeset</span> to call the live MCP</div>\`);
 
