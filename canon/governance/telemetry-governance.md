@@ -338,15 +338,21 @@ Every operational question this telemetry is supposed to answer should have at l
 
 Use `SUM(_sample_interval)` instead of `COUNT(*)` to account for Analytics Engine sampling. All examples use a 30-day window; adjust as needed.
 
+### Field names — semantic vs. positional
+
+Cloudflare Analytics Engine stores writes as positional `blob1..20` and `double1..20` columns. The PTXprint MCP server publishes a single source of truth in `src/telemetry-schema.ts` that maps semantic names (`event_type`, `tool_name`, `consumer_label`, `duration_ms`, `pages_count`, …) to those positions, and the `telemetry_public` tool transparently rewrites semantic SQL to positional SQL before forwarding to Cloudflare. **Use semantic names in queries.** The mapping is also exposed via the `telemetry_schema` MCP tool and the public `GET /diagnostics/schema` HTTP endpoint, so anyone — agent, curl, Grafana — can discover it at runtime.
+
+Position is forever (reordering breaks historical data) but you should never have to type `blob3` again.
+
 ### Adoption — distinct consumers per week
 
 ```sql
 SELECT
   toStartOfWeek(timestamp) AS week,
-  COUNT(DISTINCT blob4) AS distinct_consumers
+  COUNT(DISTINCT consumer_label) AS distinct_consumers
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '90' DAY
-  AND blob1 = 'mcp_request'
+  AND event_type = 'mcp_request'
 GROUP BY week
 ORDER BY week DESC
 ```
@@ -356,13 +362,13 @@ ORDER BY week DESC
 ```sql
 SELECT
   toStartOfWeek(timestamp) AS week,
-  SUM(IF(blob9 = 'hit', _sample_interval, 0)) AS hits,
-  SUM(IF(blob9 = 'miss', _sample_interval, 0)) AS misses,
-  SUM(IF(blob9 = 'hit', _sample_interval, 0)) / SUM(_sample_interval) AS hit_rate
+  SUM(IF(cache_outcome = 'hit', _sample_interval, 0)) AS hits,
+  SUM(IF(cache_outcome = 'miss', _sample_interval, 0)) AS misses,
+  SUM(IF(cache_outcome = 'hit', _sample_interval, 0)) / SUM(_sample_interval) AS hit_rate
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '30' DAY
-  AND blob1 = 'mcp_request'
-  AND blob3 = 'submit_typeset'
+  AND event_type = 'mcp_request'
+  AND tool_name = 'submit_typeset'
 GROUP BY week
 ORDER BY week DESC
 ```
@@ -371,11 +377,11 @@ ORDER BY week DESC
 
 ```sql
 SELECT
-  blob8 AS failure_mode,
+  failure_mode,
   SUM(_sample_interval) AS jobs
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '30' DAY
-  AND blob1 = 'job_terminal'
+  AND event_type = 'job_terminal'
 GROUP BY failure_mode
 ORDER BY jobs DESC
 ```
@@ -384,12 +390,12 @@ ORDER BY jobs DESC
 
 ```sql
 SELECT
-  blob7 AS phase,
-  AVG(double2) AS avg_duration_ms,
+  phase,
+  AVG(duration_ms) AS avg_duration_ms,
   SUM(_sample_interval) AS observations
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '30' DAY
-  AND blob1 = 'job_phase'
+  AND event_type = 'job_phase'
 GROUP BY phase
 ORDER BY avg_duration_ms DESC
 ```
@@ -398,11 +404,11 @@ ORDER BY avg_duration_ms DESC
 
 ```sql
 SELECT
-  blob3 AS tool_name,
+  tool_name,
   SUM(_sample_interval) AS calls
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '30' DAY
-  AND blob1 = 'tool_call'
+  AND event_type = 'tool_call'
 GROUP BY tool_name
 ORDER BY calls DESC
 ```
@@ -411,14 +417,14 @@ ORDER BY calls DESC
 
 ```sql
 SELECT
-  blob12 AS document_uri,
+  docs_top_uri AS document_uri,
   SUM(_sample_interval) AS hits
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '30' DAY
-  AND blob1 = 'tool_call'
-  AND blob3 = 'docs'
-  AND blob12 != ''
-GROUP BY document_uri
+  AND event_type = 'tool_call'
+  AND tool_name = 'docs'
+  AND docs_top_uri != ''
+GROUP BY docs_top_uri
 ORDER BY hits DESC
 LIMIT 25
 ```
@@ -428,12 +434,12 @@ LIMIT 25
 ```sql
 SELECT
   toStartOfWeek(timestamp) AS week,
-  SUM(IF(blob8 = 'soft', _sample_interval, 0)) AS soft_failures,
+  SUM(IF(failure_mode = 'soft', _sample_interval, 0)) AS soft_failures,
   SUM(_sample_interval) AS total_jobs,
-  SUM(IF(blob8 = 'soft', _sample_interval, 0)) / SUM(_sample_interval) AS soft_rate
+  SUM(IF(failure_mode = 'soft', _sample_interval, 0)) / SUM(_sample_interval) AS soft_rate
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '90' DAY
-  AND blob1 = 'job_terminal'
+  AND event_type = 'job_terminal'
 GROUP BY week
 ORDER BY week DESC
 ```
@@ -442,14 +448,14 @@ ORDER BY week DESC
 
 ```sql
 SELECT
-  AVG(double10) AS avg_pages,
-  quantile(0.5)(double10) AS median_pages,
-  quantile(0.95)(double10) AS p95_pages,
+  AVG(pages_count) AS avg_pages,
+  quantile(0.5)(pages_count) AS median_pages,
+  quantile(0.95)(pages_count) AS p95_pages,
   SUM(_sample_interval) AS successful_builds
 FROM ptxprint_telemetry
 WHERE timestamp > NOW() - INTERVAL '30' DAY
-  AND blob1 = 'job_terminal'
-  AND blob8 = 'success'
+  AND event_type = 'job_terminal'
+  AND failure_mode = 'success'
 ```
 
 ---
