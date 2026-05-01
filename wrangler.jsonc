@@ -45,8 +45,25 @@
       "bucket_name": "ptxprint-outputs"
       // Lifecycle policy: configure 90-day retention in the CF dashboard or via
       // `wrangler r2 bucket lifecycle add` after first deploy.
+    },
+    {
+      // Track A snapshot archive — preserves weekly aggregates past the
+      // 90-day Analytics Engine retention window. Public-readable (same
+      // transparency principle as telemetry_public).
+      // Authority: klappy://canon/articles/hero-metrics-and-storytelling
+      //            §"Long-Term Retention Strategy"
+      "binding": "TELEMETRY_SNAPSHOTS",
+      "bucket_name": "ptxprint-telemetry-snapshots"
     }
   ],
+
+  // Track A snapshot Cron — Monday 00:00 UTC, weekly. Captures the
+  // just-completed week. Re-runs are idempotent (same key, same value).
+  // Authority: klappy://canon/articles/hero-metrics-and-storytelling
+  //            §"The Cron Schedule"
+  "triggers": {
+    "crons": ["0 0 * * 1"]
+  },
 
   // Container declaration — the image is built from ./Dockerfile during `wrangler deploy`.
   // standard-2 = 1 vCPU, 6 GiB memory, 12 GB disk (per v1.2 spec D-025).
@@ -97,4 +114,7 @@
   //                                 Token scope: Account → Account Analytics → Read.
   //                                 One-shot setup: see DEPLOY.md.
   //   TELEMETRY_VERIFIED_CLIENTS  — optional comma-separated consumer label allowlist
+  //   SNAPSHOT_BOOTSTRAP_TOKEN    — optional; gates POST /internal/snapshot/run for manual
+  //                                 backfill. If unset, the route returns 503. Generate with
+  //                                 `openssl rand -hex 32` and set via `wrangler secret put`.
 }

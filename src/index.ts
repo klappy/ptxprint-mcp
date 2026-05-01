@@ -56,6 +56,15 @@ import {
   type ParsedRpc,
 } from "./telemetry.js";
 import { exportSchema } from "./telemetry-schema.js";
+import {
+  runSnapshot,
+  runSnapshotForWeeks,
+  getLifetimeHeroStat,
+  weekStartFor,
+  addDays,
+  lastNWeekStarts,
+  METRICS as SNAPSHOT_METRICS,
+} from "./snapshot.js";
 
 // Re-export Durable Object classes so the Workers runtime can find them.
 export { JobStateDO } from "./job-state-do.js";
@@ -76,6 +85,9 @@ interface Env {
   CF_ACCOUNT_ID: string;
   CF_API_TOKEN: string;
   TELEMETRY_QUERY_RATE_LIMIT_PER_HOUR: string;
+  // Track A snapshot bindings (klappy://canon/articles/hero-metrics-and-storytelling)
+  TELEMETRY_SNAPSHOTS: R2Bucket;
+  SNAPSHOT_BOOTSTRAP_TOKEN?: string;
 }
 
 // ---------- Helpers ----------
@@ -812,7 +824,203 @@ export default {
       return handleMcpWithTelemetry(req, env, ctx, true);
     }
 
+    // ---------- /diagnostics/snapshot ----------
+    //
+    // Public read-only diagnostic for the Track A snapshot archive.
+    // Lists per-metric R2 objects (key + uploaded date) so anyone can see
+    // the archive state without authentication. Same transparency principle
+    // as telemetry_public — no information asymmetry between maintainer
+    // and consumer.
+    //
+    // Authority: klappy://canon/articles/hero-metrics-and-storytelling
+    if (url.pathname === "/diagnostics/snapshot") {
+      try {
+        const list = await env.TELEMETRY_SNAPSHOTS.list();
+        return Response.json(
+          {
+            ok: true,
+            bucket: "ptxprint-telemetry-snapshots",
+            metrics_expected: SNAPSHOT_METRICS.map((m) => ({
+              name: m.name,
+              object_key: m.objectKey,
+            })),
+            objects_present: list.objects.map((o) => ({
+              key: o.key,
+              size: o.size,
+              uploaded: o.uploaded,
+            })),
+          },
+          { headers: { "access-control-allow-origin": "*", "cache-control": "no-store" } },
+        );
+      } catch (err) {
+        return Response.json(
+          { ok: false, error: err instanceof Error ? err.message : String(err) },
+          { status: 503 },
+        );
+      }
+    }
+
+    // ---------- /diagnostics/snapshot/lifetime ----------
+    //
+    // Public read-only composite query: lifetime pages typeset.
+    // Reads the archive (R2) and adds the current incomplete week (Analytics
+    // Engine raw). This is the recipe the eventual public hero stat will
+    // call. Stable URL so the homepage can render it directly.
+    //
+    // Authority: klappy://canon/articles/hero-metrics-and-storytelling
+    //            §"Lifetime Hero Stat — The Composite Query"
+    if (url.pathname === "/diagnostics/snapshot/lifetime") {
+      try {
+        const stat = await getLifetimeHeroStat(env);
+        return Response.json(stat, {
+          headers: {
+            "access-control-allow-origin": "*",
+            "cache-control": "public, max-age=300",
+          },
+        });
+      } catch (err) {
+        return Response.json(
+          { error: err instanceof Error ? err.message : String(err) },
+          { status: 503 },
+        );
+      }
+    }
+
+    // ---------- /internal/snapshot/run ----------
+    //
+    // Token-protected manual snapshot trigger. Used for:
+    //   1. Bootstrap: backfill weeks within the 90-day AE retention window
+    //      after first deploy.
+    //   2. Smoke testing: snapshot a known week and inspect R2 directly.
+    //   3. Recovery: re-run a week if a Cron run failed silently.
+    //
+    // Body (JSON, all fields optional):
+    //   { "week": "YYYY-MM-DD" }   — snapshot one specific week
+    //   { "weeks_back": N }        — snapshot the last N completed weeks
+    //   {}                         — snapshot the just-completed week (same as cron)
+    //
+    // Auth: header `x-snapshot-bootstrap-token` must match the
+    //       SNAPSHOT_BOOTSTRAP_TOKEN secret. If the secret is unset on this
+    //       Worker, the route returns 503 (the maintainer hasn't enabled
+    //       manual runs).
+    //
+    // Authority: klappy://canon/articles/hero-metrics-and-storytelling
+    //            §"Rebuild From Raw — The Bootstrap"
+    if (req.method === "POST" && url.pathname === "/internal/snapshot/run") {
+      if (!env.SNAPSHOT_BOOTSTRAP_TOKEN) {
+        return Response.json(
+          {
+            ok: false,
+            error:
+              "manual snapshot runs disabled — SNAPSHOT_BOOTSTRAP_TOKEN secret not set on this Worker",
+          },
+          { status: 503 },
+        );
+      }
+      const presented = req.headers.get("x-snapshot-bootstrap-token") ?? "";
+      if (presented !== env.SNAPSHOT_BOOTSTRAP_TOKEN) {
+        return Response.json(
+          { ok: false, error: "unauthorized" },
+          { status: 401 },
+        );
+      }
+      let body: { week?: string; weeks_back?: number } = {};
+      try {
+        const text = await req.text();
+        if (text) body = JSON.parse(text) as typeof body;
+      } catch {
+        return Response.json(
+          { ok: false, error: "invalid JSON body" },
+          { status: 400 },
+        );
+      }
+      const now = new Date();
+      const justCompletedWeek = addDays(weekStartFor(now), -7);
+
+      let weeks: string[];
+      if (body.week) {
+        // Validate it's a Monday and YYYY-MM-DD format
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(body.week)) {
+          return Response.json(
+            { ok: false, error: "week must be YYYY-MM-DD" },
+            { status: 400 },
+          );
+        }
+        const candidate = new Date(`${body.week}T00:00:00Z`);
+        if (Number.isNaN(candidate.getTime())) {
+          return Response.json(
+            { ok: false, error: "week is not a valid date" },
+            { status: 400 },
+          );
+        }
+        if (weekStartFor(candidate) !== body.week) {
+          return Response.json(
+            {
+              ok: false,
+              error: `week ${body.week} is not a Monday; expected ${weekStartFor(candidate)}`,
+            },
+            { status: 400 },
+          );
+        }
+        weeks = [body.week];
+      } else if (typeof body.weeks_back === "number" && body.weeks_back > 0) {
+        const n = Math.min(body.weeks_back, 26); // cap at 6 months as a safety
+        weeks = lastNWeekStarts(now, n);
+      } else {
+        weeks = [justCompletedWeek];
+      }
+
+      const result = await runSnapshotForWeeks(env, weeks);
+      return Response.json(result, {
+        status: result.ok ? 200 : 500,
+        headers: { "cache-control": "no-store" },
+      });
+    }
+
     return new Response("not found", { status: 404 });
+  },
+
+  /**
+   * Cron Trigger handler — Track A weekly snapshot.
+   *
+   * Schedule: Monday 00:00 UTC (configured in wrangler.jsonc `triggers.crons`).
+   * Action: snapshot the just-completed week (the prior Monday → Sunday).
+   *
+   * Re-runs are idempotent: snapshot rows for an already-archived week are
+   * replaced by the latest values. No deduplication logic in the writer.
+   *
+   * The handler runs inside ctx.waitUntil so the Cron Trigger doesn't block
+   * on Analytics Engine query latency.
+   *
+   * Authority: klappy://canon/articles/hero-metrics-and-storytelling
+   *            §"The Cron Schedule"
+   */
+  async scheduled(
+    event: ScheduledEvent,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    const fireTime = new Date(event.scheduledTime);
+    // Just-completed week = one week before the current week boundary.
+    // When Cron fires Monday 00:00 UTC, the prior week starts the previous
+    // Monday at 00:00 UTC and ends the day before this fire (Sunday 23:59).
+    const justCompletedWeek = addDays(weekStartFor(fireTime), -7);
+    ctx.waitUntil(
+      runSnapshot(env, justCompletedWeek)
+        .then((result) => {
+          // Surface in observability logs — searchable in CF dashboard
+          console.log(
+            `[snapshot] cron fired at ${fireTime.toISOString()}; week ${justCompletedWeek} ok=${result.ok}; metrics=${result.metrics
+              .map((m) => `${m.name}:${m.records_written}`)
+              .join(",")}`,
+          );
+        })
+        .catch((err) => {
+          console.error(
+            `[snapshot] cron fired at ${fireTime.toISOString()}; week ${justCompletedWeek} threw: ${err}`,
+          );
+        }),
+    );
   },
 };
 
