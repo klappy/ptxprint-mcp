@@ -250,28 +250,28 @@ Copy this block. Apply your `books`, `sources`, and `vars.maintitle` per the com
       "family_id": "gentiumplus",
       "version": "6.200",
       "filename": "GentiumPlus-Regular.ttf",
-      "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Regular.ttf",
+      "url": "https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Regular.ttf",
       "sha256": "2c27e7da23ba44d135685836056833b304a388d3da346813189c60656dc02019"
     },
     {
       "family_id": "gentiumplus",
       "version": "6.200",
       "filename": "GentiumPlus-Bold.ttf",
-      "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Bold.ttf",
+      "url": "https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Bold.ttf",
       "sha256": "622ea9f2709d74f99d45c08d93cdf2a6d096406d3a1ec2939d02714f558b3dac"
     },
     {
       "family_id": "gentiumplus",
       "version": "6.200",
       "filename": "GentiumPlus-Italic.ttf",
-      "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Italic.ttf",
+      "url": "https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-Italic.ttf",
       "sha256": "fedc1acdd2f1080941ed998cabee9759456f0e486fbd8169ff4238b37d3ac60d"
     },
     {
       "family_id": "gentiumplus",
       "version": "6.200",
       "filename": "GentiumPlus-BoldItalic.ttf",
-      "url": "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-BoldItalic.ttf",
+      "url": "https://ptxprint.klappy.dev/r2/outputs/fixtures/fonts/gentium-plus-6.200/GentiumPlus-BoldItalic.ttf",
       "sha256": "960e0a58ce1d7849c7a3e49f4fbc1ac4a27b58ef19a2d013ce637fe364b0a1f0"
     }
   ],

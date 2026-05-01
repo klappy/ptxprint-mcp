@@ -8,7 +8,7 @@ Usage:
     pip install --user mcp   # one-time
     python3 smoke/docs-smoke.py [worker_url]
 
-Default worker_url: https://ptxprint-mcp.klappy.workers.dev
+Default worker_url: https://ptxprint.klappy.dev
 
 Exits non-zero on any failure. Prints a one-line PASS/FAIL summary.
 
@@ -28,7 +28,7 @@ from typing import Any
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-DEFAULT_WORKER_URL = "https://ptxprint-mcp.klappy.workers.dev"
+DEFAULT_WORKER_URL = "https://ptxprint.klappy.dev"
 USER_AGENT = "ptxprint-mcp-docs-smoke/0.1"
 
 

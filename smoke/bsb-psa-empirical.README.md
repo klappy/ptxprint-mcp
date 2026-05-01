@@ -21,7 +21,7 @@ from mcp.client.streamable_http import streamablehttp_client
 async def main():
     with open('smoke/bsb-psa-empirical.json') as f:
         payload = json.load(f)
-    async with streamablehttp_client('https://ptxprint-mcp.klappy.workers.dev/mcp') as (r,w,_):
+    async with streamablehttp_client('https://ptxprint.klappy.dev/mcp') as (r,w,_):
         async with ClientSession(r,w) as s:
             await s.initialize()
             sub = json.loads((await s.call_tool('submit_typeset', {'payload': payload})).content[0].text)
@@ -36,7 +36,7 @@ PY
 Expected outcome on a cold cache: `failure_mode: success`, exit_code 0, ~35s wall-clock, ~911 KB PDF, **192 pages**, Gentium Plus throughout, all 150 Psalms with section headings and parallel-passage references intact.
 
 Validated job (session 14): `197a5ceba40a3e86a1939f0098f695cf2a530231029f06ee6d65d37ece2f7a13` →
-`https://ptxprint-mcp.klappy.workers.dev/r2/outputs/197a5ceba40a3e86a1939f0098f695cf2a530231029f06ee6d65d37ece2f7a13/bsbref_Default_PSA_ptxp.pdf`
+`https://ptxprint.klappy.dev/r2/outputs/197a5ceba40a3e86a1939f0098f695cf2a530231029f06ee6d65d37ece2f7a13/bsbref_Default_PSA_ptxp.pdf`
 
 ## What was changed from `bsb-jhn-empirical.json`
 

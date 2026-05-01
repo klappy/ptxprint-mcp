@@ -12,7 +12,7 @@
 
 This repo serves two coupled purposes:
 
-1. **An MCP server implementation** — Cloudflare Worker + Container + Durable Objects + R2, exposing a small set of tools that an AI agent uses to drive PTXprint headlessly. **Live and operational** at `https://ptxprint-mcp.klappy.workers.dev`. The current tool surface is whatever the live deploy reports; ask the server (`/health` for a summary, MCP `tools/list` for the full schema) rather than trusting any hand-maintained list — README enumerations drift, the deploy is authoritative.
+1. **An MCP server implementation** — Cloudflare Worker + Container + Durable Objects + R2, exposing a small set of tools that an AI agent uses to drive PTXprint headlessly. **Live and operational** at `https://ptxprint.klappy.dev`. The current tool surface is whatever the live deploy reports; ask the server (`/health` for a summary, MCP `tools/list` for the full schema) rather than trusting any hand-maintained list — README enumerations drift, the deploy is authoritative.
 
 2. **A governance knowledge base** — markdown documents under [`canon/`](canon/), retrievable by any MCP client via the deploy's `docs` tool or directly via [`oddkit`](https://github.com/klappy/oddkit) MCP with `knowledge_base_url` set to this repo. Teaches AI agents how to construct typesetting payloads, interpret results, compose templates, and handle the long tail of PTXprint operational concerns.
 
@@ -30,7 +30,7 @@ The two are kept in one repo because they are tightly coupled: a tool surface ch
 - ⏳ **Day-2 features** — autofill mode, `cancel_job` SIGTERM enforcement, per-pass progress streaming. Specced; not yet built.
 - ⏳ **Templates / composition pattern** — drafted as a downstream-agent bootstrap surface; see open PRs.
 
-**Live deployment:** `https://ptxprint-mcp.klappy.workers.dev` — `/health` returns `{ ok: true, service, version, spec, tools }`; `/mcp` accepts streamable-HTTP MCP. Worker version and spec version are reported live; the README does not duplicate them to avoid drift.
+**Live deployment:** `https://ptxprint.klappy.dev` — `/health` returns `{ ok: true, service, version, spec, tools }`; `/mcp` accepts streamable-HTTP MCP. Worker version and spec version are reported live; the README does not duplicate them to avoid drift.
 
 **Read the full spec:** [`canon/specs/ptxprint-mcp-v1.2-spec.md`](canon/specs/ptxprint-mcp-v1.2-spec.md).
 
@@ -54,7 +54,7 @@ The agent constructs a payload describing one typesetting job (config files inli
 
 ### As an agent operator
 
-Point your MCP-aware agent at `https://ptxprint-mcp.klappy.workers.dev/mcp` (streamable-HTTP) or `/sse` (legacy SSE). The agent's reasoning loop becomes: **discover via `docs` → understand → construct payload → submit job → poll → handle result.** No additional knowledge base setup is required — the deploy's `docs` tool is a thin proxy over [`oddkit`](https://github.com/klappy/oddkit) configured against this repo's canon. Agents that already use oddkit can also point its `knowledge_base_url` at this repo directly for richer epistemic operations (orient, challenge, encode, validate).
+Point your MCP-aware agent at `https://ptxprint.klappy.dev/mcp` (streamable-HTTP) or `/sse` (legacy SSE). The agent's reasoning loop becomes: **discover via `docs` → understand → construct payload → submit job → poll → handle result.** No additional knowledge base setup is required — the deploy's `docs` tool is a thin proxy over [`oddkit`](https://github.com/klappy/oddkit) configured against this repo's canon. Agents that already use oddkit can also point its `knowledge_base_url` at this repo directly for richer epistemic operations (orient, challenge, encode, validate).
 
 The tightest path to a working PDF: ask the `docs` tool what it knows. For example:
 
@@ -90,7 +90,7 @@ A reference PDF from session 11 — most recently re-confirmed live in the 2026-
 ```bash
 curl -A "ptxprint-validate/0.1" \
   -o session11.pdf \
-  "https://ptxprint-mcp.klappy.workers.dev/r2/outputs/802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd/minitest_Default_JHN_ptxp.pdf"
+  "https://ptxprint.klappy.dev/r2/outputs/802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd/minitest_Default_JHN_ptxp.pdf"
 
 pdfinfo session11.pdf      # Title="The Testcase", Subject="JHN", Creator="PTXprint 3.0.20 (Default)"
 pdffonts session11.pdf     # Should show GentiumPlus, GentiumPlus-Bold, GentiumPlus-Italic

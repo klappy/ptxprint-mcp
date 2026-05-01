@@ -13,10 +13,12 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="dark" />
   <title>PTXprint MCP — Typeset scripture from a prompt</title>
-  <meta name="description" content="An MCP server that turns 50 years of Paratext + XeTeX engineering into four async tools an AI agent can call. Live demo + live telemetry." />
+  <meta name="description" content="A Cloudflare-native MCP server that turns 50 years of Paratext + XeTeX engineering into three async tools an AI agent can call. Live demo + live telemetry." />
   <meta property="og:title" content="PTXprint MCP — Typeset scripture from a prompt" />
   <meta property="og:description" content="A Cloudflare-native MCP server that drives PTXprint headlessly for Bible translation teams." />
+  <meta property="og:url" content="https://ptxprint.klappy.dev/" />
   <meta property="og:type" content="website" />
+  <link rel="canonical" href="https://ptxprint.klappy.dev/" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,308 +48,74 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </script>
 
   <style>
-    :root {
-      --baseline: 8px;
-    }
     html, body { background: #0E0C08; color: #F4ECDC; }
-    body {
-      font-family: 'Manrope', system-ui, sans-serif;
-      font-feature-settings: 'ss01', 'cv11', 'tnum';
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
-
-    /* Subtle paper grain over background */
-    .grain::before {
-      content: '';
-      position: fixed; inset: 0;
-      pointer-events: none;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.96  0 0 0 0 0.92  0 0 0 0 0.86  0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-      opacity: 0.55;
-      mix-blend-mode: overlay;
-      z-index: 1;
-    }
+    body { font-family: 'Manrope', system-ui, sans-serif; font-feature-settings: 'ss01', 'cv11', 'tnum'; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    .grain::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.96  0 0 0 0 0.92  0 0 0 0 0.86  0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); opacity: 0.55; mix-blend-mode: overlay; z-index: 1; }
     .grain > * { position: relative; z-index: 2; }
-
-    /* Page-edge baseline rules */
-    .edge-rule { box-shadow: inset 0 0 0 1px #2A2117; }
-
-    /* Display type — Fraunces with optical sizes, low contrast at large sizes */
-    .display-xl {
-      font-family: 'Fraunces', serif;
-      font-variation-settings: 'opsz' 144, 'SOFT' 30, 'WONK' 0;
-      font-weight: 400;
-      letter-spacing: -0.035em;
-      line-height: 0.9;
-    }
-    .display-lg {
-      font-family: 'Fraunces', serif;
-      font-variation-settings: 'opsz' 120, 'SOFT' 50;
-      font-weight: 400;
-      letter-spacing: -0.025em;
-      line-height: 0.95;
-    }
-    .display-md {
-      font-family: 'Fraunces', serif;
-      font-variation-settings: 'opsz' 72, 'SOFT' 50;
-      font-weight: 500;
-      letter-spacing: -0.015em;
-      line-height: 1.0;
-    }
-    .display-sm {
-      font-family: 'Fraunces', serif;
-      font-variation-settings: 'opsz' 36, 'SOFT' 30;
-      font-weight: 500;
-      letter-spacing: -0.005em;
-    }
-    .italic-wonk {
-      font-style: italic;
-      font-variation-settings: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
-    }
-
-    /* Eyebrow / small caps */
-    .eyebrow {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: #BFB294;
-    }
-    .smallcaps {
-      font-variant-caps: all-small-caps;
-      letter-spacing: 0.08em;
-    }
-
-    /* Marginalia — labels in the margin like an old book */
-    .marginalia {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: #8A7E66;
-    }
-
-    /* Drop cap — rubric red, Bible style */
-    .dropcap::first-letter {
-      font-family: 'Fraunces', serif;
-      font-variation-settings: 'opsz' 144, 'SOFT' 30;
-      font-weight: 600;
-      color: #C8331A;
-      float: left;
-      font-size: 4.2em;
-      line-height: 0.85;
-      padding-right: 10px;
-      padding-top: 4px;
-    }
-
-    /* Pulsing live dot */
-    @keyframes pulse-dot {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(217, 169, 62, 0.7); }
-      50%      { box-shadow: 0 0 0 8px rgba(217, 169, 62, 0); }
-    }
-    .live-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: #D9A93E;
-      animation: pulse-dot 2s infinite;
-      display: inline-block;
-    }
-    .live-dot.ok { background: #6FAA72; box-shadow: 0 0 0 0 rgba(111,170,114,0.7); animation-name: pulse-ok; }
-    @keyframes pulse-ok {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(111,170,114,0.7); }
-      50%      { box-shadow: 0 0 0 8px rgba(111,170,114,0); }
-    }
-    .live-dot.bad { background: #C8331A; animation: none; }
-
-    /* Hairline rules */
+    .display-xl { font-family:'Fraunces',serif; font-variation-settings:'opsz' 144,'SOFT' 30,'WONK' 0; font-weight:400; letter-spacing:-0.035em; line-height:0.9; }
+    .display-lg { font-family:'Fraunces',serif; font-variation-settings:'opsz' 120,'SOFT' 50; font-weight:400; letter-spacing:-0.025em; line-height:0.95; }
+    .display-md { font-family:'Fraunces',serif; font-variation-settings:'opsz' 72,'SOFT' 50; font-weight:500; letter-spacing:-0.015em; line-height:1.0; }
+    .italic-wonk { font-style:italic; font-variation-settings:'opsz' 144,'SOFT' 100,'WONK' 1; }
+    .eyebrow { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#BFB294; }
+    .smallcaps { font-variant-caps: all-small-caps; letter-spacing:0.08em; }
+    .marginalia { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#8A7E66; }
+    .folio { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:#6F6450; }
+    .dropcap::first-letter { font-family:'Fraunces',serif; font-variation-settings:'opsz' 144,'SOFT' 30; font-weight:600; color:#C8331A; float:left; font-size:4.2em; line-height:0.85; padding-right:10px; padding-top:4px; }
+    @keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(217,169,62,0.7); } 50% { box-shadow: 0 0 0 8px rgba(217,169,62,0); } }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:#D9A93E; animation:pulse-dot 2s infinite; display:inline-block; }
+    .live-dot.ok { background:#6FAA72; box-shadow: 0 0 0 0 rgba(111,170,114,0.7); animation-name:pulse-ok; }
+    @keyframes pulse-ok { 0%,100% { box-shadow: 0 0 0 0 rgba(111,170,114,0.7); } 50% { box-shadow: 0 0 0 8px rgba(111,170,114,0); } }
+    .live-dot.bad { background:#C8331A; animation:none; }
     .hr-thin { border-top: 1px solid #3A2F1F; }
-    .hr-rubric { border-top: 1px solid #C8331A; opacity: 0.55; }
-
-    /* Specimen card */
-    .specimen {
-      background: linear-gradient(180deg, #15110B 0%, #1F1810 100%);
-      border: 1px solid #3A2F1F;
-      border-radius: 6px;
-    }
-    .specimen-glow {
-      box-shadow:
-        inset 0 1px 0 rgba(244,236,220,0.04),
-        0 1px 0 rgba(0,0,0,0.4),
-        0 30px 80px -40px rgba(217,169,62,0.18);
-    }
-
-    /* Code blocks */
-    .code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12.5px;
-      line-height: 1.55;
-      color: #E8DDC4;
-    }
-    .tok-key { color: #D9A93E; }
-    .tok-str { color: #C8B47A; }
-    .tok-num { color: #C8331A; }
-    .tok-com { color: #6F6450; font-style: italic; }
-    .tok-mut { color: #8A7E66; }
-
-    /* Animated bar (telemetry) */
+    .hr-rubric { border-top: 1px solid #C8331A; opacity:0.55; }
+    .specimen { background: linear-gradient(180deg,#15110B 0%, #1F1810 100%); border:1px solid #3A2F1F; border-radius:6px; }
+    .specimen-glow { box-shadow: inset 0 1px 0 rgba(244,236,220,0.04), 0 1px 0 rgba(0,0,0,0.4), 0 30px 80px -40px rgba(217,169,62,0.18); }
+    .code { font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.55; color:#E8DDC4; }
+    .tok-key { color:#D9A93E; }
+    .tok-str { color:#C8B47A; }
+    .tok-num { color:#C8331A; }
+    .tok-com { color:#6F6450; font-style:italic; }
     .bar { transition: width 1.2s cubic-bezier(.2,.7,.1,1); }
-
-    /* Fancy ampersand styling */
-    .amper {
-      font-family: 'Fraunces', serif;
-      font-style: italic;
-      font-variation-settings: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
-      font-weight: 300;
-      color: #D9A93E;
-    }
-
-    /* Reveal-on-scroll */
-    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.9s ease, transform 0.9s ease; }
-    .reveal.in { opacity: 1; transform: none; }
-
-    /* Faint grid */
-    .grid-bg {
-      background-image:
-        linear-gradient(rgba(244,236,220,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(244,236,220,0.025) 1px, transparent 1px);
-      background-size: 32px 32px;
-    }
-
-    /* Hover underline (editorial) */
-    .ed-link {
-      background-image: linear-gradient(currentColor, currentColor);
-      background-size: 0 1px;
-      background-position: 0 100%;
-      background-repeat: no-repeat;
-      transition: background-size 0.4s;
-    }
+    .amper { font-family:'Fraunces',serif; font-style:italic; font-variation-settings:'opsz' 144,'SOFT' 100,'WONK' 1; font-weight:300; color:#D9A93E; }
+    .grid-bg { background-image: linear-gradient(rgba(244,236,220,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(244,236,220,0.025) 1px, transparent 1px); background-size: 32px 32px; }
+    .ed-link { background-image: linear-gradient(currentColor,currentColor); background-size: 0 1px; background-position: 0 100%; background-repeat: no-repeat; transition: background-size 0.4s; }
     .ed-link:hover { background-size: 100% 1px; }
-
-    /* Subtle vertical mark */
-    .vrule { background: linear-gradient(180deg, transparent, #3A2F1F 12%, #3A2F1F 88%, transparent); }
-
-    /* Folio header */
-    .folio {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: #6F6450;
-    }
-
-    /* Buttons */
-    .btn {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 12px 18px;
-      border-radius: 4px;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .btn-primary {
-      background: #D9A93E;
-      color: #0E0C08;
-      border: 1px solid #D9A93E;
-    }
-    .btn-primary:hover { background: #E8BC52; transform: translateY(-1px); }
-    .btn-ghost {
-      background: transparent;
-      color: #F4ECDC;
-      border: 1px solid #3A2F1F;
-    }
-    .btn-ghost:hover { border-color: #D9A93E; color: #D9A93E; }
-    .btn-rubric {
-      background: transparent;
-      color: #C8331A;
-      border: 1px solid #C8331A;
-    }
-    .btn-rubric:hover { background: #C8331A; color: #F4ECDC; }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-
-    /* Demo terminal */
-    .term {
-      background: #0A0805;
-      border: 1px solid #3A2F1F;
-      border-radius: 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-    }
-    .term-bar {
-      background: #15110B;
-      border-bottom: 1px solid #3A2F1F;
-      padding: 8px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .term-dot { width: 10px; height: 10px; border-radius: 50%; background: #3A2F1F; }
-
-    /* State pill */
-    .pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 3px 9px;
-      border-radius: 999px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10.5px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      border: 1px solid currentColor;
-    }
-    .pill-queued    { color: #8A7E66; }
-    .pill-running   { color: #D9A93E; }
-    .pill-succeeded { color: #6FAA72; }
-    .pill-failed    { color: #C8331A; }
-    .pill-cancelled { color: #8A7E66; }
-
-    /* Big counter typeface */
-    .counter {
-      font-family: 'Fraunces', serif;
-      font-variation-settings: 'opsz' 144, 'SOFT' 30;
-      font-weight: 400;
-      letter-spacing: -0.03em;
-      line-height: 1;
-      font-feature-settings: 'tnum';
-    }
-
-    /* Sparkline polyline animation */
-    @keyframes draw {
-      from { stroke-dashoffset: 1000; }
-      to   { stroke-dashoffset: 0; }
-    }
+    .btn { font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; padding: 12px 18px; border-radius:4px; transition: all 0.2s; display: inline-flex; align-items:center; gap:10px; cursor: pointer; }
+    .btn-primary { background:#D9A93E; color:#0E0C08; border:1px solid #D9A93E; }
+    .btn-primary:hover { background:#E8BC52; transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color:#F4ECDC; border:1px solid #3A2F1F; }
+    .btn-ghost:hover { border-color:#D9A93E; color:#D9A93E; }
+    .btn-rubric { background: transparent; color:#C8331A; border:1px solid #C8331A; }
+    .btn-rubric:hover { background:#C8331A; color:#F4ECDC; }
+    .btn-sm { font-size:10.5px; padding: 8px 12px; }
+    .btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+    .term { background:#0A0805; border:1px solid #3A2F1F; border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:12px; }
+    .term-bar { background:#15110B; border-bottom:1px solid #3A2F1F; padding:8px 14px; display:flex; align-items:center; gap:10px; }
+    .term-dot { width:10px; height:10px; border-radius:50%; background:#3A2F1F; }
+    .pill { display: inline-flex; align-items:center; gap:6px; padding: 3px 9px; border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase; border:1px solid currentColor; }
+    .pill-idle      { color:#8A7E66; }
+    .pill-init      { color:#8A7E66; }
+    .pill-queued    { color:#8A7E66; }
+    .pill-running   { color:#D9A93E; }
+    .pill-succeeded { color:#6FAA72; }
+    .pill-cached    { color:#6FAA72; }
+    .pill-failed    { color:#C8331A; }
+    .pill-cancelled { color:#8A7E66; }
+    .counter { font-family:'Fraunces',serif; font-variation-settings:'opsz' 144,'SOFT' 30; font-weight:400; letter-spacing:-0.03em; line-height:1; font-feature-settings:'tnum'; }
+    @keyframes draw { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
     .spark-line { stroke-dasharray: 1000; animation: draw 1.8s ease forwards; }
-
-    /* Vodka diagram */
-    .vodka-block {
-      border: 1px solid #3A2F1F;
-      border-radius: 4px;
-      padding: 16px;
-    }
-
-    /* Subtle glow under tool numerals */
-    .tool-num {
-      font-family: 'Fraunces', serif;
-      font-variation-settings: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
-      font-style: italic;
-      font-weight: 300;
-      color: #D9A93E;
-      opacity: 0.4;
-      font-size: 80px;
-      line-height: 1;
-    }
-
-    /* Selection */
-    ::selection { background: #C8331A; color: #F4ECDC; }
+    .tool-num { font-family:'Fraunces',serif; font-variation-settings:'opsz' 144,'SOFT' 100,'WONK' 1; font-style:italic; font-weight:300; color:#D9A93E; opacity:0.4; font-size:80px; line-height:1; }
+    .pdf-frame { background:#0A0805; border:1px solid #3A2F1F; border-radius:6px; overflow:hidden; }
+    .pdf-frame iframe { width:100%; height:560px; border:0; background:#fff; }
+    .chip { display:inline-flex; align-items:center; gap:6px; padding: 4px 9px; border-radius:4px; border:1px solid #3A2F1F; background:#15110B; font-family:'JetBrains Mono',monospace; font-size:11px; color:#E8DDC4; }
+    .chip-ok  { border-color:#6FAA72; color:#6FAA72; }
+    .chip-bad { border-color:#C8331A; color:#C8331A; }
+    ::selection { background:#C8331A; color:#F4ECDC; }
   </style>
 </head>
 
 <body class="grain">
 
-<!-- ============================================================ -->
-<!-- TOP STATUS STRIP                                              -->
-<!-- ============================================================ -->
 <div class="border-b border-rule bg-ink-2/60 backdrop-blur-sm sticky top-0 z-40">
   <div class="max-w-[1280px] mx-auto px-6 py-2 flex items-center gap-6 text-[11px]" style="font-family:'JetBrains Mono',monospace; letter-spacing:0.06em;">
     <div class="flex items-center gap-2">
@@ -363,18 +131,14 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
     <div class="ml-auto flex items-center gap-5">
       <a href="https://github.com/klappy/ptxprint-mcp" target="_blank" rel="noopener" class="text-paper-2 ed-link hover:text-gilt">github</a>
       <a href="#demo" class="text-paper-2 ed-link hover:text-gilt">demo</a>
+      <a href="#docs-live" class="text-paper-2 ed-link hover:text-gilt">docs</a>
       <a href="#telemetry" class="text-paper-2 ed-link hover:text-gilt">telemetry</a>
     </div>
   </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- HERO                                                          -->
-<!-- ============================================================ -->
 <header class="relative overflow-hidden">
   <div class="absolute inset-0 grid-bg opacity-30 pointer-events-none"></div>
-
-  <!-- Folio rule -->
   <div class="max-w-[1280px] mx-auto px-6 pt-8">
     <div class="flex items-baseline gap-6 folio">
       <span>klappy / ptxprint-mcp</span>
@@ -387,7 +151,6 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
 
   <div class="max-w-[1280px] mx-auto px-6 pt-16 pb-24 lg:pt-24 lg:pb-32 relative">
     <div class="grid grid-cols-12 gap-8">
-      <!-- Marginalia label -->
       <aside class="hidden lg:flex col-span-1 justify-end">
         <div class="marginalia rotate-180" style="writing-mode: vertical-rl;">
           MCP &nbsp;·&nbsp; ACT.&nbsp;I &nbsp;·&nbsp; TYPESETTING AS A SERVICE
@@ -421,23 +184,19 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.9 1.3 1.9 1.3 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.3.5-2.4 1.3-3.2-.1-.4-.6-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.6.2 2.8.1 3.2.8.8 1.3 1.9 1.3 3.2 0 4.6-2.8 5.6-5.5 6 .4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
             <span>Open the repo</span>
           </a>
-          <a href="#tools" class="btn btn-ghost">
-            <span>Read the contract</span>
-          </a>
+          <a href="#tools" class="btn btn-ghost"><span>Read the contract</span></a>
         </div>
 
-        <!-- Endpoint chips -->
         <div class="mt-10 flex flex-wrap gap-2">
           <code class="text-[11.5px] text-paper-mute border border-rule rounded px-2.5 py-1">
-            <span class="text-rubric">POST</span> <span class="text-paper-2">https://ptxprint-mcp.klappy.workers.dev</span><span class="text-gilt">/mcp</span>
+            <span class="text-rubric">POST</span> <span class="text-paper-2">https://ptxprint.klappy.dev</span><span class="text-gilt">/mcp</span>
           </code>
           <code class="text-[11.5px] text-paper-mute border border-rule rounded px-2.5 py-1">
-            <span class="text-sap">GET</span> <span class="text-paper-2">https://ptxprint-mcp.klappy.workers.dev</span><span class="text-gilt">/health</span>
+            <span class="text-sap">GET</span> <span class="text-paper-2">https://ptxprint.klappy.dev</span><span class="text-gilt">/health</span>
           </code>
         </div>
       </div>
 
-      <!-- Live status panel -->
       <aside class="col-span-12 lg:col-span-3 lg:col-start-10">
         <div class="specimen specimen-glow p-5">
           <div class="folio mb-3">live observation</div>
@@ -460,13 +219,10 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           </div>
           <div class="hr-thin mb-3"></div>
           <div class="folio mb-2">tools published</div>
-          <div id="panel-tools" class="flex flex-wrap gap-1.5 mt-2">
-            <!-- filled by JS -->
-          </div>
+          <div id="panel-tools" class="flex flex-wrap gap-1.5 mt-2"></div>
           <div class="folio mt-5 text-paper-mute" id="panel-stamp">checked just now</div>
         </div>
 
-        <!-- Mini stat -->
         <div class="mt-4 specimen p-4">
           <div class="flex items-baseline justify-between">
             <div>
@@ -484,17 +240,12 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </div>
 </header>
 
-<!-- ============================================================ -->
-<!-- MANIFESTO / PITCH                                             -->
-<!-- ============================================================ -->
 <section id="pitch" class="border-t border-rule">
   <div class="max-w-[1280px] mx-auto px-6 py-20 lg:py-28">
     <div class="grid grid-cols-12 gap-8 mb-14">
       <div class="col-span-12 lg:col-span-4">
         <div class="eyebrow mb-3"><span class="text-rubric">§ I.</span> &nbsp; The pitch</div>
-        <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">
-          A thin, opinionless layer over a deeply opinionated craft.
-        </h2>
+        <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">A thin, opinionless layer over a deeply opinionated craft.</h2>
       </div>
       <div class="col-span-12 lg:col-span-7 lg:col-start-6">
         <p class="dropcap text-paper-2 text-lg leading-[1.7]">
@@ -516,7 +267,6 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
 
     <div class="hr-thin mb-10"></div>
 
-    <!-- Three pillars -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-14">
       <div>
         <div class="folio mb-4">i.</div>
@@ -549,15 +299,17 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </div>
 </section>
 
-<!-- ============================================================ -->
-<!-- LIVE DEMO                                                     -->
-<!-- ============================================================ -->
 <section id="demo" class="border-t border-rule bg-ink-2/40">
   <div class="max-w-[1280px] mx-auto px-6 py-20 lg:py-28">
     <div class="flex items-end justify-between mb-10">
       <div>
-        <div class="eyebrow mb-3"><span class="text-rubric">§ II.</span> &nbsp; Live demo</div>
-        <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">Submit a job. Watch it run.</h2>
+        <div class="eyebrow mb-3"><span class="text-rubric">§ II.</span> &nbsp; Live demo · real MCP calls</div>
+        <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">Submit a job. Get a real PDF.</h2>
+        <p class="text-paper-2 max-w-[680px] mt-4 leading-relaxed text-[15px]">
+          Both demo payloads are checked-in smoke fixtures from the repo's <span class="font-mono text-paper">smoke/</span>
+          directory and have been rendered before, so they cache-hit and return instantly &mdash; zero container CPU.
+          The PDF below is the real artifact served from R2.
+        </p>
       </div>
       <div class="hidden md:block text-right">
         <div class="folio">protocol</div>
@@ -565,110 +317,146 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       </div>
     </div>
 
+    <div class="flex flex-wrap items-center gap-3 mb-6">
+      <span class="folio mr-2">payload</span>
+      <button data-payload="jhn" class="payload-btn btn btn-ghost btn-sm">
+        <span>BSB · Gospel of John</span>
+      </button>
+      <button data-payload="psa" class="payload-btn btn btn-ghost btn-sm">
+        <span>BSB · Book of Psalms</span>
+      </button>
+      <a id="payload-source" href="#" target="_blank" rel="noopener" class="folio text-paper-mute hover:text-gilt ml-auto ed-link">
+        view the JSON source on github →
+      </a>
+    </div>
+
     <div class="grid grid-cols-12 gap-6">
-      <!-- Form -->
-      <div class="col-span-12 lg:col-span-5">
-        <div class="specimen p-5">
-          <div class="folio mb-3">submit_typeset · arguments</div>
+      <div class="col-span-12 lg:col-span-7">
+        <div class="specimen p-5 mb-4">
+          <div class="folio mb-3">actions</div>
           <div class="hr-thin mb-4"></div>
-
-          <label class="block mb-4">
-            <span class="eyebrow">project_id</span>
-            <input id="f-project" value="WSG" class="mt-1 w-full bg-ink border border-rule rounded px-3 py-2 font-mono text-[13px] text-paper focus:outline-none focus:border-gilt" />
-          </label>
-
-          <label class="block mb-4">
-            <span class="eyebrow">config_name</span>
-            <input id="f-config" value="FancyNT" class="mt-1 w-full bg-ink border border-rule rounded px-3 py-2 font-mono text-[13px] text-paper focus:outline-none focus:border-gilt" />
-          </label>
-
-          <label class="block mb-4">
-            <span class="eyebrow">books (USFM codes)</span>
-            <input id="f-books" value="MAT MRK LUK JHN" class="mt-1 w-full bg-ink border border-rule rounded px-3 py-2 font-mono text-[13px] text-paper focus:outline-none focus:border-gilt" />
-          </label>
-
-          <label class="block mb-4">
-            <span class="eyebrow">mode</span>
-            <select id="f-mode" class="mt-1 w-full bg-ink border border-rule rounded px-3 py-2 font-mono text-[13px] text-paper focus:outline-none focus:border-gilt">
-              <option value="simple">simple — one pass, fast</option>
-              <option value="autofill">autofill — multi-pass layout</option>
-            </select>
-          </label>
-
-          <label class="block mb-5">
-            <span class="eyebrow">define (-D overrides)</span>
-            <textarea id="f-define" rows="3" class="mt-1 w-full bg-ink border border-rule rounded px-3 py-2 font-mono text-[12px] text-paper focus:outline-none focus:border-gilt">{ "s_linespacing": "13", "c_fighiderefs": "True" }</textarea>
-          </label>
-
-          <button id="run-demo" class="btn btn-primary w-full justify-center">
-            <span>Submit typesetting job</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-          <button id="cancel-demo" class="btn btn-rubric w-full justify-center mt-2 hidden">
-            <span>Cancel job</span>
-          </button>
-
+          <div class="flex flex-wrap gap-2">
+            <button id="btn-submit" class="btn btn-primary">
+              <span>submit_typeset</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <button id="btn-status" class="btn btn-ghost" disabled><span>get_job_status</span></button>
+            <button id="btn-cancel" class="btn btn-rubric" disabled><span>cancel_job</span></button>
+            <button id="btn-tools-list" class="btn btn-ghost btn-sm ml-auto"><span>tools/list</span></button>
+            <button id="btn-clear" class="btn btn-ghost btn-sm"><span>clear log</span></button>
+          </div>
           <div class="mt-4 text-[11px] text-paper-mute leading-relaxed">
-            Demo plays the real protocol against deterministic mock state in your browser.
-            Once CORS is enabled on <span class="font-mono text-paper-2">/mcp</span>, the same form submits live.
-            Status indicator above this section already pings <span class="font-mono text-paper-2">/health</span> in real time.
+            Each call is a real <span class="font-mono">tools/call</span> over MCP streamable-http. Response envelopes are
+            shown verbatim. The page identifies itself with <span class="font-mono">x-ptxprint-client</span> headers so
+            it appears on the transparency leaderboard.
           </div>
         </div>
-      </div>
 
-      <!-- Terminal -->
-      <div class="col-span-12 lg:col-span-7">
         <div class="term">
           <div class="term-bar">
             <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
-            <span class="text-paper-mute text-[11px] ml-3">agent ⇌ ptxprint-mcp</span>
-            <span id="job-pill" class="ml-auto pill pill-queued">idle</span>
+            <span class="text-paper-mute text-[11px] ml-3">browser ⇌ ptxprint.klappy.dev/mcp</span>
+            <span id="job-pill" class="ml-auto pill pill-idle">idle</span>
           </div>
-          <div id="term-body" class="p-4 h-[480px] overflow-auto code"></div>
+          <div id="term-body" class="p-4 h-[460px] overflow-auto code"></div>
         </div>
+      </div>
 
-        <!-- Result panel -->
-        <div id="result-panel" class="specimen p-5 mt-4 hidden">
+      <div class="col-span-12 lg:col-span-5">
+        <div class="specimen p-5">
           <div class="flex items-baseline justify-between mb-3">
-            <div class="folio">job artifact</div>
-            <div class="folio text-paper-mute"><span id="result-cache" class="text-gilt"></span></div>
+            <div class="folio">artifact</div>
+            <div id="pdf-meta" class="folio text-paper-mute">awaiting submit</div>
           </div>
           <div class="hr-rubric mb-4"></div>
 
-          <!-- Faux PDF cover -->
-          <div class="grid grid-cols-12 gap-5 items-center">
-            <div class="col-span-4">
-              <div class="aspect-[3/4] border border-rule rounded relative overflow-hidden" style="background: linear-gradient(180deg,#1F1810 0%, #15110B 100%);">
-                <div class="absolute inset-0 grid-bg opacity-25"></div>
-                <div class="relative h-full p-4 flex flex-col">
-                  <div class="folio text-[8px]">SBL · MAT–JHN · WSG · FANCY NT</div>
-                  <div class="hr-rubric my-2 opacity-60"></div>
-                  <div class="display-md text-paper text-[18px] leading-[1.05]">The<br/><span class="text-rubric">Gospels</span></div>
-                  <div class="mt-auto text-[8px] text-paper-mute font-mono">412 pp · A5 · ptxp</div>
-                </div>
+          <div class="pdf-frame" id="pdf-shell">
+            <div id="pdf-empty" class="h-[560px] flex flex-col items-center justify-center p-6 text-center">
+              <div class="display-md text-paper-2 text-[24px] mb-3">No artifact yet.</div>
+              <div class="text-paper-mute text-[13px] max-w-[260px] leading-relaxed">
+                Click <span class="font-mono text-paper">submit_typeset</span> to call the real MCP server.
+                A cached PDF will load right here.
               </div>
             </div>
-            <div class="col-span-8 text-[13px] text-paper-2 font-mono leading-relaxed">
-              <div><span class="text-paper-mute">pdf_path:</span><br/><span id="result-pdf" class="text-gilt break-all">—</span></div>
-              <div class="mt-3"><span class="text-paper-mute">pages:</span> <span id="result-pages" class="text-paper">—</span> <span class="text-paper-mute">·</span> <span class="text-paper-mute">overfull boxes:</span> <span id="result-overfull" class="text-paper">—</span></div>
-              <div class="mt-3"><span class="text-paper-mute">elapsed:</span> <span id="result-elapsed" class="text-paper">—</span></div>
-              <div class="mt-3"><span class="text-paper-mute">human_summary:</span><br/><span id="result-summary" class="text-paper">—</span></div>
-            </div>
+            <iframe id="pdf-iframe" class="hidden" title="PTXprint output PDF"></iframe>
           </div>
+
+          <div class="mt-3 flex items-baseline justify-between text-[12px]">
+            <a id="pdf-link" href="#" target="_blank" rel="noopener" class="text-gilt font-mono ed-link hidden">
+              open in new tab ↗
+            </a>
+            <div class="text-paper-mute font-mono" id="pdf-bytes">—</div>
+          </div>
+        </div>
+
+        <div id="tools-list-panel" class="specimen p-5 mt-4 hidden">
+          <div class="flex items-baseline justify-between mb-3">
+            <div class="folio">tools advertised by /mcp</div>
+            <div class="folio text-paper-mute" id="tools-list-stamp">—</div>
+          </div>
+          <div class="hr-thin mb-3"></div>
+          <div id="tools-list-chips" class="flex flex-wrap gap-2"></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============================================================ -->
-<!-- THE FOUR TOOLS — specimen plate                               -->
-<!-- ============================================================ -->
+<section id="docs-live" class="border-t border-rule">
+  <div class="max-w-[1280px] mx-auto px-6 py-20 lg:py-24">
+    <div class="grid grid-cols-12 gap-8 mb-8">
+      <div class="col-span-12 lg:col-span-5">
+        <div class="eyebrow mb-3"><span class="text-rubric">§ III.</span> &nbsp; The canon, live</div>
+        <h2 class="display-lg text-paper text-[40px] lg:text-[56px]">Ask the <span class="italic-wonk text-gilt">docs</span> tool anything.</h2>
+        <p class="text-paper-2 mt-4 leading-relaxed">
+          The MCP server's <span class="font-mono text-paper">docs(query)</span> tool searches the project's
+          canon &mdash; the prose articles, specs, and governance documents that give an agent enough context
+          to drive PTXprint. Type a question; see the actual answer plus the canon URIs that backed it.
+        </p>
+      </div>
+
+      <div class="col-span-12 lg:col-span-7">
+        <div class="specimen p-5">
+          <div class="folio mb-3">docs(query, audience=headless)</div>
+          <div class="hr-thin mb-4"></div>
+          <div class="flex gap-2 flex-wrap">
+            <input id="docs-q" placeholder="e.g. vodka architecture, payload schema, font resolution"
+                   value="vodka architecture"
+                   class="flex-1 min-w-[220px] bg-ink border border-rule rounded px-3 py-2 font-mono text-[13px] text-paper focus:outline-none focus:border-gilt" />
+            <button id="docs-go" class="btn btn-primary"><span>ask</span></button>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 items-baseline">
+            <span class="folio">try:</span>
+            <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="vodka architecture">vodka architecture</button>
+            <span class="text-rule">·</span>
+            <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="submit_typeset payload schema">payload schema</button>
+            <span class="text-rule">·</span>
+            <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="font resolution">font resolution</button>
+            <span class="text-rule">·</span>
+            <button class="docs-suggestion folio text-paper-2 hover:text-gilt ed-link" data-q="failure mode taxonomy">failure modes</button>
+          </div>
+        </div>
+
+        <div id="docs-result" class="specimen p-5 mt-4 hidden">
+          <div class="flex items-baseline justify-between mb-3">
+            <div class="folio">answer</div>
+            <div class="folio text-paper-mute" id="docs-stamp">—</div>
+          </div>
+          <div class="hr-rubric mb-4"></div>
+          <div id="docs-answer" class="text-paper-2 text-[14px] leading-relaxed mb-4 whitespace-pre-wrap"></div>
+          <div class="folio mb-2">sources</div>
+          <div id="docs-sources" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="tools" class="border-t border-rule">
   <div class="max-w-[1280px] mx-auto px-6 py-20 lg:py-28">
     <div class="flex items-end justify-between mb-12">
       <div>
-        <div class="eyebrow mb-3"><span class="text-rubric">§ III.</span> &nbsp; The contract</div>
+        <div class="eyebrow mb-3"><span class="text-rubric">§ IV.</span> &nbsp; The contract</div>
         <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">
           Three tools. One <span class="italic-wonk text-gilt">contract</span>.
         </h2>
@@ -678,32 +466,27 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           is pollable, cancellation is honored.
         </p>
       </div>
-      <div class="folio hidden md:block text-right">
-        SPECIMEN<br/>PLATE
-      </div>
+      <div class="folio hidden md:block text-right">SPECIMEN<br/>PLATE</div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-
-      <!-- Tool 1 -->
       <div class="specimen p-5 relative overflow-hidden">
         <div class="absolute right-3 top-3 tool-num">i</div>
         <div class="folio mb-2">tool · async</div>
         <h3 class="display-md text-paper text-[22px] mb-2"><code class="font-mono text-paper">submit_typeset</code></h3>
         <p class="text-paper-2 text-[14px] leading-relaxed mb-4">
           Hand it a project, a config, a book selection. Returns a <code class="font-mono text-gilt">job_id</code>
-          immediately and a predicted output path. Identical payloads cache-hit.
+          immediately and a predicted output URL. Identical payloads cache-hit.
         </p>
         <pre class="code bg-ink/60 p-3 rounded border border-rule overflow-auto"><code><span class="tok-com">// returns immediately</span>
 {
-  <span class="tok-key">job_id</span>: <span class="tok-str">"job_a1f9…"</span>,
-  <span class="tok-key">cache_id</span>: <span class="tok-str">"sha256:b91c…"</span>,
-  <span class="tok-key">cache_status</span>: <span class="tok-str">"miss"</span>,
-  <span class="tok-key">predicted_pdf_path</span>: <span class="tok-str">"…/WSG_…ptxp.pdf"</span>
+  <span class="tok-key">job_id</span>: <span class="tok-str">"611700a0…"</span>,
+  <span class="tok-key">payload_hash</span>: <span class="tok-str">"611700a0…"</span>,
+  <span class="tok-key">cached</span>: <span class="tok-num">true</span>,
+  <span class="tok-key">predicted_pdf_url</span>: <span class="tok-str">"…/r2/…/pdf"</span>
 }</code></pre>
       </div>
 
-      <!-- Tool 2 -->
       <div class="specimen p-5 relative overflow-hidden">
         <div class="absolute right-3 top-3 tool-num">ii</div>
         <div class="folio mb-2">tool · pollable</div>
@@ -713,15 +496,14 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           <code class="font-mono text-gilt">human_summary</code> string for downstream chat agents.
         </p>
         <pre class="code bg-ink/60 p-3 rounded border border-rule overflow-auto"><code>{
-  <span class="tok-key">state</span>: <span class="tok-str">"running"</span>,
-  <span class="tok-key">progress</span>: { <span class="tok-key">passes_completed</span>: <span class="tok-num">3</span> },
+  <span class="tok-key">state</span>: <span class="tok-str">"succeeded"</span>,
+  <span class="tok-key">progress</span>: { <span class="tok-key">passes_completed</span>: <span class="tok-num">1</span> },
   <span class="tok-key">overfull_count</span>: <span class="tok-num">8</span>,
   <span class="tok-key">errors</span>: [],
-  <span class="tok-key">human_summary</span>: <span class="tok-str">"Pass 3 of ~5. Steady."</span>
+  <span class="tok-key">human_summary</span>: <span class="tok-str">"Done. 61 pages."</span>
 }</code></pre>
       </div>
 
-      <!-- Tool 3 -->
       <div class="specimen p-5 relative overflow-hidden">
         <div class="absolute right-3 top-3 tool-num">iii</div>
         <div class="folio mb-2">tool · safety valve</div>
@@ -732,7 +514,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         </p>
         <pre class="code bg-ink/60 p-3 rounded border border-rule overflow-auto"><code>{
   <span class="tok-key">ok</span>: <span class="tok-num">true</span>,
-  <span class="tok-key">was_running</span>: <span class="tok-num">true</span>,
+  <span class="tok-key">was_running</span>: <span class="tok-num">false</span>,
   <span class="tok-key">cancelled_at</span>: <span class="tok-str">"2026-04-30T23:24:00Z"</span>
 }</code></pre>
       </div>
@@ -755,39 +537,34 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </div>
 </section>
 
-<!-- ============================================================ -->
-<!-- LIVE TELEMETRY                                                -->
-<!-- ============================================================ -->
 <section id="telemetry" class="border-t border-rule bg-ink-2/40">
   <div class="max-w-[1280px] mx-auto px-6 py-20 lg:py-28">
     <div class="flex items-end justify-between mb-12">
       <div>
-        <div class="eyebrow mb-3"><span class="text-rubric">§ IV.</span> &nbsp; Live telemetry</div>
+        <div class="eyebrow mb-3"><span class="text-rubric">§ V.</span> &nbsp; Live telemetry · two sources</div>
         <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">No information asymmetry.</h2>
         <p class="text-paper-2 max-w-[680px] mt-4 leading-relaxed">
-          The same data the maintainer sees, served from
-          <a href="https://oddkit.klappy.dev" target="_blank" rel="noopener" class="text-gilt ed-link">oddkit</a>'s public telemetry endpoint.
-          Cloudflare Analytics Engine, queried over MCP from this page, in your browser, right now.
+          The same data the maintainer sees, served live from two MCP endpoints &mdash; oddkit (the canon side)
+          and PTXprint MCP itself. Cloudflare Analytics Engine, queried over MCP from this page in your
+          browser, right now.
         </p>
       </div>
       <div class="folio hidden md:block text-right">
-        <div>SOURCE</div>
-        <div class="text-paper-2 mt-1">oddkit_telemetry</div>
+        <div>SOURCES</div>
+        <div class="text-paper-2 mt-1">oddkit_telemetry · ptxprint_telemetry</div>
       </div>
     </div>
 
     <div class="grid grid-cols-12 gap-5 mb-8">
-      <!-- Big counter: 7d -->
       <div class="col-span-12 md:col-span-4 specimen p-6">
         <div class="folio mb-2">canon ops · last 7d</div>
         <div class="counter text-paper text-[88px]" id="t-7d">—</div>
         <div class="text-paper-mute text-[12px] mt-2 font-mono" id="t-7d-rate">—</div>
       </div>
 
-      <!-- 24h sparkline -->
       <div class="col-span-12 md:col-span-8 specimen p-6">
         <div class="flex items-baseline justify-between mb-2">
-          <div class="folio">activity · last 24h</div>
+          <div class="folio">activity · last 24h · oddkit</div>
           <div class="folio text-paper-mute" id="t-24h-total">—</div>
         </div>
         <svg id="spark" viewBox="0 0 600 140" class="w-full h-[140px]" preserveAspectRatio="none">
@@ -797,31 +574,44 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
               <stop offset="100%" stop-color="#D9A93E" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <!-- Hourly grid -->
           <g id="spark-grid"></g>
           <path id="spark-area" fill="url(#sparkfill)" d=""/>
           <polyline id="spark-poly" class="spark-line" fill="none" stroke="#D9A93E" stroke-width="1.5" points=""/>
         </svg>
-        <div class="flex justify-between text-paper-mute font-mono text-[10px] mt-1">
-          <span id="t-24h-start">—</span>
-          <span id="t-24h-end">—</span>
-        </div>
       </div>
     </div>
 
-    <!-- Top tools bar chart -->
     <div class="specimen p-6 mb-5">
       <div class="flex items-baseline justify-between mb-5">
         <div class="folio">top oddkit actions · last 7d</div>
         <div class="folio text-paper-mute">SUM(_sample_interval)</div>
       </div>
       <div id="t-tools" class="space-y-2.5">
-        <!-- bars filled by JS -->
         <div class="text-paper-mute font-mono text-[12px]">loading…</div>
       </div>
     </div>
 
-    <!-- SQL receipt -->
+    <div class="specimen p-6 mb-5">
+      <div class="flex items-baseline justify-between mb-3">
+        <div class="folio">ptxprint_telemetry · this server's own usage</div>
+        <div class="folio text-paper-mute" id="ptx-t-stamp">—</div>
+      </div>
+      <div class="hr-thin mb-4"></div>
+      <div id="ptx-t-content">
+        <div class="text-paper-mute font-mono text-[12px]">querying…</div>
+      </div>
+    </div>
+
+    <details class="specimen p-5 group mb-5">
+      <summary class="flex items-center justify-between cursor-pointer list-none">
+        <div class="folio">live · telemetry_policy() — what this server tracks and why</div>
+        <div class="folio text-paper-mute group-open:hidden">show</div>
+        <div class="folio text-paper-mute hidden group-open:block">hide</div>
+      </summary>
+      <div class="mt-4 hr-thin"></div>
+      <div id="policy-summary" class="mt-4 text-paper-2 text-[13px] leading-relaxed">loading…</div>
+    </details>
+
     <details class="specimen p-5 group">
       <summary class="flex items-center justify-between cursor-pointer list-none">
         <div class="folio">audit · the SQL this page just ran</div>
@@ -835,17 +625,12 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </div>
 </section>
 
-<!-- ============================================================ -->
-<!-- ARCHITECTURE — VODKA                                           -->
-<!-- ============================================================ -->
 <section id="architecture" class="border-t border-rule">
   <div class="max-w-[1280px] mx-auto px-6 py-20 lg:py-28">
     <div class="grid grid-cols-12 gap-8 mb-12">
       <div class="col-span-12 lg:col-span-5">
-        <div class="eyebrow mb-3"><span class="text-rubric">§ V.</span> &nbsp; Architecture</div>
-        <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">
-          Vodka <span class="italic-wonk text-gilt">architecture</span>.
-        </h2>
+        <div class="eyebrow mb-3"><span class="text-rubric">§ VI.</span> &nbsp; Architecture</div>
+        <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">Vodka <span class="italic-wonk text-gilt">architecture</span>.</h2>
         <p class="text-paper-2 mt-4 leading-relaxed">
           Each MCP server holds opinions about exactly one concern. The PTXprint server holds <span class="text-paper">none</span>
           about typesetting craft &mdash; only about subprocess lifecycle, content-addressed caching, and sandboxed
@@ -861,61 +646,42 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       </div>
 
       <div class="col-span-12 lg:col-span-7">
-        <!-- Vodka diagram, hand-drawn-ish in SVG -->
         <div class="specimen p-6">
           <div class="folio mb-4">flow</div>
           <svg viewBox="0 0 720 360" class="w-full">
             <defs>
-              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-                <path d="M0,0 L10,5 L0,10 z" fill="#D9A93E"/>
-              </marker>
-              <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-                <path d="M0,0 L10,5 L0,10 z" fill="#C8331A"/>
-              </marker>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D9A93E"/></marker>
+              <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C8331A"/></marker>
             </defs>
-
-            <!-- Agent -->
             <g>
               <rect x="20" y="140" width="140" height="80" fill="#15110B" stroke="#3A2F1F"/>
               <text x="90" y="175" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="20">Agent</text>
               <text x="90" y="195" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">CLAUDE / GEMMA / GPT</text>
             </g>
-
-            <!-- oddkit (knowing) -->
             <g>
               <rect x="280" y="40" width="180" height="100" fill="#15110B" stroke="#C8331A"/>
               <text x="370" y="78" text-anchor="middle" fill="#C8331A" font-family="JetBrains Mono" font-size="9" letter-spacing="2">KNOWING</text>
               <text x="370" y="102" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="20">oddkit MCP</text>
               <text x="370" y="124" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">canon · search · get</text>
             </g>
-
-            <!-- PTXprint (doing) -->
             <g>
               <rect x="280" y="220" width="180" height="100" fill="#15110B" stroke="#D9A93E"/>
               <text x="370" y="258" text-anchor="middle" fill="#D9A93E" font-family="JetBrains Mono" font-size="9" letter-spacing="2">DOING</text>
               <text x="370" y="282" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="20">ptxprint MCP</text>
               <text x="370" y="304" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">submit · status · cancel</text>
             </g>
-
-            <!-- Container -->
             <g>
               <rect x="540" y="220" width="160" height="100" fill="#15110B" stroke="#3A2F1F" stroke-dasharray="3,3"/>
               <text x="620" y="258" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9" letter-spacing="2">CONTAINER</text>
               <text x="620" y="282" text-anchor="middle" fill="#F4ECDC" font-family="Fraunces" font-size="18">PTXprint</text>
               <text x="620" y="304" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">XeTeX · fonts</text>
             </g>
-
-            <!-- Arrows -->
             <line x1="160" y1="170" x2="278" y2="100" stroke="#C8331A" stroke-width="1.5" marker-end="url(#arrR)"/>
             <line x1="160" y1="190" x2="278" y2="260" stroke="#D9A93E" stroke-width="1.5" marker-end="url(#arr)"/>
             <line x1="460" y1="270" x2="538" y2="270" stroke="#D9A93E" stroke-width="1.5" marker-end="url(#arr)"/>
-
-            <!-- Labels on arrows -->
             <text x="220" y="125" fill="#C8331A" font-family="JetBrains Mono" font-size="10">search canon</text>
             <text x="220" y="245" fill="#D9A93E" font-family="JetBrains Mono" font-size="10">submit_typeset</text>
             <text x="500" y="263" fill="#8A7E66" font-family="JetBrains Mono" font-size="10">service binding</text>
-
-            <!-- Storage -->
             <g>
               <rect x="540" y="40" width="160" height="100" fill="#15110B" stroke="#3A2F1F" stroke-dasharray="3,3"/>
               <text x="620" y="78" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9" letter-spacing="2">STATE / OUTPUTS</text>
@@ -929,7 +695,6 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       </div>
     </div>
 
-    <!-- Principles row -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 pt-8 border-t border-rule">
       <div>
         <div class="folio mb-2">opinionless server</div>
@@ -951,12 +716,9 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </div>
 </section>
 
-<!-- ============================================================ -->
-<!-- TECH STACK                                                    -->
-<!-- ============================================================ -->
 <section class="border-t border-rule">
   <div class="max-w-[1280px] mx-auto px-6 py-16 lg:py-20">
-    <div class="eyebrow mb-3"><span class="text-rubric">§ VI.</span> &nbsp; Stack</div>
+    <div class="eyebrow mb-3"><span class="text-rubric">§ VII.</span> &nbsp; Stack</div>
     <h2 class="display-md text-paper text-[28px] mb-8">Built on the shoulders of two giants.</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -968,7 +730,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           <li><span class="text-gilt font-mono text-[12px]">Containers</span> &nbsp;— PTXprint + XeTeX + SIL Charis (standard-2: 1 vCPU, 6 GiB)</li>
           <li><span class="text-gilt font-mono text-[12px]">Durable Objects</span> &nbsp;— per-job state, cancellation, polling</li>
           <li><span class="text-gilt font-mono text-[12px]">R2</span> &nbsp;— content-addressed PDF and log storage</li>
-          <li><span class="text-gilt font-mono text-[12px]">Cache API</span> &nbsp;— hot path for repeat reads</li>
+          <li><span class="text-gilt font-mono text-[12px]">Analytics Engine</span> &nbsp;— public usage telemetry</li>
         </ul>
       </div>
 
@@ -987,9 +749,6 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </div>
 </section>
 
-<!-- ============================================================ -->
-<!-- COLOPHON / FOOTER                                             -->
-<!-- ============================================================ -->
 <footer class="border-t border-rule">
   <div class="max-w-[1280px] mx-auto px-6 py-14">
     <div class="grid grid-cols-12 gap-8">
@@ -1013,9 +772,9 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       <div class="col-span-6 lg:col-span-3">
         <div class="folio mb-3">endpoints</div>
         <ul class="space-y-2 text-paper-2 text-[14px] font-mono text-[12.5px]">
-          <li><a class="ed-link hover:text-gilt" target="_blank" rel="noopener" href="https://ptxprint-mcp.klappy.workers.dev/health">/health</a></li>
-          <li><a class="ed-link hover:text-gilt" target="_blank" rel="noopener" href="https://ptxprint-mcp.klappy.workers.dev/">/</a></li>
-          <li><a class="ed-link hover:text-gilt" target="_blank" rel="noopener" href="https://oddkit.klappy.dev/health">oddkit /health</a></li>
+          <li><a class="ed-link hover:text-gilt" target="_blank" rel="noopener" href="https://ptxprint.klappy.dev/health">ptxprint.klappy.dev/health</a></li>
+          <li><a class="ed-link hover:text-gilt" target="_blank" rel="noopener" href="https://ptxprint.klappy.dev/mcp">ptxprint.klappy.dev/mcp</a></li>
+          <li><a class="ed-link hover:text-gilt" target="_blank" rel="noopener" href="https://oddkit.klappy.dev/health">oddkit.klappy.dev/health</a></li>
         </ul>
       </div>
     </div>
@@ -1027,171 +786,403 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   </div>
 </footer>
 
-<!-- ============================================================ -->
-<!-- SCRIPTS                                                       -->
-<!-- ============================================================ -->
 <script>
-const PTXPRINT_BASE = 'https://ptxprint-mcp.klappy.workers.dev';
-const ODDKIT_MCP    = 'https://oddkit.klappy.dev/mcp';
+const PTX_BASE   = 'https://ptxprint.klappy.dev';
+const PTX_MCP    = PTX_BASE + '/mcp';
+const ODDKIT_MCP = 'https://oddkit.klappy.dev/mcp';
 
-// ---------- 1. LIVE /health PROBE -------------------------------
+const SELF_REPORT_HEADERS = {
+  'x-ptxprint-client': 'ptxprint-mcp-homepage',
+  'x-ptxprint-client-version': '0.2.0',
+  'x-ptxprint-surface': 'homepage',
+  'x-ptxprint-contact-url': 'https://github.com/klappy/ptxprint-mcp',
+  'x-ptxprint-policy-url': 'https://ptxprint.klappy.dev/',
+  'x-ptxprint-capabilities': 'submit,poll,cancel,docs,telemetry',
+};
+
+const PAYLOADS = {
+  jhn: {
+    label: 'BSB · Gospel of John',
+    url: 'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-jhn-empirical.json',
+    source: 'https://github.com/klappy/ptxprint-mcp/blob/main/smoke/bsb-jhn-empirical.json',
+    expected: { label: '21 chapters · ~360 KB' },
+  },
+  psa: {
+    label: 'BSB · Book of Psalms',
+    url: 'https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/smoke/bsb-psa-empirical.json',
+    source: 'https://github.com/klappy/ptxprint-mcp/blob/main/smoke/bsb-psa-empirical.json',
+    expected: { label: '150 chapters' },
+  },
+};
+let activePayload = 'jhn';
+let lastJobId = null;
+let lastPdfUrl = null;
+
+// 1. /health probe
 async function probeHealth() {
   const t0 = performance.now();
-  let data = null, latency = 0, ok = false;
   try {
-    const r = await fetch(PTXPRINT_BASE + '/health', { cache: 'no-store' });
-    latency = Math.round(performance.now() - t0);
-    if (r.ok) {
-      data = await r.json();
-      ok = true;
-    }
-  } catch (e) {
-    // CORS-blocked; we'll degrade gracefully
-  }
-
-  const dot       = document.getElementById('status-dot');
-  const text      = document.getElementById('status-text');
-  const sVer      = document.getElementById('status-version');
-  const sSpec     = document.getElementById('status-spec');
-  const sTools    = document.getElementById('status-tools');
-  const pServer   = document.getElementById('panel-server');
-  const pVersion  = document.getElementById('panel-version');
-  const pSpec     = document.getElementById('panel-spec');
-  const pLatency  = document.getElementById('panel-latency');
-  const pTools    = document.getElementById('panel-tools');
-  const pStamp    = document.getElementById('panel-stamp');
-
+    const r = await fetch(PTX_BASE + '/health', { cache: 'no-store' });
+    const latency = Math.round(performance.now() - t0);
+    if (r.ok) { paintHealth(await r.json(), latency, true); return; }
+  } catch (e) {}
+  paintHealth(null, 0, false);
+}
+function paintHealth(data, latency, ok) {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
   if (ok && data) {
     dot.classList.remove('bad'); dot.classList.add('ok');
     text.textContent = 'live · ' + (data.service || 'ptxprint-mcp');
-    sVer.textContent = data.version || '?';
-    sSpec.textContent = data.spec || '?';
-    sTools.textContent = (data.tools || []).length;
-    pServer.textContent = data.service;
-    pVersion.textContent = data.version;
-    pSpec.textContent = data.spec;
-    pLatency.textContent = latency + ' ms';
-    pTools.innerHTML = (data.tools || []).map(t =>
+    document.getElementById('status-version').textContent = data.version || '?';
+    document.getElementById('status-spec').textContent = data.spec || '?';
+    document.getElementById('status-tools').textContent = (data.tools || []).length;
+    document.getElementById('panel-server').textContent = data.service;
+    document.getElementById('panel-version').textContent = data.version;
+    document.getElementById('panel-spec').textContent = data.spec;
+    document.getElementById('panel-latency').textContent = latency + ' ms';
+    document.getElementById('panel-tools').innerHTML = (data.tools || []).map(t =>
       \`<code class="text-[10.5px] font-mono px-1.5 py-0.5 border border-rule rounded text-paper-2">\${t}</code>\`
     ).join('');
-    pStamp.textContent = 'checked ' + new Date().toLocaleTimeString();
+    document.getElementById('panel-stamp').textContent = 'checked ' + new Date().toLocaleTimeString();
   } else {
-    // Fallback — known good snapshot from build time, surfaced as such
-    const fallback = {
-      service: 'ptxprint-mcp',
-      version: '0.1.0',
-      spec: 'v1.3-draft',
-      tools: ['submit_typeset','get_job_status','cancel_job','docs','telemetry_public','telemetry_policy'],
-    };
-    dot.classList.add('bad'); text.textContent = 'cors-blocked · snapshot';
-    sVer.textContent = fallback.version;
-    sSpec.textContent = fallback.spec;
-    sTools.textContent = fallback.tools.length;
-    pServer.textContent = fallback.service;
-    pVersion.textContent = fallback.version;
-    pSpec.textContent = fallback.spec;
-    pLatency.textContent = 'cors';
-    pTools.innerHTML = fallback.tools.map(t =>
-      \`<code class="text-[10.5px] font-mono px-1.5 py-0.5 border border-rule rounded text-paper-2">\${t}</code>\`
-    ).join('');
-    pStamp.textContent = 'snapshot · enable CORS on /health for live';
+    dot.classList.add('bad'); text.textContent = 'unreachable';
+    document.getElementById('panel-stamp').textContent = 'fetch failed · check console';
   }
 }
 probeHealth();
-setInterval(probeHealth, 30_000);
+setInterval(probeHealth, 30000);
 
-// ---------- 2. ODDKIT MCP CLIENT (browser-side) -----------------
-let oddSession = null;
-
-async function oddkitInit() {
-  const r = await fetch(ODDKIT_MCP, {
-    method: 'POST',
-    headers: {
+// 2. MCP client
+class MCPClient {
+  constructor(endpoint, extraHeaders = {}) {
+    this.endpoint = endpoint;
+    this.extraHeaders = extraHeaders;
+    this.session = null;
+    this.initPromise = null;
+  }
+  _headers() {
+    return {
       'Content-Type': 'application/json',
       'Accept': 'application/json, text/event-stream',
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0', id: 1, method: 'initialize',
-      params: {
-        protocolVersion: '2025-06-18',
-        capabilities: {},
-        clientInfo: { name: 'ptxprint-mcp-homepage', version: '0.1.0' },
-      },
-    }),
+      ...this.extraHeaders,
+      ...(this.session ? { 'Mcp-Session-Id': this.session } : {}),
+    };
+  }
+  async init() {
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = (async () => {
+      const r = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: this._headers(),
+        body: JSON.stringify({
+          jsonrpc: '2.0', id: 1, method: 'initialize',
+          params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'ptxprint-mcp-homepage', version: '0.2.0' } },
+        }),
+      });
+      this.session = r.headers.get('Mcp-Session-Id') || r.headers.get('mcp-session-id');
+      await r.text();
+      if (this.session) {
+        await fetch(this.endpoint, {
+          method: 'POST',
+          headers: this._headers(),
+          body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+        });
+      }
+    })();
+    return this.initPromise;
+  }
+  static parseSse(text) {
+    const m = text.match(/^data:\\s*(\\{[\\s\\S]*\\})\\s*$/m);
+    return JSON.parse(m ? m[1] : text);
+  }
+  async raw(method, params) {
+    await this.init();
+    const r = await fetch(this.endpoint, {
+      method: 'POST',
+      headers: this._headers(),
+      body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params }),
+    });
+    return MCPClient.parseSse(await r.text());
+  }
+  async tool(name, args) {
+    const env = await this.raw('tools/call', { name, arguments: args });
+    if (env.error) throw new Error(env.error.message || JSON.stringify(env.error));
+    const inner = env.result?.content?.[0]?.text;
+    return inner ? JSON.parse(inner) : env.result;
+  }
+  async toolsList() {
+    const env = await this.raw('tools/list', {});
+    return env.result?.tools || [];
+  }
+}
+
+const ptx    = new MCPClient(PTX_MCP, SELF_REPORT_HEADERS);
+const oddkit = new MCPClient(ODDKIT_MCP);
+
+// 3. Demo terminal
+const term      = document.getElementById('term-body');
+const pill      = document.getElementById('job-pill');
+const btnSubmit = document.getElementById('btn-submit');
+const btnStatus = document.getElementById('btn-status');
+const btnCancel = document.getElementById('btn-cancel');
+const btnClear  = document.getElementById('btn-clear');
+const btnTools  = document.getElementById('btn-tools-list');
+
+function setPill(state, label) {
+  pill.className = 'ml-auto pill pill-' + state;
+  pill.textContent = label || state;
+}
+function ts() { return new Date().toISOString().split('T')[1].replace('Z',''); }
+function termWriteHTML(html) {
+  term.insertAdjacentHTML('beforeend', html);
+  term.scrollTop = term.scrollHeight;
+}
+function jsonHL(obj) {
+  if (obj === null || obj === undefined) return '<span class="tok-num">null</span>';
+  const s = JSON.stringify(obj, null, 2);
+  return s
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("[^"\\n]+")(\\s*:)/g, '<span class="tok-key">$1</span>$2')
+    .replace(/:\\s*("[^"\\n]*")/g, ': <span class="tok-str">$1</span>')
+    .replace(/:\\s*(true|false|null)/g, ': <span class="tok-num">$1</span>')
+    .replace(/:\\s*(-?\\d+(\\.\\d+)?)/g, ': <span class="tok-num">$1</span>');
+}
+function termSection(t) { termWriteHTML(\`<div class="mt-3 text-paper-mute">[\${ts()}] <span class="text-gilt">\${t}</span></div>\`); }
+function termComment(s) { termWriteHTML(\`<div class="mt-1 tok-com">// \${s}</div>\`); }
+function termJSON(o)    { termWriteHTML(\`<pre class="mt-1">\${jsonHL(o)}</pre>\`); }
+function termError(m)   { termWriteHTML(\`<div class="mt-2 text-rubric">! \${String(m).replace(/</g,'&lt;')}</div>\`); }
+
+async function loadPayload(which) {
+  const meta = PAYLOADS[which];
+  termSection(\`fetch \${meta.label} payload\`);
+  termComment(meta.url);
+  const r = await fetch(meta.url, { cache: 'force-cache' });
+  if (!r.ok) throw new Error('payload fetch failed: HTTP ' + r.status);
+  const json = await r.json();
+  termComment(\`\${(JSON.stringify(json).length / 1024).toFixed(1)} KB · sha256 keyed at server\`);
+  return json;
+}
+
+async function doSubmit() {
+  btnSubmit.disabled = true; btnStatus.disabled = true; btnCancel.disabled = true;
+  setPill('init', 'connecting');
+  hidePdf();
+  try {
+    const payload = await loadPayload(activePayload);
+    termSection('tools/call · submit_typeset');
+    termJSON({ jsonrpc:'2.0', method:'tools/call', params:{ name:'submit_typeset', arguments:{ payload:'<…elided in log…>' } } });
+    setPill('queued');
+    const t0 = performance.now();
+    const result = await ptx.tool('submit_typeset', { payload });
+    const ms = Math.round(performance.now() - t0);
+    termSection(\`← response · \${ms} ms\`);
+    termJSON(result);
+    lastJobId = result.job_id;
+    lastPdfUrl = result.predicted_pdf_url;
+    btnStatus.disabled = false; btnCancel.disabled = false;
+    if (result.cached) {
+      setPill('cached', 'cache hit');
+      termComment('cache hit — payload sha256 already typeset; PDF served from R2');
+      await showPdf(result, PAYLOADS[activePayload].expected);
+    } else {
+      setPill('running', 'dispatched');
+      termComment('cache MISS — container dispatched. Polling get_job_status…');
+      pollUntilDone(result.job_id, result.predicted_pdf_url);
+    }
+  } catch (e) {
+    termError('submit failed: ' + e.message);
+    setPill('failed');
+  } finally {
+    btnSubmit.disabled = false;
+  }
+}
+
+async function doStatus() {
+  if (!lastJobId) return;
+  btnStatus.disabled = true;
+  try {
+    termSection('tools/call · get_job_status');
+    termJSON({ jsonrpc:'2.0', method:'tools/call', params:{ name:'get_job_status', arguments:{ job_id:lastJobId } } });
+    const t0 = performance.now();
+    const status = await ptx.tool('get_job_status', { job_id: lastJobId });
+    const ms = Math.round(performance.now() - t0);
+    termSection(\`← response · \${ms} ms\`);
+    termJSON(status);
+    if (status.state === 'succeeded') setPill('succeeded');
+    else if (status.state === 'failed') setPill('failed');
+    else if (status.state === 'cancelled') setPill('cancelled');
+    else setPill('running', status.state || 'running');
+  } catch (e) { termError('status failed: ' + e.message); }
+  finally { btnStatus.disabled = false; }
+}
+
+async function doCancel() {
+  if (!lastJobId) return;
+  btnCancel.disabled = true;
+  try {
+    termSection('tools/call · cancel_job');
+    termJSON({ jsonrpc:'2.0', method:'tools/call', params:{ name:'cancel_job', arguments:{ job_id:lastJobId } } });
+    const t0 = performance.now();
+    const result = await ptx.tool('cancel_job', { job_id: lastJobId });
+    const ms = Math.round(performance.now() - t0);
+    termSection(\`← response · \${ms} ms\`);
+    termJSON(result);
+    if (result.was_running) setPill('cancelled');
+    else termComment('was_running: false — nothing to cancel (cached jobs have no live process)');
+  } catch (e) { termError('cancel failed: ' + e.message); }
+  finally { btnCancel.disabled = false; }
+}
+
+async function pollUntilDone(jobId, predicted) {
+  let n = 0;
+  while (n < 20) {
+    n++;
+    await new Promise(r => setTimeout(r, 5000));
+    try {
+      const status = await ptx.tool('get_job_status', { job_id: jobId });
+      termSection(\`poll \${n} · get_job_status\`);
+      termJSON({ state: status.state, progress: status.progress, human_summary: status.human_summary });
+      if (status.state === 'succeeded') {
+        setPill('succeeded');
+        await showPdf({ predicted_pdf_url: predicted, job_id: jobId, cached: false }, PAYLOADS[activePayload].expected);
+        return;
+      }
+      if (status.state === 'failed' || status.state === 'cancelled') {
+        setPill(status.state); termError('terminal state: ' + status.state); return;
+      }
+    } catch (e) { termError('poll failed: ' + e.message); return; }
+  }
+  termComment('poll cap reached — keep polling manually with get_job_status');
+}
+
+async function doToolsList() {
+  btnTools.disabled = true;
+  try {
+    termSection('tools/list');
+    const tools = await ptx.toolsList();
+    termJSON(tools.map(t => ({ name: t.name, description: (t.description || '').slice(0, 90) + '…' })));
+    const panel = document.getElementById('tools-list-panel');
+    const chips = document.getElementById('tools-list-chips');
+    chips.innerHTML = tools.map(t =>
+      \`<span class="chip chip-ok" title="\${(t.description||'').replace(/"/g,'&quot;').slice(0,200)}">● \${t.name}</span>\`
+    ).join('');
+    document.getElementById('tools-list-stamp').textContent = new Date().toLocaleTimeString();
+    panel.classList.remove('hidden');
+  } catch (e) { termError('tools/list failed: ' + e.message); }
+  finally { btnTools.disabled = false; }
+}
+
+function hidePdf() {
+  document.getElementById('pdf-empty').classList.remove('hidden');
+  const ifr = document.getElementById('pdf-iframe');
+  ifr.classList.add('hidden'); ifr.removeAttribute('src');
+  document.getElementById('pdf-link').classList.add('hidden');
+  document.getElementById('pdf-bytes').textContent = '—';
+  document.getElementById('pdf-meta').textContent = 'awaiting submit';
+}
+
+async function showPdf(result, expected) {
+  let url = result.predicted_pdf_url;
+  if (!url) return;
+  // Rewrite legacy workers.dev paths to the canonical domain (worker still
+  // returns the workers.dev URL until WORKER_URL env var is updated)
+  url = url.replace('https://ptxprint-mcp.klappy.workers.dev', 'https://ptxprint.klappy.dev');
+  let sizeLabel = '—';
+  try {
+    const h = await fetch(url, { method: 'HEAD' });
+    if (h.ok) {
+      const len = h.headers.get('content-length');
+      if (len) sizeLabel = (parseInt(len, 10) / 1024).toFixed(1) + ' KB';
+    } else { termError('PDF HEAD returned HTTP ' + h.status); }
+  } catch (e) { termComment('PDF HEAD probe blocked (CORS); iframe load is unaffected.'); }
+  document.getElementById('pdf-empty').classList.add('hidden');
+  const ifr = document.getElementById('pdf-iframe');
+  ifr.src = url;
+  ifr.classList.remove('hidden');
+  const link = document.getElementById('pdf-link');
+  link.href = url;
+  link.classList.remove('hidden');
+  document.getElementById('pdf-bytes').textContent = sizeLabel + (expected ? ' · ' + expected.label : '');
+  document.getElementById('pdf-meta').textContent = (result.cached ? 'cache · hit · ' : 'just rendered · ') + (result.job_id || '').slice(0, 12) + '…';
+  termComment('PDF loaded into iframe — see right panel');
+}
+
+btnSubmit.addEventListener('click', doSubmit);
+btnStatus.addEventListener('click', doStatus);
+btnCancel.addEventListener('click', doCancel);
+btnTools.addEventListener('click', doToolsList);
+btnClear.addEventListener('click', () => { term.innerHTML = ''; });
+
+function refreshPayloadButtons() {
+  document.querySelectorAll('.payload-btn').forEach(b => {
+    const active = b.dataset.payload === activePayload;
+    b.classList.toggle('btn-primary', active);
+    b.classList.toggle('btn-ghost', !active);
   });
-  oddSession = r.headers.get('Mcp-Session-Id') || r.headers.get('mcp-session-id');
-  await r.text(); // drain
-  // notifications/initialized
-  await fetch(ODDKIT_MCP, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json, text/event-stream',
-      'Mcp-Session-Id': oddSession,
-    },
-    body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
-  });
+  document.getElementById('payload-source').href = PAYLOADS[activePayload].source;
 }
+document.querySelectorAll('.payload-btn').forEach(b => {
+  b.addEventListener('click', () => { activePayload = b.dataset.payload; refreshPayloadButtons(); });
+});
+refreshPayloadButtons();
 
-function parseSse(text) {
-  // Extract data: { ... } from SSE; fall back to plain JSON
-  const m = text.match(/^data:\\s*(\\{[\\s\\S]*\\})\\s*$/m);
-  return JSON.parse(m ? m[1] : text);
+termWriteHTML(\`<div class="text-paper-mute">[\${ts()}] $ ready · click <span class="text-gilt">submit_typeset</span> to call the live MCP</div>\`);
+
+// 4. docs() live
+const docsQ = document.getElementById('docs-q');
+const docsGo = document.getElementById('docs-go');
+const docsResult = document.getElementById('docs-result');
+
+async function runDocs(query) {
+  docsGo.disabled = true;
+  docsResult.classList.add('hidden');
+  try {
+    const t0 = performance.now();
+    const out = await ptx.tool('docs', { query, audience: 'headless', depth: 1 });
+    const ms = Math.round(performance.now() - t0);
+    document.getElementById('docs-stamp').textContent = \`\${ms} ms · governance: \${out.governance_source || 'unknown'}\`;
+    document.getElementById('docs-answer').textContent = out.answer || out.error || '(no answer returned)';
+    const sources = (out.sources || []).slice(0, 5);
+    document.getElementById('docs-sources').innerHTML = sources.length
+      ? sources.map(s => \`
+          <div class="border border-rule rounded p-3">
+            <div class="font-mono text-[11px] text-gilt">\${(s.uri || '').replace(/</g,'&lt;')}</div>
+            <div class="text-paper text-[13px] mt-1">\${(s.title || '').replace(/</g,'&lt;')}</div>
+            <div class="text-paper-mute text-[12px] mt-1">\${(s.snippet || '').replace(/</g,'&lt;').slice(0, 220)}…</div>
+            <div class="folio mt-2">score: \${(+s.score || 0).toFixed(2)}</div>
+          </div>\`).join('')
+      : '<div class="text-paper-mute font-mono text-[12px]">no sources returned</div>';
+    docsResult.classList.remove('hidden');
+  } catch (e) {
+    document.getElementById('docs-stamp').textContent = 'error';
+    document.getElementById('docs-answer').textContent = 'docs query failed: ' + e.message;
+    document.getElementById('docs-sources').innerHTML = '';
+    docsResult.classList.remove('hidden');
+  } finally {
+    docsGo.disabled = false;
+  }
 }
+docsGo.addEventListener('click', () => runDocs(docsQ.value));
+docsQ.addEventListener('keydown', e => { if (e.key === 'Enter') runDocs(docsQ.value); });
+document.querySelectorAll('.docs-suggestion').forEach(b => {
+  b.addEventListener('click', () => { docsQ.value = b.dataset.q; runDocs(b.dataset.q); });
+});
 
-async function oddkitCall(name, args) {
-  if (!oddSession) await oddkitInit();
-  const r = await fetch(ODDKIT_MCP, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json, text/event-stream',
-      'Mcp-Session-Id': oddSession,
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0', id: Date.now(), method: 'tools/call',
-      params: { name, arguments: args },
-    }),
-  });
-  const text = await r.text();
-  const env  = parseSse(text);
-  const inner = env.result?.content?.[0]?.text;
-  return inner ? JSON.parse(inner) : env;
-}
-
-async function runTelemetrySQL(sql) {
-  const out = await oddkitCall('telemetry_public', { sql });
-  return out?.result?.data;
-}
-
-// ---------- 3. RENDER TELEMETRY ----------------------------------
+// 5. Telemetry
 const SQL_TOP    = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY AND tool_name IS NOT NULL AND tool_name != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
 const SQL_24H    = \`SELECT toStartOfHour(timestamp) AS hour, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '24' HOUR GROUP BY hour ORDER BY hour ASC\`;
 const SQL_7D_TOT = \`SELECT SUM(_sample_interval) AS total FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY\`;
-
-// Snapshot fallback (taken at page generation time)
-const SNAPSHOT = {
-  top: [
-    { tool_name: 'oddkit',           calls: 763 },
-    { tool_name: 'oddkit_catalog',   calls: 443 },
-    { tool_name: 'oddkit_challenge', calls: 395 },
-    { tool_name: 'oddkit_search',    calls: 381 },
-    { tool_name: 'oddkit_time',      calls: 337 },
-    { tool_name: 'oddkit_gate',      calls: 261 },
-    { tool_name: 'oddkit_encode',    calls: 245 },
-    { tool_name: 'oddkit_resolve',   calls: 174 },
-    { tool_name: 'oddkit_get',       calls: 133 },
-    { tool_name: 'oddkit_validate',  calls: 109 },
-  ],
-  hourly: [7,11,54,44,60,6,6,13,39,61,66,113,272,50,41,83,90,31,57,16],
-  total7d: 7560,
-};
+const PTX_SQL_TOP   = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND tool_name != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
 
 function fmt(n) { return Number(n).toLocaleString('en-US'); }
+async function runOddkitSQL(sql) { return (await oddkit.tool('telemetry_public', { sql }))?.result?.data; }
+async function runPtxSQL(sql)    { return await ptx.tool('telemetry_public', { sql }); }
 
-function renderTopTools(rows, isLive) {
+function renderTopTools(rows) {
+  if (!rows.length) { document.getElementById('t-tools').innerHTML = '<div class="text-paper-mute font-mono text-[12px]">no rows</div>'; return; }
   const max = Math.max(...rows.map(r => +r.calls));
-  const html = rows.map(r => {
+  document.getElementById('t-tools').innerHTML = rows.map(r => {
     const w = (+r.calls / max * 100).toFixed(1);
     return \`
       <div class="flex items-center gap-3">
@@ -1202,29 +1193,19 @@ function renderTopTools(rows, isLive) {
         <code class="text-[12px] text-gilt w-20 text-right tabular-nums">\${fmt(r.calls)}</code>
       </div>\`;
   }).join('');
-  document.getElementById('t-tools').innerHTML = html;
-  // Animate bars
   requestAnimationFrame(() => {
-    document.querySelectorAll('#t-tools .bar').forEach(el => {
-      el.style.width = el.dataset.w + '%';
-    });
+    document.querySelectorAll('#t-tools .bar').forEach(el => { el.style.width = el.dataset.w + '%'; });
   });
 }
 
-function renderSparkline(values, isLive) {
+function renderSparkline(values) {
   const w = 600, h = 140, pad = 4;
   const max = Math.max(...values, 1);
   const step = (w - pad*2) / Math.max(values.length - 1, 1);
-  const points = values.map((v,i) => {
-    const x = pad + i * step;
-    const y = h - pad - (v / max) * (h - pad*2);
-    return \`\${x.toFixed(1)},\${y.toFixed(1)}\`;
-  });
+  const points = values.map((v,i) => \`\${(pad + i * step).toFixed(1)},\${(h - pad - (v / max) * (h - pad*2)).toFixed(1)}\`);
   document.getElementById('spark-poly').setAttribute('points', points.join(' '));
-  // Area fill
   const area = \`M\${pad},\${h-pad} L\${points.join(' L')} L\${pad + (values.length-1)*step},\${h-pad} Z\`;
   document.getElementById('spark-area').setAttribute('d', area);
-  // Grid
   const grid = [];
   for (let i = 0; i < values.length; i++) {
     const x = pad + i * step;
@@ -1234,201 +1215,118 @@ function renderSparkline(values, isLive) {
   document.getElementById('t-24h-total').textContent = fmt(values.reduce((a,b)=>a+(+b||0),0)) + ' calls';
 }
 
-async function loadTelemetry() {
+async function loadOddkitTelemetry() {
   const stamp = document.getElementById('t-stamp');
-  const sqlBox = document.getElementById('t-sql');
-  sqlBox.textContent = \`-- 7d total\\n\${SQL_7D_TOT};\\n\\n-- 24h hourly\\n\${SQL_24H};\\n\\n-- top tools 7d\\n\${SQL_TOP};\`;
-
-  let live = false;
+  document.getElementById('t-sql').textContent =
+    \`-- oddkit_telemetry  (live, via oddkit MCP)\\n\\n\${SQL_7D_TOT};\\n\\n\${SQL_24H};\\n\\n\${SQL_TOP};\\n\\n-- ptxprint_telemetry  (live, via ptxprint MCP)\\n\\n\${PTX_SQL_TOP};\`;
   try {
-    const [tot, hourly, top] = await Promise.all([
-      runTelemetrySQL(SQL_7D_TOT),
-      runTelemetrySQL(SQL_24H),
-      runTelemetrySQL(SQL_TOP),
-    ]);
-    if (tot && hourly && top && top.data) {
-      live = true;
-      const totalRow = tot.data?.[0];
-      const totalNum = totalRow ? +totalRow.total : 0;
-      document.getElementById('t-7d').textContent = fmt(totalNum);
-      document.getElementById('mini-7d').textContent = fmt(totalNum);
-      document.getElementById('t-7d-rate').textContent = (totalNum / 7).toFixed(0) + ' avg / day';
+    const [tot, hourly, top] = await Promise.all([ runOddkitSQL(SQL_7D_TOT), runOddkitSQL(SQL_24H), runOddkitSQL(SQL_TOP) ]);
+    const totalNum = +(tot?.data?.[0]?.total || 0);
+    document.getElementById('t-7d').textContent = fmt(totalNum);
+    document.getElementById('mini-7d').textContent = fmt(totalNum);
+    document.getElementById('t-7d-rate').textContent = (totalNum / 7).toFixed(0) + ' avg / day';
+    renderSparkline((hourly?.data || []).map(r => +r.calls));
+    renderTopTools((top?.data || []).slice(0, 10));
+    stamp.textContent = 'live · queried ' + new Date().toLocaleTimeString();
+  } catch (e) { stamp.textContent = 'error: ' + e.message; }
+}
+loadOddkitTelemetry();
+setInterval(loadOddkitTelemetry, 60000);
 
-      const hours = (hourly.data || []).map(r => +r.calls);
-      renderSparkline(hours, true);
-      if (hourly.data?.length) {
-        document.getElementById('t-24h-start').textContent = hourly.data[0].hour.split(' ')[1] || '';
-        document.getElementById('t-24h-end').textContent   = hourly.data[hourly.data.length-1].hour.split(' ')[1] || '';
-      }
-
-      renderTopTools((top.data || []).slice(0,10), true);
-      stamp.textContent = 'live · queried ' + new Date().toLocaleTimeString() + ' · oddkit_telemetry (Cloudflare AE)';
+async function loadPtxTelemetry() {
+  const target = document.getElementById('ptx-t-content');
+  const stamp  = document.getElementById('ptx-t-stamp');
+  try {
+    const out = await runPtxSQL(PTX_SQL_TOP);
+    if (out?.error) {
+      target.innerHTML = \`
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <div class="folio mb-2 text-rubric">! \${out.error}</div>
+            <p class="text-paper-2 text-[13px] leading-relaxed">
+              The Worker requires a Cloudflare API token to forward telemetry queries to Analytics Engine.
+              The token is not yet wired on this deployment. The data IS being written
+              (every <code class="font-mono text-paper">tools/call</code> emits a data point); it just isn't
+              queryable through this tool yet. See the policy below for the full schema.
+            </p>
+          </div>
+          <div class="border border-rule rounded p-4 bg-ink/40">
+            <div class="folio mb-2">in the meantime</div>
+            <ul class="text-paper-2 text-[13px] space-y-1.5 leading-relaxed">
+              <li>· every call from this page emits one <code class="font-mono text-gilt">tools/call</code> data point</li>
+              <li>· this page identifies as <code class="font-mono text-gilt">ptxprint-mcp-homepage</code></li>
+              <li>· the policy below documents what is and isn't tracked</li>
+            </ul>
+          </div>
+        </div>\`;
+      stamp.textContent = 'service-not-configured · transparent';
       return;
     }
-  } catch (e) { /* fall through */ }
-
-  // Fallback — snapshot
-  document.getElementById('t-7d').textContent = fmt(SNAPSHOT.total7d);
-  document.getElementById('mini-7d').textContent = fmt(SNAPSHOT.total7d);
-  document.getElementById('t-7d-rate').textContent = (SNAPSHOT.total7d / 7).toFixed(0) + ' avg / day';
-  renderSparkline(SNAPSHOT.hourly, false);
-  renderTopTools(SNAPSHOT.top, false);
-  stamp.textContent = 'snapshot · live failed · oddkit_telemetry (Cloudflare AE)';
-}
-loadTelemetry();
-setInterval(loadTelemetry, 60_000);
-
-// ---------- 4. DEMO TERMINAL -------------------------------------
-const term = document.getElementById('term-body');
-const pill = document.getElementById('job-pill');
-const runBtn    = document.getElementById('run-demo');
-const cancelBtn = document.getElementById('cancel-demo');
-const result    = document.getElementById('result-panel');
-
-let jobActive = false;
-let jobCancelled = false;
-
-function setPill(state) {
-  pill.className = 'ml-auto pill pill-' + state;
-  pill.textContent = state;
-}
-
-function termWrite(html) {
-  term.insertAdjacentHTML('beforeend', html);
-  term.scrollTop = term.scrollHeight;
-}
-
-function ts() { return new Date().toISOString().split('T')[1].replace('Z',''); }
-
-function jsonHL(obj) {
-  const s = JSON.stringify(obj, null, 2);
-  return s
-    .replace(/("[^"]+")(\\s*:)/g, '<span class="tok-key">$1</span>$2')
-    .replace(/:\\s*("[^"]*")/g, ': <span class="tok-str">$1</span>')
-    .replace(/:\\s*(true|false|null)/g, ': <span class="tok-num">$1</span>')
-    .replace(/:\\s*(\\d+(\\.\\d+)?)/g, ': <span class="tok-num">$1</span>');
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function fakeHash() {
-  const a='0123456789abcdef'; let s=''; for(let i=0;i<64;i++) s+=a[Math.floor(Math.random()*16)]; return s;
-}
-function fakeJobId() {
-  const a='0123456789abcdef'; let s=''; for(let i=0;i<8;i++) s+=a[Math.floor(Math.random()*16)]; return 'job_'+s;
-}
-
-async function runDemo() {
-  if (jobActive) return;
-  jobActive = true; jobCancelled = false;
-  result.classList.add('hidden');
-  term.innerHTML = '';
-  runBtn.disabled = true;
-  cancelBtn.classList.remove('hidden');
-
-  const project = document.getElementById('f-project').value.trim();
-  const config  = document.getElementById('f-config').value.trim();
-  const books   = document.getElementById('f-books').value.trim();
-  const mode    = document.getElementById('f-mode').value;
-  let define = {};
-  try { define = JSON.parse(document.getElementById('f-define').value || '{}'); } catch (e) {}
-
-  const args = { project_id: project, config_name: config, books, mode, define };
-
-  termWrite(\`<div class="text-paper-mute">[\${ts()}] $ submit_typeset</div>\`);
-  termWrite(\`<div class="mt-1"><span class="tok-com">// JSON-RPC over MCP streamable-http</span></div>\`);
-  termWrite(\`<pre class="mt-1">\${jsonHL({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'submit_typeset',arguments:args}})}</pre>\`);
-
-  setPill('queued');
-  await sleep(450);
-  if (jobCancelled) return finishCancelled();
-
-  const cacheHit = Math.random() < 0.18;
-  const cache = cacheHit ? 'hit' : 'miss';
-  const job_id = fakeJobId();
-  const cache_id = 'sha256:' + fakeHash().slice(0,16) + '…';
-  const predicted = \`…/\${project}/local/ptxprint/\${project}_\${config}_\${books.split(' ')[0]}-\${books.split(' ').pop()}_ptxp.pdf\`;
-
-  termWrite(\`<div class="mt-3 text-paper-mute">[\${ts()}] ← response (\${cacheHit ? '8' : '47'} ms)</div>\`);
-  termWrite(\`<pre class="mt-1">\${jsonHL({job_id, cache_id, cache_status: cache, predicted_pdf_path: predicted, submitted_at: new Date().toISOString()})}</pre>\`);
-
-  if (cacheHit) {
-    termWrite(\`<div class="mt-2 text-sap">// cache hit — identical payload already typeset; PDF served from R2</div>\`);
-    setPill('succeeded');
-    showResult({pages: 412, overfull: 8, elapsed: '0.3 s', cache: 'hit', cache_id, pdf: predicted, summary: 'Cached PDF served. No CPU spent.'});
-    finish();
-    return;
+    const rows = out?.result?.data?.data || [];
+    if (!rows.length) {
+      target.innerHTML = '<div class="text-paper-mute font-mono text-[12px]">No data points yet — be the first to call a tool.</div>';
+    } else {
+      target.innerHTML = \`
+        <div class="grid grid-cols-1 md:grid-cols-\${Math.min(rows.length, 5)} gap-3">
+          \${rows.slice(0, 5).map(r => \`
+            <div class="border border-rule rounded p-3">
+              <div class="folio">\${r.tool_name}</div>
+              <div class="counter text-paper text-[36px] mt-1">\${fmt(r.calls)}</div>
+            </div>\`).join('')}
+        </div>\`;
+    }
+    stamp.textContent = 'live · ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    target.innerHTML = \`<div class="text-rubric font-mono text-[12px]">! \${e.message}</div>\`;
+    stamp.textContent = 'error';
   }
+}
+loadPtxTelemetry();
+setInterval(loadPtxTelemetry, 60000);
 
-  setPill('running');
-  const passes = mode === 'autofill' ? 5 : 1;
-  const delays = mode === 'autofill' ? [900, 1200, 1100, 1300, 1000] : [1600];
-  let overfull = 24;
-  for (let p = 1; p <= passes; p++) {
-    if (jobCancelled) return finishCancelled();
-    await sleep(delays[p-1]);
-    overfull = Math.max(0, overfull - Math.ceil(overfull * 0.5));
-    termWrite(\`<div class="mt-2 text-paper-mute">[\${ts()}] $ get_job_status</div>\`);
-    termWrite(\`<pre class="mt-1">\${jsonHL({
-      job_id,
-      state: 'running',
-      progress: { passes_completed: p, passes_total_estimate: mode==='autofill' ? '~5' : 1, current_phase: p===passes ? 'finishing' : 'typesetting' },
-      overfull_count: overfull,
-      errors: [],
-      log_tail: \`[XeTeX] pass \${p} complete · \${overfull} overfull boxes remaining\`,
-      human_summary: mode==='autofill'
-        ? \`Autofill pass \${p} of ~\${passes}. \${overfull} overfull boxes; trending down.\`
-        : \`Typesetting pass complete. \${overfull} overfull boxes.\`,
-    })}</pre>\`);
+// 6. telemetry_policy
+async function loadPolicy() {
+  const target = document.getElementById('policy-summary');
+  try {
+    const out = await ptx.tool('telemetry_policy', {});
+    const headers = out.self_report_headers || {};
+    const chain = out.fallback_chain || [];
+    const sentCount = Object.keys(headers).filter(k => SELF_REPORT_HEADERS[k] !== undefined).length;
+    target.innerHTML = \`
+      <div class="mb-4">
+        <div class="folio mb-2">policy URI</div>
+        <code class="text-gilt text-[12px] font-mono">\${(out.policy_uri || '—').replace(/</g,'&lt;')}</code>
+        <span class="folio text-paper-mute ml-3">tier: \${out.governance_source || '—'}</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <div class="folio mb-2">self-report headers (this page sends \${sentCount}/\${Object.keys(headers).length})</div>
+          <div class="space-y-1">
+            \${Object.entries(headers).map(([k, desc]) => {
+              const sent = SELF_REPORT_HEADERS[k] !== undefined;
+              return \`<div class="text-[12px] flex items-baseline gap-2">
+                <span class="\${sent ? 'text-sap' : 'text-paper-mute'} font-mono">\${sent ? '✓' : '·'}</span>
+                <code class="font-mono \${sent ? 'text-paper' : 'text-paper-mute'}">\${k}</code>
+              </div>\`;
+            }).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="folio mb-2">policy fallback chain</div>
+          <div class="space-y-2">
+            \${chain.map((tier, i) => \`
+              <div class="text-[12px]">
+                <span class="font-mono \${tier.tier === out.governance_source ? 'text-gilt' : 'text-paper-mute'}">\${i+1}. \${tier.tier}</span>
+                <div class="text-paper-mute font-mono text-[11px] pl-5 break-all">\${(tier.source || '').replace(/</g,'&lt;')}</div>
+              </div>\`).join('')}
+          </div>
+        </div>
+      </div>\`;
+  } catch (e) {
+    target.innerHTML = \`<div class="text-rubric font-mono text-[12px]">! \${e.message}</div>\`;
   }
-
-  if (jobCancelled) return finishCancelled();
-  await sleep(700);
-  setPill('succeeded');
-  termWrite(\`<div class="mt-2 text-sap">// pdf written to R2 · job complete</div>\`);
-  termWrite(\`<pre class="mt-1">\${jsonHL({
-    job_id, state: 'succeeded',
-    progress: { passes_completed: passes, current_phase: 'finishing' },
-    pdf_path: predicted,
-    overfull_count: overfull,
-    completed_at: new Date().toISOString(),
-    human_summary: \`Done. 412 pages. \${overfull} residual overfull boxes.\`,
-  })}</pre>\`);
-  showResult({pages: 412, overfull, elapsed: ((delays.reduce((a,b)=>a+b,0)+1150)/1000).toFixed(1) + ' s', cache: 'miss', cache_id, pdf: predicted, summary: \`Done. \${412} pages, \${overfull} residual overfull boxes.\`});
-  finish();
 }
-
-function showResult({pages, overfull, elapsed, cache, cache_id, pdf, summary}) {
-  result.classList.remove('hidden');
-  document.getElementById('result-pdf').textContent = pdf;
-  document.getElementById('result-pages').textContent = pages;
-  document.getElementById('result-overfull').textContent = overfull;
-  document.getElementById('result-elapsed').textContent = elapsed;
-  document.getElementById('result-summary').textContent = summary;
-  document.getElementById('result-cache').textContent = \`cache · \${cache} · \${cache_id}\`;
-}
-
-function finish() {
-  runBtn.disabled = false;
-  cancelBtn.classList.add('hidden');
-  jobActive = false;
-}
-
-function finishCancelled() {
-  setPill('cancelled');
-  termWrite(\`<div class="mt-3 text-rubric">// SIGTERM sent · partial outputs preserved</div>\`);
-  termWrite(\`<pre class="mt-1">\${jsonHL({ok:true, was_running:true, cancelled_at: new Date().toISOString()})}</pre>\`);
-  finish();
-}
-
-runBtn.addEventListener('click', runDemo);
-cancelBtn.addEventListener('click', () => { jobCancelled = true; });
-
-// ---------- 5. REVEAL ON SCROLL ----------------------------------
-const io = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
-}, { threshold: 0.08 });
-document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+loadPolicy();
 </script>
 
 </body>

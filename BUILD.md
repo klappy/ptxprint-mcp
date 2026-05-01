@@ -13,7 +13,7 @@ canonical_status: non_canonical
 
 ## Current state
 
-- **Live deployment:** `https://ptxprint-mcp.klappy.workers.dev`
+- **Live deployment:** `https://ptxprint.klappy.dev`
 - **Worker version (per `/health`):** `0.1.0`
 - **Spec target:** `v1.2-draft`
 - **Container image:** built from `./Dockerfile`; pinned to PTXprint `3.0.20` (`ARG PTX2PDF_REF=3.0.20`)
@@ -40,7 +40,7 @@ git push origin <branch> → open PR → merge to main → Workers Builds runs n
 Verify the deploy landed:
 
 ```bash
-curl -A "ptxprint-ops/0.1" https://ptxprint-mcp.klappy.workers.dev/health
+curl -A "ptxprint-ops/0.1" https://ptxprint.klappy.dev/health
 # Then exercise the specific behavior the change introduced (e.g. for a route change,
 # curl the route; for a Container change, submit a smoke payload that perturbs the hash
 # so you get a fresh container instance pulling the new image).
@@ -111,7 +111,7 @@ Once configured, every merged commit on `main` triggers a build-and-deploy. **No
 ```bash
 # Liveness — fast
 curl -A "ptxprint-ops/0.1" -w "\nHTTP %{http_code}\n" \
-  https://ptxprint-mcp.klappy.workers.dev/health
+  https://ptxprint.klappy.dev/health
 
 # Smoke (Phase 1, ~5-10 sec)
 # Submit smoke/minimal-payload.json or smoke/fonts-payload.json via JSON-RPC POST to /mcp.
@@ -119,7 +119,7 @@ curl -A "ptxprint-ops/0.1" -w "\nHTTP %{http_code}\n" \
 
 # Re-verify session-11 reference PDF (90-day retention)
 curl -A "ptxprint-ops/0.1" -I \
-  https://ptxprint-mcp.klappy.workers.dev/r2/outputs/802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd/minitest_Default_JHN_ptxp.pdf
+  https://ptxprint.klappy.dev/r2/outputs/802e42e7d549cf9f827cbbcff69a6354e1b968a23084e5f2485f93cde52fc4bd/minitest_Default_JHN_ptxp.pdf
 ```
 
 ## What's IN the deployment today

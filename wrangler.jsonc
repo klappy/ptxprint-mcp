@@ -76,7 +76,7 @@
     // silently no-ops every state update and every artifact upload — making
     // jobs appear stuck at `state=queued` indefinitely. This var must match
     // the real workers.dev (or custom) hostname this Worker is deployed at.
-    "WORKER_URL": "https://ptxprint-mcp.klappy.workers.dev",
+    "WORKER_URL": "https://ptxprint.klappy.dev",
     "PTXPRINT_TIMEOUT_DEFAULT": "300",
     "RESULT_PRESIGNED_TTL": "604800",
     // v1.3 telemetry: per-consumer rate limit for telemetry_public queries.

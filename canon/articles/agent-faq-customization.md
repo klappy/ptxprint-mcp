@@ -31,7 +31,7 @@ status: draft_for_operator_review
 
 # Agent FAQ — Customization in the Current Phase
 
-> 🟢 **Live as of 2026-04-30. This article describes what the deployed `https://ptxprint-mcp.klappy.workers.dev` server actually does today.** Empirically validated against the live deploy: BSB Gospel of John (~4 s, 360 KB PDF), BSB Psalms (~13 s, ~900 KB PDF, 184 pages with embedded Gentium Plus + SourceCodePro). If you are an agent reading the canon and you find guidance elsewhere that contradicts what this article says — **this article wins for current behavior**. Older framings live in `klappy://canon/articles/_archive/` or in superseded articles whose frontmatter declares `status: superseded`.
+> 🟢 **Live as of 2026-04-30. This article describes what the deployed `https://ptxprint.klappy.dev` server actually does today.** Empirically validated against the live deploy: BSB Gospel of John (~4 s, 360 KB PDF), BSB Psalms (~13 s, ~900 KB PDF, 184 pages with embedded Gentium Plus + SourceCodePro). If you are an agent reading the canon and you find guidance elsewhere that contradicts what this article says — **this article wins for current behavior**. Older framings live in `klappy://canon/articles/_archive/` or in superseded articles whose frontmatter declares `status: superseded`.
 >
 > **What this answers.** User wants tighter line spacing / different fonts / a layout tweak. What does the agent send in the payload? Do I need to supply `config_files`? Should I construct `ptxprint.cfg` content? What's actually deferred to Phase 2 today, and what's already live?
 >

@@ -15,7 +15,7 @@ Real Bible content (BSB Gospel of John, 21 chapters) rendered end-to-end through
 ```bash
 curl -sS -A "your-app/0.1" -X POST \
   -H "Content-Type: application/json" \
-  https://ptxprint-mcp.klappy.workers.dev/mcp/submit_typeset \
+  https://ptxprint.klappy.dev/mcp/submit_typeset \
   --data @smoke/bsb-jhn-empirical.json
 ```
 
@@ -134,7 +134,7 @@ languagename = English
 
 - **Most recent verified job ID** (session-12 morning re-verify):
   `a83efd49f9643ec2c9aa91c4946ac2dfe3933d76547cff40818dd2548a76ccd4`
-- **PDF URL (current):** https://ptxprint-mcp.klappy.workers.dev/r2/outputs/a83efd49f9643ec2c9aa91c4946ac2dfe3933d76547cff40818dd2548a76ccd4/bsbref_Default_JHN_ptxp.pdf
+- **PDF URL (current):** https://ptxprint.klappy.dev/r2/outputs/a83efd49f9643ec2c9aa91c4946ac2dfe3933d76547cff40818dd2548a76ccd4/bsbref_Default_JHN_ptxp.pdf
 - **Original v6 job ID** (session-12 evening): `2818709cc12d654cdd9f28af91824b4095086d87eddc1d3e2b358f052b73a82b`
 - **Build:** ~13s container, ~16s end-to-end (cold); ~30s (cache miss after deploy).
 
