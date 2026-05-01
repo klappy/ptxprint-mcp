@@ -12,6 +12,8 @@
  *   POST /cancel   — set cancel_requested flag (Container polls this)
  */
 
+import { DurableObject } from "cloudflare:workers";
+
 export interface JobState {
   job_id: string;
   payload_hash: string;
@@ -55,11 +57,10 @@ const INITIAL_STATE: Omit<JobState, "job_id" | "payload_hash" | "submitted_at"> 
   human_summary: "Job queued. Container will pick up shortly.",
 };
 
-export class JobStateDO implements DurableObject {
-  constructor(
-    private state: DurableObjectState,
-    _env: unknown,
-  ) {}
+export class JobStateDO extends DurableObject {
+  // ctx and env are inherited as `protected` from the DurableObject base class.
+  // We never read env here (state is stored in this.ctx.storage) so the
+  // inherited fields are sufficient — no constructor override needed.
 
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url);
@@ -76,18 +77,18 @@ export class JobStateDO implements DurableObject {
         payload_hash: body.payload_hash,
         submitted_at: body.submitted_at,
       };
-      await this.state.storage.put("job", fresh);
+      await this.ctx.storage.put("job", fresh);
       return Response.json(fresh);
     }
 
     if (req.method === "GET" && url.pathname === "/") {
-      const job = await this.state.storage.get<JobState>("job");
+      const job = await this.ctx.storage.get<JobState>("job");
       if (!job) return new Response("not found", { status: 404 });
       return Response.json(job);
     }
 
     if (req.method === "POST" && url.pathname === "/update") {
-      const job = await this.state.storage.get<JobState>("job");
+      const job = await this.ctx.storage.get<JobState>("job");
       if (!job) return new Response("not initialized", { status: 409 });
       const patch = (await req.json()) as Partial<JobState>;
       const merged: JobState = { ...job, ...patch };
@@ -95,19 +96,19 @@ export class JobStateDO implements DurableObject {
       if (patch.progress) {
         merged.progress = { ...job.progress, ...patch.progress };
       }
-      await this.state.storage.put("job", merged);
+      await this.ctx.storage.put("job", merged);
       return Response.json(merged);
     }
 
     if (req.method === "POST" && url.pathname === "/cancel") {
-      const job = await this.state.storage.get<JobState>("job");
+      const job = await this.ctx.storage.get<JobState>("job");
       if (!job) return new Response("not found", { status: 404 });
       const merged: JobState = {
         ...job,
         cancel_requested: true,
         human_summary: "Cancellation requested. Container will SIGTERM PTXprint on next poll (≤10s).",
       };
-      await this.state.storage.put("job", merged);
+      await this.ctx.storage.put("job", merged);
       return Response.json({ ok: true, was_running: job.state === "running" });
     }
 
@@ -118,7 +119,7 @@ export class JobStateDO implements DurableObject {
 // ---------- Convenience helpers for the Worker ----------
 
 export async function readJobState(
-  ns: DurableObjectNamespace,
+  ns: DurableObjectNamespace<JobStateDO>,
   jobId: string,
 ): Promise<JobState | null> {
   const stub = ns.get(ns.idFromName(jobId));
@@ -128,7 +129,7 @@ export async function readJobState(
 }
 
 export async function initJob(
-  ns: DurableObjectNamespace,
+  ns: DurableObjectNamespace<JobStateDO>,
   jobId: string,
   payloadHash: string,
   submittedAt: string,
@@ -142,7 +143,7 @@ export async function initJob(
 }
 
 export async function cancelJob(
-  ns: DurableObjectNamespace,
+  ns: DurableObjectNamespace<JobStateDO>,
   jobId: string,
 ): Promise<{ ok: boolean; was_running: boolean }> {
   const stub = ns.get(ns.idFromName(jobId));
