@@ -55,6 +55,7 @@ import {
   type ConsumerInfo,
   type ParsedRpc,
 } from "./telemetry.js";
+import { exportSchema } from "./telemetry-schema.js";
 
 // Re-export Durable Object classes so the Workers runtime can find them.
 export { JobStateDO } from "./job-state-do.js";
@@ -435,12 +436,12 @@ export class PtxprintMcp extends McpAgent<Env> {
     // Authority: klappy://canon/specs/ptxprint-mcp-v1.3-spec §3 telemetry_public
     this.server.tool(
       "telemetry_public",
-      "Query the ptxprint_telemetry Analytics Engine dataset with SQL. The data is public — this is the same dashboard the maintainer sees. Use SUM(_sample_interval) instead of COUNT(*) for sample-correct totals. Rate-limited to 60 queries/consumer/hour. See telemetry_policy() for canned query examples.",
+      "Query the ptxprint_telemetry Analytics Engine dataset with SQL. The data is public — this is the same dashboard the maintainer sees. Use SUM(_sample_interval) instead of COUNT(*) for sample-correct totals. Rate-limited to 60 queries/consumer/hour. You may use semantic field names (event_type, tool_name, consumer_label, etc.) in your SQL — the worker rewrites them to positional blob/double refs before forwarding. Call telemetry_schema() for the full field name list. See telemetry_policy() for canned query examples.",
       {
         sql: z
           .string()
           .min(1)
-          .describe("A read-only SQL query against ptxprint_telemetry."),
+          .describe("A read-only SQL query against ptxprint_telemetry. Semantic field names are auto-rewritten to positional refs."),
       },
       async ({ sql }: { sql: string }) => {
         // Use the DO session ID as the rate-limit key. Inside the McpAgent DO,
@@ -460,6 +461,31 @@ export class PtxprintMcp extends McpAgent<Env> {
             },
           ],
           ...(result.error ? { isError: true } : {}),
+        };
+      },
+    );
+
+    // ----- telemetry_schema ----- (v1.3)
+    //
+    // Returns the canonical mapping between semantic field names and
+    // Cloudflare Analytics Engine positional column refs (blob1..12,
+    // double1..10). Use this to know what you can query with telemetry_public,
+    // or if you need to construct positional SQL by hand.
+    //
+    // The schema is the SINGLE source of truth (src/telemetry-schema.ts).
+    // Same data is exposed via the public GET /diagnostics/schema endpoint.
+    this.server.tool(
+      "telemetry_schema",
+      "Return the field-name → positional-column mapping for the ptxprint_telemetry dataset. Use these names in telemetry_public SQL — the worker auto-rewrites them. Lists every blob and double slot with its semantic name and a one-line description.",
+      {},
+      async () => {
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(exportSchema(), null, 2),
+            },
+          ],
         };
       },
     );
@@ -524,6 +550,7 @@ export default {
             "docs",
             "telemetry_public",
             "telemetry_policy",
+            "telemetry_schema",
           ],
         },
         {
@@ -615,6 +642,38 @@ export default {
           },
         },
       );
+    }
+
+    // ---------- /diagnostics/schema ----------
+    //
+    // Public endpoint that returns the canonical telemetry field schema —
+    // the mapping between semantic field names (event_type, tool_name, etc.)
+    // and Cloudflare Analytics Engine positional column refs (blob1..12,
+    // double1..10). Same data the telemetry_schema MCP tool returns.
+    //
+    // Use this when constructing custom telemetry_public queries from
+    // outside the MCP context (curl, Grafana, ad-hoc dashboards). It's the
+    // single source of truth — src/telemetry-schema.ts — surfaced as JSON.
+    //
+    //   curl https://ptxprint.klappy.dev/diagnostics/schema | jq
+    if (url.pathname === "/diagnostics/schema") {
+      if (req.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "access-control-allow-origin": "*",
+            "access-control-allow-methods": "GET, OPTIONS",
+            "access-control-allow-headers": "Content-Type",
+            "access-control-max-age": "86400",
+          },
+        });
+      }
+      return Response.json(exportSchema(), {
+        headers: {
+          "access-control-allow-origin": "*",
+          "cache-control": "public, max-age=300",
+        },
+      });
     }
 
     // Internal: container calls back to update job state.

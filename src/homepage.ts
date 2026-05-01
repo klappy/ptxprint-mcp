@@ -592,7 +592,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
     <div class="specimen p-6 mb-5">
       <div class="flex items-baseline justify-between mb-5">
         <div class="folio">tool_call leaderboard · last 30d · ptxprint</div>
-        <div class="folio text-paper-mute">SUM(_sample_interval) on blob3</div>
+        <div class="folio text-paper-mute">SUM(_sample_interval) GROUP BY tool_name</div>
       </div>
       <div id="t-tools" class="space-y-2.5">
         <div class="text-paper-mute font-mono text-[12px]">loading…</div>
@@ -1238,9 +1238,9 @@ const SQL_TOP    = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM oddki
 const SQL_24H    = \`SELECT toStartOfHour(timestamp) AS hour, SUM(_sample_interval) AS calls FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '24' HOUR GROUP BY hour ORDER BY hour ASC\`;
 const SQL_7D_TOT = \`SELECT SUM(_sample_interval) AS total FROM oddkit_telemetry WHERE timestamp > NOW() - INTERVAL '7' DAY\`;
 const PTX_SQL_TOTAL = \`SELECT SUM(_sample_interval) AS total FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY\`;
-const PTX_SQL_TOOLS = \`SELECT blob3 AS tool_name, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND blob1 = 'tool_call' AND blob3 != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
+const PTX_SQL_TOOLS = \`SELECT tool_name, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND event_type = 'tool_call' AND tool_name != '' GROUP BY tool_name ORDER BY calls DESC LIMIT 10\`;
 const PTX_SQL_24H   = \`SELECT toStartOfHour(timestamp) AS hour, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '24' HOUR GROUP BY hour ORDER BY hour ASC\`;
-const PTX_SQL_CONS  = \`SELECT blob4 AS consumer, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND blob4 != '' GROUP BY consumer ORDER BY calls DESC LIMIT 8\`;
+const PTX_SQL_CONS  = \`SELECT consumer_label AS consumer, SUM(_sample_interval) AS calls FROM ptxprint_telemetry WHERE timestamp > NOW() - INTERVAL '30' DAY AND consumer_label != '' GROUP BY consumer ORDER BY calls DESC LIMIT 8\`;
 
 function fmt(n) { return Number(n).toLocaleString('en-US'); }
 async function runOddkitSQL(sql) { return (await oddkit.tool('telemetry_public', { sql }))?.result?.data; }
