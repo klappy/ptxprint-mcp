@@ -115,3 +115,47 @@ Earlier versions treated it as a secret. It isn't one. From [Cloudflare's own do
 | Set the only required secret | `npx wrangler secret put CF_API_TOKEN --name ptxprint-mcp` |
 | Trigger an auto-deploy | `git push origin main` |
 | Verify a deploy landed | `curl https://ptxprint.klappy.dev/health` (note `version`) |
+| Inspect snapshot archive state | `curl https://ptxprint.klappy.dev/diagnostics/snapshot` |
+| Read the lifetime hero stat | `curl https://ptxprint.klappy.dev/diagnostics/snapshot/lifetime` |
+| Bootstrap snapshot archive after deploy | see "Snapshot archive setup" below |
+
+---
+
+## Snapshot archive setup (Track A)
+
+The Worker runs a Cron Trigger every Monday at 00:00 UTC that snapshots the just-completed week of telemetry into an R2 bucket. This survives the 90-day Analytics Engine retention window so lifetime totals stay accurate.
+
+### One-time bucket creation
+
+```bash
+npx wrangler r2 bucket create ptxprint-telemetry-snapshots
+```
+
+The binding (`TELEMETRY_SNAPSHOTS`) is already declared in `wrangler.jsonc`. Next deploy picks it up.
+
+### One-time bootstrap-token secret (for manual runs)
+
+The cron does the routine work without a token. The manual bootstrap route — `POST /internal/snapshot/run` — is gated by a header secret. To enable it:
+
+```bash
+openssl rand -hex 32 | npx wrangler secret put SNAPSHOT_BOOTSTRAP_TOKEN
+```
+
+Save the output (you'll need it to call the route). If the secret is left unset, the route returns 503; the cron is unaffected.
+
+### Backfill weeks within the 90-day retention window
+
+Every week of delay between Track A shipping and the bootstrap is a week of pages that won't survive. Run this once, immediately after first deploy:
+
+```bash
+TOKEN=<the SNAPSHOT_BOOTSTRAP_TOKEN you saved>
+
+curl -X POST https://ptxprint.klappy.dev/internal/snapshot/run \
+  -H "x-snapshot-bootstrap-token: $TOKEN" \
+  -H "content-type: application/json" \
+  -d '{"weeks_back": 13}'
+```
+
+13 weeks ≈ 90 days. The route caps `weeks_back` at 26.
+
+For the full operations doc (smoke test, recovery, lifetime composite recipe), see [`canon/articles/snapshot-operations.md`](canon/articles/snapshot-operations.md) (uri `klappy://canon/articles/snapshot-operations`).
