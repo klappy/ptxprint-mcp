@@ -1,0 +1,30 @@
+# Drop-in: .github/workflows/ci.yml — Node/TypeScript repos (Workers, MCP servers, oddkit)
+# Steps run only if the corresponding package.json script exists, so one template fits all Node repos.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint (if present)
+        run: npm run lint --if-present
+      - name: Typecheck (if present)
+        run: npm run tsc --if-present
+      - name: Test (if present)
+        run: npm test --if-present
+      - name: Build (if present)
+        run: npm run build --if-present
