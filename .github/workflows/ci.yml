@@ -20,6 +20,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Generate Worker types (Env comes from wrangler config)
+        run: npm run cf-typegen --if-present
       - name: Lint (if present)
         run: npm run lint --if-present
       - name: Typecheck (if present)
