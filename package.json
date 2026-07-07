@@ -14,7 +14,7 @@
     "bundle-policy": "node --import tsx/esm scripts/bundle-telemetry-policy.ts"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.7",
