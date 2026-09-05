@@ -63,3 +63,4 @@ scratch/
 # OS
 Thumbs.db
 desktop.ini
+worker-configuration.d.ts

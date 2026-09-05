@@ -24,7 +24,7 @@ import {
 //  Constants
 // ────────────────────────────────────────────────────────────
 
-export const WORKER_VERSION = "0.3.1"; // 0.3.1: canon — Paratext book number in source filename; iffrontmatter (Spanish Titus cook); 0.3.0: docs() progressive disclosure (index/article/section/pointers); // 0.2.1: container released when a job returns; 0.2.0: docs() from the bundled canon (2026-09-05)
+export const WORKER_VERSION = "0.4.0"; // 0.4.0: payload.projects — secondary projects for diglot (2026-09-05); 0.3.1: canon — Paratext book number in source filename; iffrontmatter (Spanish Titus cook); 0.3.0: docs() progressive disclosure (index/article/section/pointers); // 0.2.1: container released when a job returns; 0.2.0: docs() from the bundled canon (2026-09-05)
 
 const POLICY_RAW_URL =
   "https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/canon/governance/telemetry-governance.md";

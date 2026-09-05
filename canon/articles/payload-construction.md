@@ -128,6 +128,13 @@ The `define` map is for **transient run-time overrides** that should not mutate 
 
 A common pattern: explore with `define`, then promote to `config_files` once the user commits.
 
+## `projects`: a second text beside the first (diglot)
+
+Optional. `projects: { "<id>": { config_files, sources } }` puts another Paratext-shaped project next to the primary so
+PTXprint's diglot can pair them (`ifdiglot`, `diglotsecprj = <id>`). Same rules as the primary: `Settings.xml` at the
+project root, `shared/ptxprint/<config>/ptxprint.cfg`, sources named with the Paratext book number. Omit the field for a
+single-project job — the payload hash is unchanged.
+
 ## Sources, fonts, figures: URL + sha256
 
 Each entry must include a fetchable URL and the sha256 of the file at that URL. The worker hashes the bytes as they arrive and aborts if they don't match.

@@ -101,6 +101,11 @@ For exploratory changes, prefer `define` over mutating `config_files["...ptxprin
 10. Iterate by submitting new payloads with adjusted config_files.
 ```
 
+**On this server (Worker ≥ 0.4.0):** the secondary project travels *in the payload* — `payload.projects["<sec>"] =
+{ config_files, sources }` — and is materialized beside the primary; the primary cfg then says `ifdiglot = True`,
+`diglotsecprj = <sec>`, `diglotsecconfig = Default`. The secondary needs its own `Settings.xml` and a
+`shared/ptxprint/Default/ptxprint.cfg` (a copy of the primary's with `ifdiglot = False` is a fine start). See spec §4.
+
 Diglot is multi-axis. Don't promise a one-shot setup. Walk axes in order: project pair → merge strategy → fonts → fractions → versification → pictures → headers.
 
 ## Recipe: Lock down house style for a cluster

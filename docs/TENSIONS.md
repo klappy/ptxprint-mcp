@@ -14,3 +14,6 @@
 - **F10** Source `filename` must carry the *Paratext* book number (`57TIT`), not a sequential one (`56TIT`): PTXprint finds the book by it; wrong → silent exit, `findScript` traceback. → canon `payload-construction` §Sources. Closed.
 - **F11** Fixture `iffrontmatter = False` silently skips `FRTlocal.sfm` (the first plated Titus PDF had no licence page). → canon `study-notes-and-footnotes` §The setting you must flip + checklist. Closed.
 - Two articles without a "What this answers." line (`hero-metrics-and-storytelling`, `snapshot-operations`) — lines added. Closed.
+
+### 2026-09-05 (translator's desk) — 0.4.0
+- **D2** Diglot impossible: the container wrote every source into the primary project and sandboxed `config_files` to it, so no secondary project could exist. → `payload.projects` (optional map of secondary projects), spec §4, `payload-construction`, `workflow-recipes` diglot recipe. Closed in 0.4.0; first render pending (kitchen `trb-diglot-ult-ust`).
