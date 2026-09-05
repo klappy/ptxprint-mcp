@@ -110,7 +110,13 @@ function tokens(s: string): string[] {
     .toLowerCase()
     .replace(/[`*_#>\[\]()|"']/g, " ")
     .split(/[^a-z0-9.+\\-]+/)
-    .map((t) => t.replace(/^[.+\\-]+|[.+\\-]+$/g, ""))
+    .map((t) => {
+      const stripped = t.replace(/^[.+\\-]+|[.+\\-]+$/g, "");
+      // One-letter USFM markers (`\f`, `\v`, `\x`) strip to a single char and
+      // would be dropped; keep a leading slash so they stay queryable.
+      if (stripped.length === 1 && t.startsWith("\\")) return `\\${stripped}`;
+      return stripped;
+    })
     .filter((t) => t.length > 1 && !STOP.has(t));
 }
 function stripFrontmatter(md: string): string {
