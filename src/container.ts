@@ -8,7 +8,8 @@
  *
  * v1.2 spec §5:
  *   instance_type: standard (1 vCPU, 6 GiB, 12 GB)  // declared in wrangler.jsonc
- *   sleepAfter: 45m                                 // covers max autofill + buffer
+ *   sleepAfter: 45m                                 // ceiling only — the Worker calls stop() when a job returns
+ *                                                    // (one instance per job; max_instances is 5)
  *
  * The container's HTTP handler at POST /jobs runs PTXprint synchronously,
  * uploads to R2, calls back to JobStateDO, and returns when done.

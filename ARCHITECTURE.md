@@ -22,6 +22,7 @@ Agent (Claude Desktop / BT Servant / etc.)
   ▼
 ┌─────────────────────────────────────────────────────────┐
 │ Cloudflare Worker          (the only Worker)            │
+│  one Container DO per job; stopped when the job returns │
 │  • submit_typeset(payload) → job_id (or cached URL)     │
 │  • get_job_status(job_id)  → state, progress, URLs      │
 │  • cancel_job(job_id)      → SIGTERM via DO flag        │
