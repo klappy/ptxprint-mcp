@@ -17,6 +17,12 @@ describe("payload.projects — secondary projects for diglot (0.4.0)", () => {
   it("rejects a project id longer than 8 characters", () => {
     expect(() => PayloadSchema.parse({ ...base, projects: { "way-too-long-id": { sources: [src] } } })).toThrow();
   });
+  it("rejects a project id with characters outside [A-Za-z0-9_-]", () => {
+    expect(() => PayloadSchema.parse({ ...base, projects: { "ULT.v2": { sources: [src] } } })).toThrow();
+  });
+  it("rejects a project id that equals the primary project_id", () => {
+    expect(() => PayloadSchema.parse({ ...base, projects: { prim: { sources: [src] } } })).toThrow();
+  });
   it("hashes differently when a secondary project is present", async () => {
     const a = await payloadHash(PayloadSchema.parse(base));
     const b = await payloadHash(PayloadSchema.parse({ ...base, projects: { ust: { sources: [src] } } }));

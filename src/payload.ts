@@ -55,7 +55,10 @@ export const PayloadSchema = z.object({
   fonts: z.array(FontSchema).default([]),
   figures: z.array(FigureSchema).default([]),
   /** Additional projects keyed by project_id (e.g. the secondary text of a diglot). Optional; absent = single project. */
-  projects: z.record(z.string().min(1).max(8), ProjectSchema).optional(), // optional, no default: an old payload hashes exactly as before
+  projects: z.record(z.string().regex(/^[A-Za-z0-9_-]{1,8}$/), ProjectSchema).optional(), // optional, no default: an old payload hashes exactly as before
+}).refine((p) => !p.projects || !Object.hasOwn(p.projects, p.project_id), {
+  message: "projects keys must differ from project_id",
+  path: ["projects"],
 });
 
 export type Payload = z.infer<typeof PayloadSchema>;
