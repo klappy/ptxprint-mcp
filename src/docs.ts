@@ -107,10 +107,25 @@ function score(ix: Indexed, q: string[]): number {
   return s;
 }
 
+function plain(md: string): string {
+  // Snippets are read by people (homepage) and by agents: plain text, not markdown.
+  return md
+    .replace(/^\s*>\s?/gm, "")            // blockquote markers
+    .replace(/^#{1,6}\s+/gm, "")           // headings
+    .replace(/\*\*([^*]+)\*\*/g, "$1")     // bold
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1$2") // italic
+    .replace(/`([^`]*)`/g, "$1")           // inline code
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // links → text
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function snippet(text: string, q: string[], width = 200): string {
-  // First paragraph that mentions a query term; else the first paragraph.
-  const paras = text.split(/\n\s*\n/).map((p) => p.replace(/\s+/g, " ").trim()).filter(Boolean);
-  const hit = paras.find((p) => q.some((t) => p.toLowerCase().includes(t))) ?? paras[0] ?? "";
+  // First paragraph ≥ 80 chars that mentions a query term; else the first such paragraph of any
+  // length; else the first paragraph. One-line callouts ("Superseded.") no longer win by position.
+  const paras = text.split(/\n\s*\n/).map(plain).filter(Boolean);
+  const mentions = paras.filter((p) => q.some((t) => p.toLowerCase().includes(t)));
+  const hit = mentions.find((p) => p.length >= 80) ?? mentions[0] ?? paras.find((p) => p.length >= 80) ?? paras[0] ?? "";
   return hit.length > width ? hit.slice(0, width - 1) + "…" : hit;
 }
 

@@ -35,6 +35,15 @@ describe("docs — self-served canon", () => {
     expect(full.length).toBe(3);
   });
 
+  it("snippets are plain text, not markdown, and skip one-line callouts", async () => {
+    const r = await fetchDocs("payload construction", "headless", 1);
+    expect(r.answer).not.toMatch(/^\s*>/);
+    expect(r.answer).not.toContain("**");
+    expect(r.answer).not.toContain("`");
+    const p = await fetchDocs("phase 1 minimum payload", "headless", 1);
+    expect((p.answer ?? "").length).toBeGreaterThanOrEqual(80);
+  });
+
   it("says nothing rather than something for a query the canon does not cover", async () => {
     const r = await fetchDocs("zzqx quantum espresso llama", "headless", 1);
     expect(r.answer).toBeNull();
