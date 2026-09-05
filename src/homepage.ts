@@ -24,6 +24,8 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.12/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -110,6 +112,12 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
     .chip-ok  { border-color:#6FAA72; color:#6FAA72; }
     .chip-bad { border-color:#C8331A; color:#C8331A; }
     ::selection { background:#C8331A; color:#F4ECDC; }
+      .md p{margin:0 0 .6em}.md p:last-child{margin:0}
+    .md blockquote{border-left:2px solid #6F6450;padding-left:.75em;margin:0 0 .6em;color:#BFB294}
+    .md code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.92em;background:rgba(255,255,255,.06);padding:.05em .3em;border-radius:3px}
+    .md pre{background:rgba(255,255,255,.05);padding:.6em .8em;border-radius:4px;overflow-x:auto}
+    .md strong{color:#F4ECDC}.md a{color:#D9A93E;text-decoration:underline dotted}
+    .md ul,.md ol{padding-left:1.2em;margin:0 0 .6em}.md h1,.md h2,.md h3{font-family:Fraunces,serif;color:#F4ECDC;margin:.4em 0 .3em}
   </style>
 </head>
 
@@ -477,7 +485,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
             <div class="folio text-paper-mute" id="docs-stamp">—</div>
           </div>
           <div class="hr-rubric mb-4"></div>
-          <div id="docs-answer" class="text-paper-2 text-[14px] leading-relaxed mb-4 whitespace-pre-wrap"></div>
+          <div id="docs-answer" class="text-paper-2 text-[14px] leading-relaxed mb-4 md"></div>
           <div class="folio mb-2">sources</div>
           <div id="docs-sources" class="space-y-2"></div>
         </div>
@@ -910,6 +918,11 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
 const PTX_BASE   = 'https://ptxprint.klappy.dev';
 const PTX_MCP    = PTX_BASE + '/mcp';
 const ODDKIT_MCP = 'https://oddkit.klappy.dev/mcp';
+// docs() answers and snippets are markdown — render them (marked), sanitize them (DOMPurify).
+function md(s) {
+  try { return DOMPurify.sanitize(marked.parse(String(s || ''), { breaks: true })); }
+  catch { return String(s || '').replace(/</g, '&lt;'); }
+}
 
 const SELF_REPORT_HEADERS = {
   'x-ptxprint-client': 'ptxprint-mcp-homepage',
@@ -1440,14 +1453,14 @@ async function runDocs(query) {
     const out = await ptx.tool('docs', { query, audience: 'headless', depth: 1 });
     const ms = Math.round(performance.now() - t0);
     document.getElementById('docs-stamp').textContent = \`\${ms} ms · governance: \${out.governance_source || 'unknown'}\`;
-    document.getElementById('docs-answer').textContent = out.answer || out.error || '(no answer returned)';
+    document.getElementById('docs-answer').innerHTML = md(out.answer || out.error || '(no answer returned)');
     const sources = (out.sources || []).slice(0, 5);
     document.getElementById('docs-sources').innerHTML = sources.length
       ? sources.map(s => \`
           <div class="border border-rule rounded p-3">
             <div class="font-mono text-[11px] text-gilt">\${(s.uri || '').replace(/</g,'&lt;')}</div>
             <div class="text-paper text-[13px] mt-1">\${(s.title || '').replace(/</g,'&lt;')}</div>
-            <div class="text-paper-mute text-[12px] mt-1">\${(s.snippet || '').replace(/</g,'&lt;').slice(0, 220)}…</div>
+            <div class="text-paper-mute text-[12px] mt-1 md">\${md((s.snippet || '').slice(0, 240))}</div>
             <div class="folio mt-2">score: \${(+s.score || 0).toFixed(2)}</div>
           </div>\`).join('')
       : '<div class="text-paper-mute font-mono text-[12px]">no sources returned</div>';

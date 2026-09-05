@@ -107,10 +107,12 @@ function score(ix: Indexed, q: string[]): number {
   return s;
 }
 
-function snippet(text: string, q: string[], width = 200): string {
-  // First paragraph that mentions a query term; else the first paragraph.
-  const paras = text.split(/\n\s*\n/).map((p) => p.replace(/\s+/g, " ").trim()).filter(Boolean);
-  const hit = paras.find((p) => q.some((t) => p.toLowerCase().includes(t))) ?? paras[0] ?? "";
+function snippet(text: string, q: string[], width = 240): string {
+  // Markdown in, markdown out — renderers render it; agents read it. First paragraph ≥ 80 chars
+  // that mentions a query term; else the first such paragraph; else the first real paragraph.
+  const paras = text.split(/\n\s*\n/).map((p) => p.replace(/[ \t]+\n/g, "\n").trim()).filter(Boolean);
+  const mentions = paras.filter((p) => q.some((t) => p.toLowerCase().includes(t)));
+  const hit = mentions.find((p) => p.length >= 80) ?? mentions[0] ?? paras.find((p) => p.length >= 80) ?? paras[0] ?? "";
   return hit.length > width ? hit.slice(0, width - 1) + "…" : hit;
 }
 
