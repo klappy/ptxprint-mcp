@@ -23,6 +23,7 @@ endpoint is derived from it.
 from __future__ import annotations
 
 import asyncio
+import re
 import hashlib
 import logging
 import os
@@ -69,6 +70,13 @@ class FigureModel(BaseModel):
     sha256: str
 
 
+class ProjectModel(BaseModel):
+    """A secondary project (diglot): its own config_files and sources, materialized at <scratch>/<project_id>/."""
+
+    config_files: dict[str, str] = Field(default_factory=dict)
+    sources: list[SourceModel] = Field(default_factory=list)
+
+
 class PayloadModel(BaseModel):
     schema_version: str
     project_id: str
@@ -80,6 +88,7 @@ class PayloadModel(BaseModel):
     sources: list[SourceModel] = Field(default_factory=list)
     fonts: list[FontModel] = Field(default_factory=list)
     figures: list[FigureModel] = Field(default_factory=list)
+    projects: dict[str, ProjectModel] = Field(default_factory=dict)
 
 
 class JobRequestModel(BaseModel):
@@ -178,6 +187,13 @@ async def fetch_inputs(scratch: Path, project_id: str, payload: PayloadModel) ->
         tasks.append(fetch_with_verify(font.url, font.sha256, fonts_dir / font.filename))
     for fig in payload.figures:
         tasks.append(fetch_with_verify(fig.url, fig.sha256, figures_dir / fig.filename))
+
+    # secondary projects (diglot): sources at their own project root
+    for pid, proj in (payload.projects or {}).items():
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,8}", pid) or pid == project_id:
+            raise ValueError(f"invalid secondary project id: {pid!r}")
+        for src in proj.sources:
+            tasks.append(fetch_with_verify(src.url, src.sha256, scratch / pid / src.filename))
 
     if tasks:
         await asyncio.gather(*tasks)
@@ -293,6 +309,10 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
         scratch = Path(tmpdir)
         try:
             write_config_files(scratch, payload.project_id, payload.config_files)
+            for pid, proj in (payload.projects or {}).items():
+                if not re.fullmatch(r"[A-Za-z0-9_-]{1,8}", pid) or pid == payload.project_id:
+                    raise ValueError(f"invalid secondary project id: {pid!r}")
+                write_config_files(scratch, pid, proj.config_files)
             await fetch_inputs(scratch, payload.project_id, payload)
 
             await patch_state(callback, job_id, {

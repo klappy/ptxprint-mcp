@@ -215,9 +215,23 @@ The fallback chain is observable: every response includes the `governance_source
 
 ---
 
-## 4. Payload Schema — unchanged from v1.2
+## 4. Payload Schema — one optional field added 2026-09-05 (Worker 0.4.0)
 
-`schema_version: "1.0"`. Container rejects versions it doesn't speak. v1.3 introduces no new payload fields and removes none.
+`schema_version: "1.0"`. Container rejects versions it doesn't speak. v1.3 adds **one optional field** and removes none:
+
+```json
+"projects": {
+  "<project_id>": { "config_files": { "Settings.xml": "...", "shared/ptxprint/Default/ptxprint.cfg": "..." },
+                    "sources": [ { "book": "TIT", "filename": "57TITust.usfm", "url": "...", "sha256": "..." } ] }
+}
+```
+
+Each entry is materialized beside the primary as `<scratch>/<project_id>/` — the layout PTXprint's **diglot** needs
+(`[document] ifdiglot = True`, `diglotsecprj = <project_id>`, `diglotsecconfig = <config>` in the primary cfg). Ids match
+`[A-Za-z0-9_-]{1,8}` and may not equal the primary `project_id`; `config_files` paths are sandboxed to their own project
+root exactly as the primary's are. Fonts and figures stay on the primary payload. Absent → single-project behaviour and a
+payload hash byte-identical to before (the field has no default, so omitting it changes nothing). Motivation: the translator's-desk cook (ULT | UST with Translation Notes), kitchen
+`2026-09-05-trb-diglot-ult-ust`.
 
 See v1.2 spec §4 for the full schema and slot semantics. The canonical hashing rule (RFC 8785 JCS or equivalent over the payload JSON) is unchanged; cache identity remains content-addressed.
 

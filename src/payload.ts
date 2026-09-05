@@ -36,6 +36,13 @@ const FigureSchema = z.object({
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
 });
 
+// A secondary project (diglot): materialized beside the primary as <scratch>/<project_id>/ with its own config_files
+// and sources. Fonts/figures stay on the primary payload (fontconfig sees them either way).
+const ProjectSchema = z.object({
+  config_files: z.record(z.string(), z.string()).default({}),
+  sources: z.array(SourceSchema).default([]),
+});
+
 export const PayloadSchema = z.object({
   schema_version: z.literal("1.0"),
   project_id: z.string().min(1).max(8),
@@ -47,6 +54,11 @@ export const PayloadSchema = z.object({
   sources: z.array(SourceSchema).default([]),
   fonts: z.array(FontSchema).default([]),
   figures: z.array(FigureSchema).default([]),
+  /** Additional projects keyed by project_id (e.g. the secondary text of a diglot). Optional; absent = single project. */
+  projects: z.record(z.string().regex(/^[A-Za-z0-9_-]{1,8}$/), ProjectSchema).optional(), // optional, no default: an old payload hashes exactly as before
+}).refine((p) => !p.projects || !Object.hasOwn(p.projects, p.project_id), {
+  message: "projects keys must differ from project_id",
+  path: ["projects"],
 });
 
 export type Payload = z.infer<typeof PayloadSchema>;
