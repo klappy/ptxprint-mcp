@@ -20,6 +20,10 @@ status: draft
 
 ---
 
+## Before anything else: the setting you must flip
+
+`changes.txt` is ignored unless `[project] usechangesfile = True` is in the config's `ptxprint.cfg`. A payload that adds rules without it renders cleanly and applies none of them — no error, no warning (observed 2026-09-05; see `klappy://canon/articles/study-notes-and-footnotes`).
+
 ## What `changes.txt` is
 
 `changes.txt` is a regex-based USFM transformation language applied to source USFM **before** typesetting. It's the single most useful supporting file for surgical text manipulation: change "Jesus" to a vernacular name throughout, swap a USFM marker at specific references, insert page breaks, etc.

@@ -451,15 +451,16 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <div class="eyebrow mb-3"><span class="text-rubric">§ III.</span> &nbsp; The canon, live</div>
         <h2 class="display-lg text-paper text-[40px] lg:text-[56px]">Ask the <span class="italic-wonk text-gilt">docs</span> tool anything.</h2>
         <p class="text-paper-2 mt-4 leading-relaxed">
-          The MCP server's <span class="font-mono text-paper">docs(query)</span> tool searches the project's
-          canon &mdash; the prose articles, specs, and governance documents that give an agent enough context
-          to drive PTXprint. Type a question; see the actual answer plus the canon URIs that backed it.
+          The MCP server's <span class="font-mono text-paper">docs</span> tool serves the project's canon
+          progressively: the <em>index</em> first (every article and what it answers), then one article, then one
+          section. A question returns pointers &mdash; and says <span class="font-mono text-paper">covered: false</span>
+          when the canon does not have it, instead of guessing.
         </p>
       </div>
 
       <div class="col-span-12 lg:col-span-7">
         <div class="specimen p-5">
-          <div class="folio mb-3">docs(query, audience=headless)</div>
+          <div class="folio mb-3">docs {} · docs {uri} · docs {uri, section} · docs {query}</div>
           <div class="hr-thin mb-4"></div>
           <div class="flex gap-2 flex-wrap">
             <input id="docs-q" placeholder="e.g. payload schema, font resolution, AdjList format, failure modes"
@@ -481,12 +482,11 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
 
         <div id="docs-result" class="specimen p-5 mt-4 hidden">
           <div class="flex items-baseline justify-between mb-3">
-            <div class="folio">answer</div>
+            <div class="folio">the canon</div>
             <div class="folio text-paper-mute" id="docs-stamp">—</div>
           </div>
           <div class="hr-rubric mb-4"></div>
           <div id="docs-answer" class="text-paper-2 text-[14px] leading-relaxed mb-4 md"></div>
-          <div class="folio mb-2">sources</div>
           <div id="docs-sources" class="space-y-2"></div>
         </div>
       </div>
@@ -1445,25 +1445,55 @@ const docsQ = document.getElementById('docs-q');
 const docsGo = document.getElementById('docs-go');
 const docsResult = document.getElementById('docs-result');
 
+// Progressive disclosure, as the agent sees it: index → pointers → one article.
+const esc = (x) => String(x ?? '').replace(/</g, '&lt;');
+function pointerCard(p, label) {
+  return \`<button class="docs-open text-left w-full border border-rule rounded p-3 hover:border-gilt" data-uri="\${esc(p.uri)}">
+      <div class="font-mono text-[11px] text-gilt">\${esc(p.uri)}</div>
+      <div class="text-paper text-[13px] mt-1">\${esc(p.title)}</div>
+      <div class="text-paper-mute text-[12px] mt-1 md">\${md(p.what_it_answers || '')}</div>
+      \${label ? \`<div class="folio mt-2">\${label}</div>\` : ''}
+    </button>\`;
+}
+function wireOpen() {
+  document.querySelectorAll('.docs-open').forEach(b => b.addEventListener('click', () => openDoc(b.dataset.uri)));
+}
+async function showIndex() {
+  const t0 = performance.now();
+  const out = await ptx.tool('docs', {});
+  document.getElementById('docs-stamp').textContent = \`\${Math.round(performance.now() - t0)} ms · docs {} · \${out.count} articles · \${out.served_from || ''}\`;
+  document.getElementById('docs-answer').innerHTML = '<span class="text-paper-mute">The index — every article, and what it answers. Open one, or ask a question.</span>';
+  document.getElementById('docs-sources').innerHTML = (out.articles || []).map(p => pointerCard(p)).join('');
+  wireOpen();
+  docsResult.classList.remove('hidden');
+}
+async function openDoc(uri) {
+  const t0 = performance.now();
+  const out = await ptx.tool('docs', { uri });
+  document.getElementById('docs-stamp').textContent = \`\${Math.round(performance.now() - t0)} ms · docs {uri} · \${out.served_from || ''}\`;
+  if (out.kind !== 'article') { document.getElementById('docs-answer').textContent = out.error || 'not found'; return; }
+  const sections = (out.sections || []).map(s => \`<span class="font-mono text-[11px] text-paper-mute">\${esc(s.slug)}</span>\`).join(' · ');
+  document.getElementById('docs-answer').innerHTML = \`<div class="font-mono text-[11px] text-gilt mb-2">\${esc(out.uri)}</div>\${md(out.body.replace(/^---\\n[\\s\\S]*?\\n---\\n?/, ''))}\`;
+  document.getElementById('docs-sources').innerHTML = \`<div class="folio">sections · docs {uri, section}</div><div class="mt-1">\${sections}</div><button id="docs-back" class="folio text-paper-2 hover:text-gilt ed-link mt-3">← back to the index</button>\`;
+  document.getElementById('docs-back').addEventListener('click', showIndex);
+  docsResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 async function runDocs(query) {
   docsGo.disabled = true;
-  docsResult.classList.add('hidden');
   try {
     const t0 = performance.now();
-    const out = await ptx.tool('docs', { query, audience: 'headless', depth: 1 });
+    const out = await ptx.tool('docs', { query, audience: 'headless' });
     const ms = Math.round(performance.now() - t0);
-    document.getElementById('docs-stamp').textContent = \`\${ms} ms · governance: \${out.governance_source || 'unknown'}\`;
-    document.getElementById('docs-answer').innerHTML = md(out.answer || out.error || '(no answer returned)');
-    const sources = (out.sources || []).slice(0, 5);
-    document.getElementById('docs-sources').innerHTML = sources.length
-      ? sources.map(s => \`
-          <div class="border border-rule rounded p-3">
-            <div class="font-mono text-[11px] text-gilt">\${(s.uri || '').replace(/</g,'&lt;')}</div>
-            <div class="text-paper text-[13px] mt-1">\${(s.title || '').replace(/</g,'&lt;')}</div>
-            <div class="text-paper-mute text-[12px] mt-1 md">\${md((s.snippet || '').slice(0, 240))}</div>
-            <div class="folio mt-2">score: \${(+s.score || 0).toFixed(2)}</div>
-          </div>\`).join('')
-      : '<div class="text-paper-mute font-mono text-[12px]">no sources returned</div>';
+    document.getElementById('docs-stamp').textContent = \`\${ms} ms · docs {query} · \${out.covered ? 'covered' : 'NOT covered'} · \${out.served_from || ''}\`;
+    document.getElementById('docs-answer').innerHTML = out.covered
+      ? \`<span class="text-paper-mute">Pointers, not answers — open one for the article.</span>\`
+      : \`<span class="text-rubric">covered: false</span> <span class="text-paper-mute">— nothing in the canon covers this well. Nearest neighbours below, for honesty, not as answers.</span>\`;
+    const ps = out.pointers || [];
+    document.getElementById('docs-sources').innerHTML = ps.length
+      ? ps.map(p => pointerCard(p, \`score: \${(+p.score || 0).toFixed(2)}\`)).join('') + '<button id="docs-back" class="folio text-paper-2 hover:text-gilt ed-link mt-3">← back to the index</button>'
+      : '<div class="text-paper-mute font-mono text-[12px]">no pointers</div>';
+    wireOpen();
+    const back = document.getElementById('docs-back'); if (back) back.addEventListener('click', showIndex);
     docsResult.classList.remove('hidden');
   } catch (e) {
     document.getElementById('docs-stamp').textContent = 'error';
@@ -1476,6 +1506,7 @@ async function runDocs(query) {
 }
 docsGo.addEventListener('click', () => runDocs(docsQ.value));
 docsQ.addEventListener('keydown', e => { if (e.key === 'Enter') runDocs(docsQ.value); });
+showIndex().catch(() => {});
 document.querySelectorAll('.docs-suggestion').forEach(b => {
   b.addEventListener('click', () => { docsQ.value = b.dataset.q; runDocs(b.dataset.q); });
 });

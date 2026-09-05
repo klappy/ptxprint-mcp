@@ -99,6 +99,8 @@ Common patterns and fixes:
 | 4 | `! Missing number, treated as zero` | A cfg value expected a number and got something else | Find the misspelled or wrong-typed value |
 | 4 | `! TeX capacity exceeded, sorry` | Document complexity exceeds XeTeX limits | Reduce complexity (fewer pictures per page, simpler styles) |
 | 3 | XeTeX completed but no PDF | Permissions or disk issue inside the worker | Re-submit; if persistent, escalate as infrastructure issue |
+| 3a | PTXprint **exited 0 with no PDF and no log** in ~2 s (`log_tail`: "[container diagnostic] PTXprint exited 0 with no PDF and no log file") | Payload has no `config_files` (define-only or `{books, sources}` only): PTXprint finds no config and quits silently — issue #40, reproduced 2026-09-05 | Include a `ptxprint.cfg` (start from `klappy://canon/articles/bundled-default-cfg` or a smoke fixture) |
+| 3b | `! Dimension too large` | The footnotes anchored on one page are taller than the page (study-note stacks) | `klappy://canon/articles/study-notes-and-footnotes` §Why a full book fails |
 
 ## The recovery loop
 

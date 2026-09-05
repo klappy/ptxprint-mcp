@@ -31,3 +31,6 @@ F2 stale `human_summary` on cached jobs · P3 `telemetry_public` refused-stateme
 
 ## Next dish named by the captain
 A Titus study bible: Aquifer Open Study Notes (Titus 3) + BSB through this server, notes typeset under the text. Ordered on the kitchen rail when the captain says so.
+
+## Addendum — 0.3.0, same day: progressive disclosure
+`docs` re-cut to four calls (`{}` index · `{uri}` article · `{uri, section}` · `{query}` pointers with `covered: false`); `depth` kept one release as an alias. New article `study-notes-and-footnotes` (from the Titus cook); `changes-txt-format` callout; real cfg keys in `settings-cookbook`; taxonomy rows 3a/3b; spec §3 docs + §5 Limits. Kitchen ticket `2026-09-05-ptxprint-docs-v2-progressive-disclosure`.
