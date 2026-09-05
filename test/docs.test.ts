@@ -35,11 +35,9 @@ describe("docs — self-served canon", () => {
     expect(full.length).toBe(3);
   });
 
-  it("snippets are plain text, not markdown, and skip one-line callouts", async () => {
+  it("snippets keep their markdown (renderers render it) and skip one-line callouts", async () => {
     const r = await fetchDocs("payload construction", "headless", 1);
-    expect(r.answer).not.toMatch(/^\s*>/);
-    expect(r.answer).not.toContain("**");
-    expect(r.answer).not.toContain("`");
+    expect(r.answer).toContain("**"); // the Quickstart callout is bold in the source; it must survive
     const p = await fetchDocs("phase 1 minimum payload", "headless", 1);
     expect((p.answer ?? "").length).toBeGreaterThanOrEqual(80);
   });
