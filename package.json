@@ -1,7 +1,7 @@
 {
   "name": "ptxprint-mcp",
   "version": "0.1.0",
-  "description": "PTXprint MCP server — stateless content-addressed Bible typesetting on Cloudflare Workers + Containers",
+  "description": "PTXprint MCP server \u2014 stateless content-addressed Bible typesetting on Cloudflare Workers + Containers",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,8 @@
     "cf-typegen": "wrangler types",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bundle-policy": "node --import tsx/esm scripts/bundle-telemetry-policy.ts"
+    "bundle-policy": "node --import tsx/esm scripts/bundle-telemetry-policy.ts",
+    "bundle-canon": "node --import tsx/esm scripts/bundle-canon.ts"
   },
   "engines": {
     "node": ">=20"

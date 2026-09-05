@@ -5,7 +5,7 @@
  *   submit_typeset(payload)   → job_id (or cached URL)
  *   get_job_status(job_id)    → state / progress / urls / errors
  *   cancel_job(job_id)        → set DO flag; container polls every 10s
- *   docs(query, audience?, depth?) → in-repo canon retrieval via oddkit proxy
+ *   docs(query, audience?, depth?) → in-repo canon retrieval, served from the bundled canon (no oddkit hop)
  *   telemetry_policy()        → governance policy from canon (three-tier fallback)
  *   telemetry_public(sql)     → public Analytics Engine query forwarder
  *
@@ -359,7 +359,7 @@ export class PtxprintMcp extends McpAgent<Env> {
     // this repo's canon. See src/docs.ts for the vodka-boundary check.
     this.server.tool(
       "docs",
-      "Search the PTXprint MCP canon (in-repo documentation) and return relevant guidance. Backed by oddkit; no separate oddkit setup required by the caller. Use depth=1 for snippet-level answers, depth=2 for the full top doc, depth=3 for top doc plus the next two ranked docs in full. Audience='headless' biases toward agent-facing docs (default); 'gui' biases toward training-manual docs.",
+      "Search the PTXprint MCP canon (in-repo documentation) and return relevant guidance. Served from the canon bundled into this worker at build time (no oddkit or network hop); the response names the canon sha it answered from. Use depth=1 for snippet-level answers, depth=2 for the full top doc, depth=3 for top doc plus the next two ranked docs in full. Audience='headless' biases toward agent-facing docs (default); 'gui' biases toward training-manual docs.",
       {
         query: z.string().min(1).describe("Natural-language question or topic."),
         audience: z

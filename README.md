@@ -54,7 +54,7 @@ The agent constructs a payload describing one typesetting job (config files inli
 
 ### As an agent operator
 
-Point your MCP-aware agent at `https://ptxprint.klappy.dev/mcp` (streamable-HTTP) or `/sse` (legacy SSE). The agent's reasoning loop becomes: **discover via `docs` → understand → construct payload → submit job → poll → handle result.** No additional knowledge base setup is required — the deploy's `docs` tool is a thin proxy over [`oddkit`](https://github.com/klappy/oddkit) configured against this repo's canon. Agents that already use oddkit can also point its `knowledge_base_url` at this repo directly for richer epistemic operations (orient, challenge, encode, validate).
+Point your MCP-aware agent at `https://ptxprint.klappy.dev/mcp` (streamable-HTTP) or `/sse` (legacy SSE). The agent's reasoning loop becomes: **discover via `docs` → understand → construct payload → submit job → poll → handle result.** No additional knowledge base setup is required — the deploy's `docs` tool serves the canon bundled into the worker at build time (`npm run bundle-canon`; CI fails if the bundle is stale), so there is no upstream hop that can drift. Every answer names the canon sha it came from (`served_from`). Agents that already use [`oddkit`](https://github.com/klappy/oddkit) can still point its `knowledge_base_url` at this repo for richer epistemic operations (orient, challenge, encode, validate).
 
 The tightest path to a working PDF: ask the `docs` tool what it knows. For example:
 
