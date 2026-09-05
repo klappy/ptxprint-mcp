@@ -72,8 +72,11 @@ Watch for: per-book column toggles override the global value (Psalms, Glossary, 
 
 | Section | Key | Common values |
 |---|---|---|
-| `[notes]` | footnote-enabled key | `True` / `False` |
-| `[notes]` | footnote-placement key | `page-bottom`, `chapter-end`, `column` |
+| `[notes]` | `includefootnotes` | `True` / `False` — the translation's `\f` notes |
+| `[notes]` | `includextfn` | `True` / `False` — USFM 3 extended study notes `\ef` |
+| `[notes]` | `fneachnewline` | `True` = one note per line; `False` = notes run on as a paragraph |
+| `[project]` | `usechangesfile` | `True` — required for any `changes.txt` rule to apply |
+| `[notes]` | `fnpos` | `page` (observed default) — placement of the note band |
 
 Footnote `\f` style (in `ptxprint.sty`) controls caller appearance independently.
 

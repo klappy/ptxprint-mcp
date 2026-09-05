@@ -25,7 +25,7 @@ The two are kept in one repo because they are tightly coupled: a tool surface ch
 - ✅ **Phase 1 — typeset from a fixture** — first PDF in session 10 (2026-04-29). Charis-substitution mitigation for fixtures referencing unbundled fonts.
 - ✅ **Phase 2 — payload-supplied fonts** — minitests fixture rendered with Gentium Plus 6.200 supplied entirely via the payload's `fonts` array; no system fonts, no cfg-edit substitution.
 - ✅ **Real-content renders** — BSB Gospel of John (4s wall-clock, ~360 KB PDF) and BSB Psalms (13 s wall-clock, ~900 KB PDF, 184 pages with embedded Gentium Plus + SourceCodePro). Reproducibility verified: same payload → same `job_id` (content-addressed) on cache hit.
-- ✅ **Agent-facing canon retrieval** — `docs` tool surfaces relevant canon articles via natural-language query; depth-2 returns the full top document. Since 0.2.0 (2026-09-05) it answers from the canon bundled into the Worker — no oddkit hop — after the proxy silently went empty when oddkit's response contract changed.
+- ✅ **Agent-facing canon retrieval** — `docs` tool surfaces relevant canon articles via natural-language query; depth-2 returns the full top document. Since 0.2.0 (2026-09-05) it answers from the canon bundled into the Worker — no oddkit hop; since 0.3.0 it is progressive (index → article → section → pointers) and says `covered: false` rather than guessing.
 - ⏳ **Container-side cancel** — `cancel_job` sets the flag; SIGTERM is Day-2 (validated 2026-09-05: a cancelled job still completes).
 - ⏳ **Reliable widget-ID overrides** (`-D` flag) — blocked on widget-ID-to-cfg-key mapping (open since session 1; tracked in latest handoffs).
 - ⏳ **Day-2 features** — autofill mode, `cancel_job` SIGTERM enforcement, per-pass progress streaming. Specced; not yet built.
@@ -57,12 +57,13 @@ The agent constructs a payload describing one typesetting job (config files inli
 
 Point your MCP-aware agent at `https://ptxprint.klappy.dev/mcp` (streamable-HTTP) or `/sse` (legacy SSE). The agent's reasoning loop becomes: **discover via `docs` → understand → construct payload → submit job → poll → handle result.** No additional knowledge base setup is required — the deploy's `docs` tool serves the canon bundled into the worker at build time (`npm run bundle-canon`; CI fails if the bundle is stale), so there is no upstream hop that can drift. Every answer names the canon sha it came from (`served_from`). Agents that already use [`oddkit`](https://github.com/klappy/oddkit) can still point its `knowledge_base_url` at this repo for richer epistemic operations (orient, challenge, encode, validate).
 
-The tightest path to a working PDF: ask the `docs` tool what it knows. For example:
+The tightest path to a working PDF: read the index, then open what you need.
 
 ```text
-docs(query="phase 1 minimum payload", depth=2)
-docs(query="payload construction", depth=2)
-docs(query="english single book template", depth=2)   # post PR #23
+docs {}                                                              # the index: every article, what it answers
+docs {uri: "klappy://canon/articles/payload-construction"}           # one article + its section map
+docs {uri: "klappy://canon/articles/payload-construction", section: "skeleton"}
+docs {query: "study notes as footnotes"}                             # pointers; covered:false when the canon lacks it
 ```
 
 The README does not list every available canon article — that catalog grows over time, and a hand-maintained list would lie in wait. The discovery surface is the tool; the filesystem under [`canon/articles/`](canon/articles/) is authoritative.

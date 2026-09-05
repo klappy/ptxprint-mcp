@@ -1,63 +1,93 @@
 import { describe, it, expect } from "vitest";
-import { fetchDocs, canonBundleInfo } from "../src/docs.js";
+import { docs, canonBundleInfo } from "../src/docs.js";
 
-// The three queries the README hands a new agent. Before the fix every one of
-// them returned answer:null / sources:[] (validation 2026-09-05, row D1).
-const README_QUERIES = ["phase 1 minimum payload", "payload construction", "english single book template"];
+// The six questions the Titus study-bible cook actually asked (2026-09-05), with the article that
+// should answer each — or `null` where the honest answer is "the canon does not cover this".
+const COOK_QUESTIONS: Array<[string, string | null]> = [
+  ["how do I build a submit_typeset payload", "klappy://canon/articles/payload-construction"],
+  ["changes.txt not applied how to enable usechangesfile", "klappy://canon/articles/study-notes-and-footnotes"],
+  ["study notes as footnotes extended footnote ef marker", "klappy://canon/articles/study-notes-and-footnotes"],
+  ["Dimension too large footnote error", "klappy://canon/articles/study-notes-and-footnotes"],
+  ["how many jobs can run at the same time container limit", "klappy://canon/specs/ptxprint-mcp-v1.3-spec"],
+  ["minimal payload with no config files fails silently exit 0 no PDF", "klappy://canon/articles/failure-mode-taxonomy"],
+];
 
-describe("docs — self-served canon", () => {
-  it("bundles a real canon, not an empty one", () => {
+describe("docs — progressive disclosure over the bundled canon", () => {
+  it("bundles a real canon", () => {
     const info = canonBundleInfo();
     expect(info.docs).toBeGreaterThan(20);
     expect(info.bytes).toBeGreaterThan(100_000);
   });
 
-  it.each(README_QUERIES)("answers the README query %j at depth 1", async (q) => {
-    const r = await fetchDocs(q, "headless", 1);
-    expect(r.governance_source).toBe("knowledge_base");
-    expect(r.answer).toBeTruthy();
-    expect(r.sources.length).toBeGreaterThan(0);
-    expect(r.sources[0].uri).toMatch(/^klappy:\/\/canon\//);
+  it("docs {} is the index: every bundled article once, each with what it answers", async () => {
+    const r = await docs({});
+    expect(r.kind).toBe("index");
+    if (r.kind !== "index") return;
+    expect(r.count).toBe(canonBundleInfo().docs);
+    expect(new Set(r.articles.map((a) => a.uri)).size).toBe(r.count);
+    for (const a of r.articles) {
+      expect(a.uri).toMatch(/^klappy:\/\/canon\//);
+      expect(a.title.length).toBeGreaterThan(3);
+      expect(a.what_it_answers.length).toBeGreaterThan(20);
+    }
     expect(r.served_from).toMatch(/^bundled-canon@/);
   });
 
-  it("ranks the payload-construction article first for its own title", async () => {
-    const r = await fetchDocs("payload construction", "headless", 1);
-    expect(r.sources[0].uri).toBe("klappy://canon/articles/payload-construction");
+  it("docs {uri} returns one article with a section map", async () => {
+    const r = await docs({ uri: "klappy://canon/articles/payload-construction" });
+    expect(r.kind).toBe("article");
+    if (r.kind !== "article") return;
+    expect(r.body).toContain("---");
+    expect(r.sections.length).toBeGreaterThan(3);
+    expect(r.sections.map((s) => s.slug)).toContain("skeleton");
   });
 
-  it("returns the full top document at depth 2 and three full docs at depth 3", async () => {
-    const d2 = await fetchDocs("english single book template", "headless", 2);
-    expect(d2.answer).toContain("---"); // frontmatter present → full body, not a snippet
-    expect(d2.sources[0].snippet.length).toBeGreaterThan(500);
-    const d3 = await fetchDocs("english single book template", "headless", 3);
-    const full = d3.sources.slice(0, 3).filter((s) => s.snippet.length > 500);
-    expect(full.length).toBe(3);
+  it("docs {uri, section} returns that section and only it", async () => {
+    const r = await docs({ uri: "klappy://canon/articles/payload-construction", section: "skeleton" });
+    expect(r.kind).toBe("section");
+    if (r.kind !== "section") return;
+    expect(r.body.startsWith("## Skeleton")).toBe(true);
+    expect(r.body).not.toContain("## What goes where");
+    expect(r.siblings).toContain("skeleton");
   });
 
-  it("snippets keep their markdown (renderers render it) and skip one-line callouts", async () => {
-    const r = await fetchDocs("payload construction", "headless", 1);
-    expect(r.answer).toContain("**"); // the Quickstart callout is bold in the source; it must survive
-    const p = await fetchDocs("phase 1 minimum payload", "headless", 1);
-    expect((p.answer ?? "").length).toBeGreaterThanOrEqual(80);
+  it("an unknown uri is an error with a pointer back to the index, not a guess", async () => {
+    const r = await docs({ uri: "klappy://canon/articles/does-not-exist" });
+    expect(r.kind).toBe("error");
+    expect(r.next).toMatch(/docs \{\}/);
   });
 
-  it("says nothing rather than something for a query the canon does not cover", async () => {
-    const r = await fetchDocs("zzqx quantum espresso llama", "headless", 1);
-    expect(r.answer).toBeNull();
-    expect(r.sources).toEqual([]);
-    expect(r.deeper.length).toBe(2);
+  it.each(COOK_QUESTIONS)("search: %j → %s", async (q, want) => {
+    const r = await docs({ query: q });
+    expect(r.kind).toBe("search");
+    if (r.kind !== "search") return;
+    if (want === null) { expect(r.covered).toBe(false); return; }
+    expect(r.covered).toBe(true);
+    expect(r.pointers.slice(0, 3).map((p) => p.uri)).toContain(want);
+    for (const p of r.pointers) expect((p as unknown as { body?: string }).body).toBeUndefined(); // pointers, never bodies
+  });
+
+  it("search says covered:false for a question the canon does not have", async () => {
+    const r = await docs({ query: "zzqx quantum espresso llama farming" });
+    expect(r.kind).toBe("search");
+    if (r.kind !== "search") return;
+    expect(r.covered).toBe(false);
+    expect(r.next).toMatch(/nothing in the canon covers/);
+  });
+
+  it("deprecated depth alias still returns an answer for old callers", async () => {
+    const r = await docs({ query: "payload construction", depth: 2 });
+    if (r.kind !== "search") throw new Error("expected search");
+    expect(r.answer).toContain("---");
+    expect(r.sources?.[0]?.uri).toBe("klappy://canon/articles/payload-construction");
   });
 
   it("never reaches the network", async () => {
     const realFetch = globalThis.fetch;
     let called = false;
     globalThis.fetch = (async () => { called = true; throw new Error("network"); }) as typeof fetch;
-    try {
-      await fetchDocs("font resolution", "headless", 2);
-    } finally {
-      globalThis.fetch = realFetch;
-    }
+    try { await docs({}); await docs({ query: "font resolution" }); await docs({ uri: "klappy://canon/articles/font-resolution" }); }
+    finally { globalThis.fetch = realFetch; }
     expect(called).toBe(false);
   });
 });

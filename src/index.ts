@@ -5,7 +5,7 @@
  *   submit_typeset(payload)   → job_id (or cached URL)
  *   get_job_status(job_id)    → state / progress / urls / errors
  *   cancel_job(job_id)        → set DO flag; container polls every 10s
- *   docs(query, audience?, depth?) → in-repo canon retrieval, served from the bundled canon (no oddkit hop)
+ *   docs({} | {uri} | {uri,section} | {query}) → the canon, progressively, from the bundled canon (no network)
  *   telemetry_policy()        → governance policy from canon (three-tier fallback)
  *   telemetry_public(sql)     → public Analytics Engine query forwarder
  *
@@ -39,7 +39,7 @@ import {
   readJobState,
   cancelJob as cancelJobDo,
 } from "./job-state-do.js";
-import { fetchDocs } from "./docs.js";
+import { docs } from "./docs.js";
 import { BUNDLED_POLICY } from "./bundled-policy.js";
 import { HOMEPAGE_HTML } from "./homepage.js";
 import {
@@ -368,45 +368,25 @@ export class PtxprintMcp extends McpAgent<Env> {
 
     // ----- docs -----
     //
-    // Thin proxy to oddkit MCP for in-repo canon retrieval. Reverses session-2
-    // D-004 ("no retrieval in MCP server") for one specific reason: downstream
-    // agents (BT Servant, others) want one MCP wired up, not two. The retrieval
-    // brain still lives in oddkit; this tool is a forwarding layer pinned to
-    // this repo's canon. See src/docs.ts for the vodka-boundary check.
+    // The canon, served progressively from the bundle in src/bundled-canon.ts (see src/docs.ts):
+    //   docs {}              → index (uri · title · what it answers · tags)
+    //   docs {uri}           → one article + its section map
+    //   docs {uri, section}  → one section
+    //   docs {query}         → ranked pointers, `covered: false` when nothing fits — never bodies
     this.server.tool(
       "docs",
-      "Search the PTXprint MCP canon (in-repo documentation) and return relevant guidance. Served from the canon bundled into this worker at build time (no oddkit or network hop); the response names the canon sha it answered from. Use depth=1 for snippet-level answers, depth=2 for the full top doc, depth=3 for top doc plus the next two ranked docs in full. Audience='headless' biases toward agent-facing docs (default); 'gui' biases toward training-manual docs.",
+      "The PTXprint MCP canon, progressively. Call with no arguments for the INDEX (every article: uri, title, what it answers) — read that first. Then {uri} for one article, {uri, section} for one section (slugs come back with the article), or {query} to find pointers; a query that the canon does not cover answers covered:false instead of a guess. Bodies are returned only by {uri}. Served from the canon bundled into this worker (no network); every response names the canon hash it came from. `depth` is a deprecated 0.2 alias (query + depth≥2 also returns the top hit's article as `answer`).",
       {
-        query: z.string().min(1).describe("Natural-language question or topic."),
-        audience: z
-          .enum(["headless", "gui"])
-          .optional()
-          .default("headless")
-          .describe("Bias the ranking toward agent-facing (headless) or human-training (gui) docs."),
-        depth: z
-          .union([z.literal(1), z.literal(2), z.literal(3)])
-          .optional()
-          .default(1)
-          .describe("Progressive disclosure: 1 = snippet, 2 = full top doc, 3 = top doc + next two."),
+        query: z.string().min(1).optional().describe("Find pointers for a question or topic. Omit everything for the index."),
+        uri: z.string().min(1).optional().describe("Open one article, e.g. klappy://canon/articles/payload-construction."),
+        section: z.string().min(1).optional().describe("With uri: one section by slug or heading text."),
+        audience: z.enum(["headless", "gui"]).optional().default("headless").describe("Ranking tiebreaker for {query}: agent-facing (headless) or human-training (gui) docs."),
+        limit: z.number().int().min(1).max(25).optional().describe("Pointers to return for {query} (default 8)."),
+        depth: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().describe("Deprecated 0.2 alias; prefer {uri}."),
       },
-      async ({
-        query,
-        audience,
-        depth,
-      }: {
-        query: string;
-        audience?: "headless" | "gui";
-        depth?: 1 | 2 | 3;
-      }) => {
-        const result = await fetchDocs(query, audience ?? "headless", depth ?? 1);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+      async (args: { query?: string; uri?: string; section?: string; audience?: "headless" | "gui"; limit?: number; depth?: 1 | 2 | 3 }) => {
+        const result = await docs(args);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       },
     );
 
@@ -1148,7 +1128,7 @@ async function emitTelemetryForMcp(
             docsAudience = String(rpc.params.audience ?? "headless");
             // docs_top_uri from response (canon URIs are public)
             const sources = toolResult.sources as Array<{ uri?: string }> | undefined;
-            docsTopUri = String(sources?.[0]?.uri ?? "");
+            docsTopUri = String((toolResult as { pointers?: Array<{ uri?: string }> }).pointers?.[0]?.uri ?? (toolResult as { uri?: string }).uri ?? sources?.[0]?.uri ?? "");
             // NOTE: rpc.params.query is NEVER logged — treated as content per
             // canon/governance/telemetry-governance §"Privacy Floor"
           }
