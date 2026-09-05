@@ -22,6 +22,8 @@ jobs:
       - run: npm ci
       - name: Generate Worker types (Env comes from wrangler config)
         run: npm run cf-typegen --if-present
+      - name: Bundled canon is current
+        run: npm run bundle-canon && git diff --exit-code --stat -- src/bundled-canon.ts || (echo 'src/bundled-canon.ts is stale — run npm run bundle-canon and commit' && exit 1)
       - name: Lint (if present)
         run: npm run lint --if-present
       - name: Typecheck (if present)

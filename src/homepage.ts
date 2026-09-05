@@ -719,7 +719,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           Each MCP server holds opinions about exactly one concern. The PTXprint server holds <span class="text-paper">none</span>
           about typesetting craft &mdash; only about subprocess lifecycle, content-addressed caching, and sandboxed
           file IO. Domain knowledge lives next door, in canon. Agents see <span class="text-paper">one MCP</span>;
-          PTXprint delegates canon retrieval to oddkit upstream when serving <span class="font-mono text-gilt">docs()</span>.
+          PTXprint serves <span class="font-mono text-gilt">docs()</span> from the canon bundled into the worker; oddkit remains the canon's companion service for agents that load it directly.
         </p>
         <p class="text-paper-2 mt-4 leading-relaxed">
           The agent's reasoning loop is one MCP wide:
