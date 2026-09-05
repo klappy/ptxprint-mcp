@@ -29,6 +29,8 @@ These conventions follow the broader klappy canon's DOLCHEO frontmatter pattern.
 
 ## Pull requests
 
+**No drift.** A PR that changes behaviour updates, in the same PR, every document that describes that behaviour — README, `ARCHITECTURE.md`, the spec under `canon/specs/`, the canon article, the tool description in `src/index.ts`, the homepage diagram, `docs/TENSIONS.md`. Leaving a doc the PR itself made stale for "a follow-up" is a defect the review should catch (kitchen ruling R20, 2026-09-04). The CI bundle check enforces this for `canon/` → `docs()`; the rest is the reviewer's job.
+
 - Spec changes (`canon/specs/`) are versioned. Don't edit a published version; create a new one (`v1.3-draft.md`) and supersede.
 - Governance changes (`canon/governance/`) edit in place; the doc is meant to evolve with the running system. Significant changes should reference the relevant session encoding.
 - Code changes need accompanying spec or governance changes if they affect the contract.

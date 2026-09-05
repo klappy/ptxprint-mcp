@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status: Phase 1 demonstrated](https://img.shields.io/badge/status-phase%201%20demonstrated-green.svg)]()
-[![Spec: v1.2-draft](https://img.shields.io/badge/spec-v1.2--draft-blueviolet.svg)](canon/specs/ptxprint-mcp-v1.2-spec.md)
+[![Spec: v1.3-draft](https://img.shields.io/badge/spec-v1.3--draft-blueviolet.svg)](canon/specs/ptxprint-mcp-v1.3-spec.md)
 
 ---
 
@@ -20,19 +20,20 @@ The two are kept in one repo because they are tightly coupled: a tool surface ch
 
 ## Project status
 
-**Phase 1 demonstrated.** The MCP server is deployed and produces real PDFs end-to-end. As of the most recent validation (2026-04-30, see [`canon/handoffs/open-items-validated-2026-04-30.md`](canon/handoffs/open-items-validated-2026-04-30.md)):
+**Phase 1 demonstrated.** The MCP server is deployed and produces real PDFs end-to-end. As of the most recent validation (2026-09-05, see [`docs/validation/2026-09-05.md`](docs/validation/2026-09-05.md); the prior one is [`canon/handoffs/open-items-validated-2026-04-30.md`](canon/handoffs/open-items-validated-2026-04-30.md)):
 
 - ✅ **Phase 1 — typeset from a fixture** — first PDF in session 10 (2026-04-29). Charis-substitution mitigation for fixtures referencing unbundled fonts.
 - ✅ **Phase 2 — payload-supplied fonts** — minitests fixture rendered with Gentium Plus 6.200 supplied entirely via the payload's `fonts` array; no system fonts, no cfg-edit substitution.
 - ✅ **Real-content renders** — BSB Gospel of John (4s wall-clock, ~360 KB PDF) and BSB Psalms (13 s wall-clock, ~900 KB PDF, 184 pages with embedded Gentium Plus + SourceCodePro). Reproducibility verified: same payload → same `job_id` (content-addressed) on cache hit.
-- ✅ **Agent-facing canon retrieval** — `docs` tool surfaces relevant canon articles via natural-language query; depth-2 returns the full top document.
+- ✅ **Agent-facing canon retrieval** — `docs` tool surfaces relevant canon articles via natural-language query; depth-2 returns the full top document. Since 0.2.0 (2026-09-05) it answers from the canon bundled into the Worker — no oddkit hop — after the proxy silently went empty when oddkit's response contract changed.
+- ⏳ **Container-side cancel** — `cancel_job` sets the flag; SIGTERM is Day-2 (validated 2026-09-05: a cancelled job still completes).
 - ⏳ **Reliable widget-ID overrides** (`-D` flag) — blocked on widget-ID-to-cfg-key mapping (open since session 1; tracked in latest handoffs).
 - ⏳ **Day-2 features** — autofill mode, `cancel_job` SIGTERM enforcement, per-pass progress streaming. Specced; not yet built.
 - ⏳ **Templates / composition pattern** — drafted as a downstream-agent bootstrap surface; see open PRs.
 
 **Live deployment:** `https://ptxprint.klappy.dev` — `/health` returns `{ ok: true, service, version, spec, tools }`; `/mcp` accepts streamable-HTTP MCP. Worker version and spec version are reported live; the README does not duplicate them to avoid drift.
 
-**Read the full spec:** [`canon/specs/ptxprint-mcp-v1.2-spec.md`](canon/specs/ptxprint-mcp-v1.2-spec.md).
+**Read the full spec:** [`canon/specs/ptxprint-mcp-v1.3-spec.md`](canon/specs/ptxprint-mcp-v1.3-spec.md) (v1.2 remains the tool-surface baseline; v1.3 adds telemetry). `/health` reports the live `spec` string — trust it over this line.
 
 **Read the architecture overview:** [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
