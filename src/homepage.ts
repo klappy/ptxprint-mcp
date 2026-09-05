@@ -774,13 +774,13 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
               <text x="630" y="228" text-anchor="middle" fill="#8A7E66" font-family="JetBrains Mono" font-size="9">SHA-256 cache key</text>
             </g>
 
-            <!-- oddkit MCP (right-bottom, dim — internal upstream for docs()) -->
+            <!-- bundled canon (right-bottom, dim — docs() answers from inside the worker) -->
             <g>
               <rect x="560" y="260" width="140" height="100" fill="#0E0C08" stroke="#3A2F1F" stroke-dasharray="3,3"/>
-              <text x="630" y="294" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9" letter-spacing="2">UPSTREAM · INTERNAL</text>
-              <text x="630" y="316" text-anchor="middle" fill="#BFB294" font-family="Fraunces" font-size="18">oddkit MCP</text>
-              <text x="630" y="336" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">canon retrieval</text>
-              <text x="630" y="350" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">(invisible to agent)</text>
+              <text x="630" y="294" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9" letter-spacing="2">CANON · BUNDLED</text>
+              <text x="630" y="316" text-anchor="middle" fill="#BFB294" font-family="Fraunces" font-size="18">canon/ in the worker</text>
+              <text x="630" y="336" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">docs() search, in-process</text>
+              <text x="630" y="350" text-anchor="middle" fill="#6F6450" font-family="JetBrains Mono" font-size="9">(no network hop)</text>
             </g>
 
             <!-- Single agent → ptxprint arrow (the only thing the agent talks to) -->
@@ -795,9 +795,9 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
             <line x1="480" y1="200" x2="558" y2="200" stroke="#D9A93E" stroke-width="1.5" marker-end="url(#arr)"/>
             <text x="490" y="194" fill="#D9A93E" font-family="JetBrains Mono" font-size="9">persist</text>
 
-            <!-- ptxprint → oddkit (internal canon fetch — dim grey) -->
+            <!-- ptxprint → bundled canon (in-process — dim grey) -->
             <line x1="480" y1="240" x2="558" y2="305" stroke="#8A7E66" stroke-width="1.2" stroke-dasharray="3,3" marker-end="url(#arrG)"/>
-            <text x="488" y="275" fill="#8A7E66" font-family="JetBrains Mono" font-size="9">docs() upstream</text>
+            <text x="488" y="275" fill="#8A7E66" font-family="JetBrains Mono" font-size="9">docs() reads</text>
           </svg>
 
           <!-- Legend -->
