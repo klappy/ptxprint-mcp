@@ -55,12 +55,17 @@ function walk(dir: string): string[] {
   return out;
 }
 
+function unquote(s: string): string {
+  return s.replace(/^["']|["']$/g, "");
+}
+
 function frontmatter(md: string): Record<string, string | string[]> {
   const m = md.match(/^---\n([\s\S]*?)\n---/);
   const fm: Record<string, string | string[]> = {};
   if (!m) return fm;
-  for (const line of m[1].split("\n")) {
-    const kv = line.match(/^([A-Za-z_]+):\s*(.*)$/);
+  const lines = m[1].split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const kv = lines[i].match(/^([A-Za-z_]+):\s*(.*)$/);
     if (!kv) continue;
     const [, k, raw] = kv;
     const v = raw.trim();
@@ -68,10 +73,20 @@ function frontmatter(md: string): Record<string, string | string[]> {
       fm[k] = v
         .slice(1, -1)
         .split(",")
-        .map((s) => s.trim().replace(/^["']|["']$/g, ""))
+        .map((s) => unquote(s.trim()))
         .filter(Boolean);
+    } else if (!v) {
+      // YAML block list: `key:` followed by indented `- item` lines.
+      const items: string[] = [];
+      while (i + 1 < lines.length) {
+        const item = lines[i + 1].match(/^\s+-\s+(.*)$/);
+        if (!item) break;
+        items.push(unquote(item[1].trim()));
+        i++;
+      }
+      fm[k] = items.length ? items : v;
     } else {
-      fm[k] = v.replace(/^["']|["']$/g, "");
+      fm[k] = unquote(v);
     }
   }
   return fm;
