@@ -25,6 +25,7 @@ import {
   MINIMAL_POLICY,
   type TelemetryEnv,
   type AnalyticsEngineDatasetLike,
+  WORKER_VERSION,
 } from "../src/telemetry.js";
 
 // ────────────────────────────────────────────────────────────
@@ -487,7 +488,7 @@ describe("writeTelemetry — blob/double mapping", () => {
     expect(call.blobs[2]).toBe("submit_typeset");     // 3: tool_name
     expect(call.blobs[3]).toBe("test-consumer");      // 4: consumer_label
     expect(call.blobs[4]).toBe("query");              // 5: consumer_source
-    expect(call.blobs[5]).toBe("0.1.0");              // 6: worker_version
+    expect(call.blobs[5]).toBe(WORKER_VERSION);       // 6: worker_version
     expect(call.blobs[9]).toBe("abcdef12");           // 10: payload_hash_prefix (truncated)
     expect(call.blobs.length).toBe(12);               // Exactly 12 blobs
 

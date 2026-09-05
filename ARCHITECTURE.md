@@ -25,7 +25,7 @@ Agent (Claude Desktop / BT Servant / etc.)
 │  • submit_typeset(payload) → job_id (or cached URL)     │
 │  • get_job_status(job_id)  → state, progress, URLs      │
 │  • cancel_job(job_id)      → SIGTERM via DO flag        │
-│  • docs(query, ...)        → oddkit canon (forwarder)   │
+│  • docs(query, ...)        → bundled canon (in-process) │
 │  • telemetry_public(sql)   → Analytics Engine query     │
 │  • telemetry_policy()      → governance from canon      │
 └─────────────────────────────────────────────────────────┘

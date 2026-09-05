@@ -255,10 +255,10 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
           <span class="text-paper">&nbsp;and gets out of the way.</span>
         </p>
         <p class="text-paper-2 text-base leading-[1.7] mt-6">
-          The opinions live next door, in a canon repository served by
-          <a href="https://oddkit.klappy.dev" class="text-gilt ed-link" target="_blank" rel="noopener">oddkit</a>.
-          But the agent doesn't talk to two MCPs — it talks to one. The
-          <span class="font-mono text-paper">docs(query)</span> tool on this server proxies canon retrieval upstream,
+          The opinions live next door, in a canon repository this Worker carries with it
+          (and which <a href="https://oddkit.klappy.dev" class="text-gilt ed-link" target="_blank" rel="noopener">oddkit</a> can read too).
+          The agent talks to one MCP. The
+          <span class="font-mono text-paper">docs(query)</span> tool on this server answers from the bundled canon, in-process,
           so the agent's loop is <span class="smallcaps text-paper">ask docs &middot; understand &middot; act &middot; observe</span>
           across a single MCP connection. One server, one concern &mdash; the design rationale is in
           <a href="#architecture" class="text-gilt ed-link">§VI</a>.
@@ -1655,10 +1655,9 @@ async function loadOddkitCompanion() {
           <div class="counter text-paper-2 text-[42px] leading-none">\${fmt(totalNum)}</div>
           <div class="folio text-paper-mute mt-1">\${(totalNum / 7).toFixed(0)} avg / day</div>
           <div class="text-paper-mute text-[11px] mt-3 leading-relaxed">
-            For context: this is the upstream <a href="https://oddkit.klappy.dev"
-              target="_blank" rel="noopener" class="text-gilt ed-link">canon-retrieval service</a>
-            ptxprint MCP delegates to when serving <code class="font-mono text-paper">docs()</code>.
-            Two services, one MCP from the agent's view.
+            For context: <a href="https://oddkit.klappy.dev"
+              target="_blank" rel="noopener" class="text-gilt ed-link">oddkit</a> is the companion canon service —
+            agents that load it can read this repo's canon directly. Since 0.2.0, <code class="font-mono text-paper">docs()</code> is served from the canon bundled into this Worker; nothing here goes upstream.
           </div>
         </div>
         <div class="col-span-12 md:col-span-8">
