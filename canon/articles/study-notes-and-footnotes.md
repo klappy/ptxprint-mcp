@@ -11,7 +11,7 @@ canonical_status: working
 
 # Study Notes and Footnotes — Putting Notes Under the Text, and Keeping Them There
 
-> **What this answers.** How do I add study notes (or any notes) to a book without editing the source USFM? Why did my `changes.txt` do nothing? What is the difference between `\f` and `\ef`? Why does a book with many notes fail with `! Dimension too large`, and what layout settings make a study Bible fit?
+> **What this answers.** How do I add study notes (or any notes) to a book without editing the source USFM? Why did my `changes.txt` do nothing? Why is my title/licence page (`FRTlocal.sfm`) missing? What is the difference between `\f` and `\ef`? Why does a book with many notes fail with `! Dimension too large`, and what layout settings make a study Bible fit?
 >
 > **Related articles.** `klappy://canon/articles/changes-txt-format` · `klappy://canon/articles/config-construction` · `klappy://canon/articles/settings-cookbook` · `klappy://canon/articles/failure-mode-taxonomy`
 
@@ -21,7 +21,7 @@ canonical_status: working
 
 Scripture in the text block (usually two columns), notes in a band at the foot of the **same page** as the verses they explain. In USFM the notes are footnotes anchored in the verse; PTXprint/XeTeX places each page's notes under that page's text and shrinks the text block to make room. Nothing else has to be built: the layout is a footnote layout with more footnotes.
 
-Verified 2026-09-05: Titus, BSB, 14 Aquifer Open Study Notes as `\f` footnotes at their verses, A5 two-column, Gentium — every note landed on the page of its verse (kitchen ticket `2026-09-05-titus-study-bible-ptxprint`).
+Verified 2026-09-05: Titus, BSB, all 41 Aquifer Open Study Notes as `\f` footnotes at their verses, 6×9 two-column, Gentium — every note on the page of its verse; and the same book as a Spanish edition (Aquifer Spanish Bible Reference Text, 41 localized notes) from the same payload shape (kitchen tickets `2026-09-05-titus-study-bible-ptxprint`, `…-spa`).
 
 ## Getting the notes into the text without touching the source
 
@@ -50,6 +50,17 @@ usechangesfile = True
 ```
 
 The John fixture (`smoke/bsb-jhn-empirical.json`) ships `usechangesfile = False`. A payload that adds a `changes.txt` without flipping this renders a perfect book with no notes and no error — the first Titus run did exactly that. Check this line first when a rule "did nothing".
+
+The same fixture ships **`iffrontmatter = False`** (`[project]`). With it off, a `FRTlocal.sfm` in `config_files` is accepted and silently skipped — no title page, no licence page, no error. The first Titus edition was plated that way and the omission was only caught when the Spanish edition was opened at page 1 (2026-09-05). Flip it, and set `maintitle` / `subtitle` in the cfg to the book being printed (the fixture says `John`):
+
+```
+[project]
+iffrontmatter = True
+maintitle = Tito
+subtitle = Texto de Referencia Bíblico en Español del Aquifer
+```
+
+Both flags belong in the same checklist line: a setting that is *off* makes PTXprint accept your file and print nothing from it. Verify by opening page 1, not by counting pages.
 
 ## `\f` or `\ef`?
 
@@ -81,7 +92,8 @@ Practical ceiling to plan for: at 7.5 pt in two columns on 6×9, a page carries 
 
 ## Diagnostic checklist
 
-1. Notes missing, no error → `usechangesfile = True`? (`\ef`: `includextfn = True`?)
+1. Notes missing, no error → `usechangesfile = True`? (`\ef`: `includextfn = True`?) Front matter missing, no error → `iffrontmatter = True`?
+0. Book not found, silent exit, stderr `… 'NoneType' … findScript` → the source `filename` does not carry the *Paratext* book number (Titus is `57TIT`, not `56TIT`; see `payload-construction` §Sources).
 2. Notes on the wrong verse → anchor has the trailing space; `at BKK c:v` scope present.
 3. `! Dimension too large` → count characters of notes anchored on the failing page; shrink notes / enlarge page / split.
 4. Notes present but the translation's own footnotes vanished → the rule replaced a `\v` that already carried a `\f`; anchor after the existing note or insert before the next `\v`.

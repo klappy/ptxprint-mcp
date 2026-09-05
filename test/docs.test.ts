@@ -10,6 +10,9 @@ const COOK_QUESTIONS: Array<[string, string | null]> = [
   ["Dimension too large footnote error", "klappy://canon/articles/study-notes-and-footnotes"],
   ["how many jobs can run at the same time container limit", "klappy://canon/specs/ptxprint-mcp-v1.3-spec"],
   ["minimal payload with no config files fails silently exit 0 no PDF", "klappy://canon/articles/failure-mode-taxonomy"],
+  // the Spanish Titus cook (2026-09-05)
+  ["book not found findScript NoneType source filename Paratext book number", "klappy://canon/articles/payload-construction"],
+  ["FRTlocal front matter title licence page missing iffrontmatter", "klappy://canon/articles/study-notes-and-footnotes"],
 ];
 
 describe("docs — progressive disclosure over the bundled canon", () => {
