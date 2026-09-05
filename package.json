@@ -1,6 +1,6 @@
 {
   "name": "ptxprint-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "PTXprint MCP server \u2014 stateless content-addressed Bible typesetting on Cloudflare Workers + Containers",
   "private": true,
   "type": "module",

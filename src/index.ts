@@ -227,12 +227,27 @@ export class PtxprintMcp extends McpAgent<Env> {
           }),
         });
 
+        // One container instance per job (idFromName(jobId)) + sleepAfter 45m means five jobs in
+        // 45 minutes exhaust max_instances=5 and the sixth fails with "Maximum number of running
+        // container instances exceeded" (observed 2026-09-05 while typesetting Titus in a loop).
+        // The container runs the job synchronously and returns when it is done, so the instance
+        // has nothing left to do: stop it the moment the dispatch returns. sleepAfter stays as the
+        // ceiling for the case where this call itself fails.
+        const releaseContainer = async () => {
+          try {
+            await (containerStub as unknown as { stop: () => Promise<void> }).stop();
+          } catch {
+            // Best-effort: sleepAfter reclaims it within 45m if stop() is unavailable or throws.
+          }
+        };
+
         const dispatchPromise = (async () => {
           await patchJobState({
             human_summary: "Worker: about to dispatch container.fetch (pre-call breadcrumb).",
           });
           try {
             const res = await containerStub.fetch(containerReq);
+            void releaseContainer();
             if (!res.ok) {
               const body = await res.text().catch(() => "<no body>");
               await patchJobState({
@@ -259,6 +274,7 @@ export class PtxprintMcp extends McpAgent<Env> {
               human_summary: `Worker: container.fetch threw: ${msg}`,
               log_tail: (e?.stack ?? "").slice(0, 2000),
             });
+            void releaseContainer();
           }
         })();
 

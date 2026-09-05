@@ -24,7 +24,7 @@ import {
 //  Constants
 // ────────────────────────────────────────────────────────────
 
-export const WORKER_VERSION = "0.2.0"; // 0.2.0: docs() served from the bundled canon (2026-09-05)
+export const WORKER_VERSION = "0.2.1"; // 0.2.1: container released when a job returns; 0.2.0: docs() from the bundled canon (2026-09-05)
 
 const POLICY_RAW_URL =
   "https://raw.githubusercontent.com/klappy/ptxprint-mcp/main/canon/governance/telemetry-governance.md";

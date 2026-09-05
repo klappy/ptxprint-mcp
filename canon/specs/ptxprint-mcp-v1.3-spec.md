@@ -298,6 +298,8 @@ Durable Objects        Cloudflare R2
 
 ### The Container — additions to v1.2
 
+**2026-09-05 amendment (Worker 0.2.1).** One Container DO is created per job (`idFromName(job_id)`). The Worker now calls `stop()` on the instance as soon as the dispatch `fetch` returns (the container runs the job synchronously), so `sleepAfter = 45m` is a ceiling, not the release path. Before this, five jobs inside 45 minutes exhausted `max_instances = 5` and the sixth failed with "Maximum number of running container instances exceeded" — found while typesetting Titus in a loop (kitchen ticket `2026-09-05-titus-study-bible-ptxprint`).
+
 - A small telemetry helper function (~30 lines of Python) that POSTs envelopes to `http://worker.local/internal/telemetry` via the Container's outbound service binding to the Worker.
 - Phase-transition hooks: between the existing v1.2 stages in `container/main.py`, insert one helper call per transition. Each hook fires on the boundary between phases and records the `duration_ms` of the just-completed phase.
 - Terminal hook: at the end of the run (success, failure, or cancellation), one final `job_terminal` event with the failure_mode and totals.
