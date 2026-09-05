@@ -9,3 +9,8 @@
 | ~~T-2026-09-05-D1s~~ closed by the snippet fix | D1' | depth-1 snippet picks a one-line callout ("Superseded.") when it is the first paragraph mentioning a term | prefer the first paragraph ≥ 80 chars, else fall through | next `src/docs.ts` cook |
 | T-2026-09-05-F6 | Titus cook | one container per job + sleepAfter 45m exhausts max_instances=5 after five jobs | **fixed** — Worker stops the instance when the job returns (0.2.1) | — |
 | T-2026-09-05-F7 | Titus cook | `! Dimension too large` when a full book of study-note footnotes is set (Titus 1–3, 41 notes; chapter 3 alone renders) — a footnote stack on one A5 page that outgrows it | investigate: `\ef` vs `\f`, note splitting, or a taller page | Titus dish / next cook |
+
+### 2026-09-05 (Spanish Titus cook) — closed in 0.3.1
+- **F10** Source `filename` must carry the *Paratext* book number (`57TIT`), not a sequential one (`56TIT`): PTXprint finds the book by it; wrong → silent exit, `findScript` traceback. → canon `payload-construction` §Sources. Closed.
+- **F11** Fixture `iffrontmatter = False` silently skips `FRTlocal.sfm` (the first plated Titus PDF had no licence page). → canon `study-notes-and-footnotes` §The setting you must flip + checklist. Closed.
+- Two articles without a "What this answers." line (`hero-metrics-and-storytelling`, `snapshot-operations`) — lines added. Closed.

@@ -141,6 +141,8 @@ Each entry must include a fetchable URL and the sha256 of the file at that URL. 
 }
 ```
 
+**`filename` is how PTXprint finds the book.** It must follow the Paratext naming rule `NNBBBSSS.ext` — `NN` the *Paratext* book number, `BBB` the USFM code, `SSS` the project id — because PTXprint locates a book by that number, not by the `\id` line. Paratext numbering skips 40: `41MAT … 44JHN … 57TIT 58PHM … 67REV`. Sources that number books sequentially (the Aquifer repos publish Titus as `56TIT…`) must be renamed in the payload — the URL and sha256 stay the same, only `filename` changes. Symptom of a wrong number: `failure_mode: silent`, stderr ending `AttributeError: 'NoneType' object has no attribute 'findScript'` (observed 2026-09-05, Titus from `56TITASBRT.SFM`).
+
 URL stability matters for caching. Two payloads pointing at the same content via different URLs hash differently and miss the cache. Prefer:
 
 - Stable HTTPS endpoints the agent's host controls (a static file server, the user's own bucket)

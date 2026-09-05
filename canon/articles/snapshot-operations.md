@@ -15,6 +15,8 @@ status: working
 
 # Snapshot Operations — Track A Telemetry Archive
 
+> **What this answers.** How an operator sets up the R2 snapshot bucket, bootstraps the telemetry archive after deploy, smoke-tests the weekly cron snapshot, and reads the lifetime hero stat from the archive plus the current week.
+
 > The snapshot mechanism designed in `klappy://canon/articles/hero-metrics-and-storytelling` § "Long-Term Retention Strategy" is implemented in `src/snapshot.ts` and wired into the Worker. This article is the operations companion: how to set up the R2 bucket, how to bootstrap the archive after deploy, how to smoke-test a snapshot run, and how to read the lifetime hero stat. It is operational, not architectural — the architectural decisions live in the hero-metrics article and stay there.
 
 ---

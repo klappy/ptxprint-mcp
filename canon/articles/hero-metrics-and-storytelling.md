@@ -16,6 +16,8 @@ status: draft_pending_fresh_review
 
 # Hero Metrics & Storytelling — Total Pages Typeset, X-Ray Timelines, and the Public Narrative
 
+> **What this answers.** Which telemetry compositions tell the project's public story: the lifetime "total pages typeset" hero stat, the per-job X-Ray phase waterfall, weekly/monthly rollups, and how snapshots survive the 90-day Analytics Engine retention window. Not for: what may be collected (see telemetry-governance).
+
 > Telemetry governance defines what is allowed to be collected and why. This article defines what — of everything that is allowed — actually tells the story. The hero metric is **total pages of scripture typeset, lifetime**. The X-Ray view is the **per-job phase waterfall**. The narrative is **shared infrastructure quietly producing publication-quality scripture, measured in pages put into the world**. Nothing in this article adds a single new schema slot, a single new server opinion, or a single new privacy boundary. Everything is composition over the existing `ptxprint_telemetry` dataset documented in `klappy://canon/governance/telemetry-governance`.
 
 ---
