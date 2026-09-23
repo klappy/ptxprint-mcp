@@ -1,0 +1,40 @@
+{
+  "source_commit": "d621c6f32e539522deeae2eab8bab404e8ad5019",
+  "source_files": [
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-mcp-validate-and-fix/CHECKLIST-RUN.md",
+      "sha": "c1f6b68dd062024af6033f2791bb80a465aa504d",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-mcp-validate-and-fix/DEBRIEF.md",
+      "sha": "b57a21a278fc34e08fd350cdb34d9d0ce60fd599",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-mcp-validate-and-fix/DELTA.md",
+      "sha": "ea1831f221f9c36ee3f9daac1218cc790ea53608",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-mcp-validate-and-fix/FIRE-CHECK-RUN.md",
+      "sha": "98f68613766511760f4d2097b3fb4314b1009dca",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-mcp-validate-and-fix/LEARNING-CLAIM.md",
+      "sha": "6c6f4659f73247bf47cbc9e881e15828e0cd53d1",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-mcp-validate-and-fix/TICKET.md",
+      "sha": "529fde3d1a57a13a75daaa5bcb0a65b2a6824436",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-mcp-validate-and-fix/VERDICT.md",
+      "sha": "ff5375c8b9b2147e71e85dddbea8601e01d92cf0",
+      "mode": "100644"
+    }
+  ]
+}
