@@ -13,6 +13,11 @@ const COOK_QUESTIONS: Array<[string, string | null]> = [
   // the Spanish Titus cook (2026-09-05)
   ["book not found findScript NoneType source filename Paratext book number", "klappy://canon/articles/payload-construction"],
   ["FRTlocal front matter title licence page missing iffrontmatter", "klappy://canon/articles/study-notes-and-footnotes"],
+  // the Titus ULT | UST diglot cook (PASS-0008, 2026-09-05)
+  ["diglot renders monoglot truncated merge diglotsecprjguid FileNamePostPart", "klappy://canon/articles/diglot-on-this-server"],
+  ["diglot Output loop chunks paragraph pairs notes verse-sized paragraphs", "klappy://canon/articles/diglot-on-this-server"],
+  ["diglot one note band diglotsepnotes", "klappy://canon/articles/diglot-on-this-server"],
+  ["diglot snippets ifdiglot secondary Settings.xml Guid", "klappy://canon/articles/diglot-on-this-server"],
 ];
 
 describe("docs — progressive disclosure over the bundled canon", () => {
