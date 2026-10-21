@@ -19,12 +19,12 @@
   },
   "dependencies": {
     "@cloudflare/containers": "^0.3.7",
-    "@modelcontextprotocol/sdk": "1.30.1",
+    "@modelcontextprotocol/sdk": "1.30.0",
     "agents": "^0.24.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251024.0",
+    "@cloudflare/workers-types": "^5.20260925.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
