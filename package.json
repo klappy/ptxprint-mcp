@@ -15,19 +15,19 @@
     "bundle-canon": "node --import tsx/esm scripts/bundle-canon.ts"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^22.18.0 || >=24.11.0"
   },
   "dependencies": {
-    "@cloudflare/containers": "^0.1.0",
-    "@modelcontextprotocol/sdk": "1.23.0",
-    "agents": "^0.2.0",
-    "zod": "^4.4.3"
+    "@cloudflare/containers": "^0.3.7",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "agents": "^0.24.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251024.0",
-    "tsx": "^4.21.0",
+    "@cloudflare/workers-types": "^5.20260925.1",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5",
-    "wrangler": "^4.20.0"
+    "wrangler": "^4.141.0"
   }
 }
