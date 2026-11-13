@@ -61,3 +61,20 @@ assertion. The test still requires an actual fresh PDF and clean TeX log.
 Broader baseline smoke runs configured John, Psalms (poetry) and Jude from existing
 fixtures in fresh scratch directories, retaining separate PDFs and logs. These are
 English/Gentium checks, not multilingual, diglot or study-bible certification.
+
+## Observed compatibility receipts (2026-11-13)
+Candidate3.1.6/e72a391 (usfmtc0.4.10), revision2 rendered configured John61pages,
+Psalms192pages and Jude3pages in run43523712400; artifact14083288669. John pages1/31/61,
+Psalms1/96/192 and Jude1/3 inspected independently without obvious clipping/overlap.
+Psalms192 matches its fixture README; root README184 was stale and is corrected.
+Controlled3.0.20/current-usfmtc experiment43524557412 failed with
+`PTXEmitter.tag() got an unexpected keyword argument 'prefix'`; artifact14083414395.
+This does not diagnose the already-built production image or recreate its historical
+mutable dependencies. The diagnostic baseline job is disabled after retaining evidence.
+
+Live updater integration43524109242 successfully discovered upstream and pushed
+engine-integration-test/43524109242-1, but GitHub refused PR creation:
+`GitHub Actions is not permitted to create or approve pull requests (createPullRequest)`.
+No PR was created, dispatch not reached, no identity workaround or permission change.
+The live test is disabled pending owner-approved repository permission repair.
+Default-branch schedule activation and real bot draft/dispatch remain unverified.

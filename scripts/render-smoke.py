@@ -65,8 +65,8 @@ async def run():
         for name, data in uploads.items():
             Path('/artifacts', name).write_bytes(data)
         Path('/artifacts/handler-result.json').write_text(json.dumps({'result':result,'states':states},indent=2))
-        assert response.status_code == 200 and result.get('failure_mode') == 'success', result
+        assert response.status_code == 200 and result.get('failure_mode') == 'success' and result.get('exit_code') == 0, result
         assert uploads.get('handler.pdf',b'').startswith(b'%PDF-'), 'handler did not upload PDF'
         assert main.ENGINE_FINGERPRINT.encode() in uploads.get('handler.log',b''), 'uploaded log lost engine provenance'
-        assert any(state.get('state') == 'succeeded' for state in states), 'missing final success state'
+        assert states and states[-1].get('state') == 'succeeded', 'missing final success state'
 asyncio.run(run())

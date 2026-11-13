@@ -29,6 +29,9 @@ jobs:
           name: engine-render-evidence
           path: artifacts/
   baseline-poetry:
+    # Completed diagnostic:3.0.20/current-usfmtc is incompatible; evidence run43524557412.
+    # Not a candidate release check. Restore only for a new explicit baseline experiment.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     permissions:
