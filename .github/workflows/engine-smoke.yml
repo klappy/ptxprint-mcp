@@ -19,8 +19,10 @@ jobs:
         run: docker build --progress=plain -t ptxprint-candidate .
       - name: Real fresh render
         run: |
-          mkdir -p artifacts
-          docker run --rm --entrypoint python -v "$PWD/smoke:/fixtures:ro" -v "$PWD/scripts:/checks:ro" -v "$PWD/artifacts:/artifacts" ptxprint-candidate /checks/render-smoke.py
+          for fixture in bsb-jhn-empirical bsb-psa-empirical bsb-jud-empirical; do
+            mkdir -p "artifacts/$fixture"
+            docker run --rm --entrypoint python -v "$PWD/smoke:/fixtures:ro" -v "$PWD/scripts:/checks:ro" -v "$PWD/artifacts/$fixture:/artifacts" ptxprint-candidate /checks/render-smoke.py "$fixture.json"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

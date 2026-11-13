@@ -16,7 +16,7 @@ async def run():
     Path('/artifacts/engine.json').write_text(json.dumps(provenance, indent=2))
     mismatch = main.JobRequestModel(job_id='test',payload={'schema_version':'1.0','project_id':'TEST','books':['JHN']},payload_hash='a'*64,engine_fingerprint='wrong',pdf_r2_key='unused',log_r2_key='unused')
     assert (await main.run_job(mismatch)).status_code == 409, 'Fingerprint mismatch must refuse before render'
-    payload = main.PayloadModel(**json.loads(Path('/fixtures/bsb-jhn-empirical.json').read_text()))
+    payload = main.PayloadModel(**json.loads((Path('/fixtures') / (sys.argv[1] if len(sys.argv) > 1 else 'bsb-jhn-empirical.json')).read_text()))
     with tempfile.TemporaryDirectory() as tmp:
         scratch = Path(tmp)
         main.write_config_files(scratch, payload.project_id, payload.config_files)

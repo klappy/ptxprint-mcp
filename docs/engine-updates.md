@@ -57,3 +57,7 @@ own TODO says it may not render; the 3.1.6 run exited0 without PDF. That unresol
 minimal-config behavior is not called a pass. CI now uses the existing documented
 working bsb-jhn-empirical fixture with its config materialized, not a newly weakened
 assertion. The test still requires an actual fresh PDF and clean TeX log.
+
+Broader baseline smoke runs configured John, Psalms (poetry) and Jude from existing
+fixtures in fresh scratch directories, retaining separate PDFs and logs. These are
+English/Gentium checks, not multilingual, diglot or study-bible certification.
