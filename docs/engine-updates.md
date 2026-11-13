@@ -25,7 +25,7 @@ container pair refuses jobs with HTTP409 instead of serving a mixed-engine resul
 ## Validation and promotion
 
 Engine image smoke builds the actual Dockerfile and renders the existing pinned
-public-domain John fixture without a production callback. It verifies PDF magic,
+public-domain bsb-jhn-empirical.json working John fixture without a production callback. It verifies PDF magic,
 zero exit status, presence of TeX log and no TeX error lines; artifacts include PDF,
 log and engine provenance for independent review. This does not prove layout or
 font fidelity, study notes/front matter, diglot, RTL or other multilingual cases.
@@ -51,3 +51,9 @@ workflow approval. The updater is not active before this workflow lands on main.
 3.1.6 real render uncovered an unconditional gi/Gtk import through report→parlocs.
 The image includes Bookworm Python3.11 GI/Cairo bindings and Gtk3 typelib, exposed
 to the matching Python3.11 runtime. render_revision2 separates this image change.
+
+Smoke fixture correction: minimal-payload.json has no Settings.xml/config and its
+own TODO says it may not render; the 3.1.6 run exited0 without PDF. That unresolved
+minimal-config behavior is not called a pass. CI now uses the existing documented
+working bsb-jhn-empirical fixture with its config materialized, not a newly weakened
+assertion. The test still requires an actual fresh PDF and clean TeX log.
