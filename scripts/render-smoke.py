@@ -47,4 +47,26 @@ async def run():
         provenance = await main.health()
         Path('/artifacts/engine.json').write_text(json.dumps(provenance, indent=2))
         print(json.dumps({'pdf_bytes': pdf.stat().st_size, **provenance}))
+    if payload.books == ['JUD']:
+        # Exercise the production handler with real PTXprint; only callbacks/uploads
+        # are captured locally so this never writes production storage.
+        uploads, states = {}, []
+        async def capture_upload(callback, key, data, content_type):
+            uploads[key] = data
+        async def capture_state(callback, job_id, patch):
+            states.append(patch)
+        main.upload_to_worker = capture_upload
+        main.patch_state = capture_state
+        request = main.JobRequestModel(job_id='handler-smoke', payload=payload,
+            payload_hash='a'*64, engine_fingerprint=main.ENGINE_FINGERPRINT,
+            pdf_r2_key='handler.pdf', log_r2_key='handler.log')
+        response = await main.run_job(request)
+        result = json.loads(response.body)
+        for name, data in uploads.items():
+            Path('/artifacts', name).write_bytes(data)
+        Path('/artifacts/handler-result.json').write_text(json.dumps({'result':result,'states':states},indent=2))
+        assert response.status_code == 200 and result.get('failure_mode') == 'success', result
+        assert uploads.get('handler.pdf',b'').startswith(b'%PDF-'), 'handler did not upload PDF'
+        assert main.ENGINE_FINGERPRINT.encode() in uploads.get('handler.log',b''), 'uploaded log lost engine provenance'
+        assert any(state.get('state') == 'succeeded' for state in states), 'missing final success state'
 asyncio.run(run())
