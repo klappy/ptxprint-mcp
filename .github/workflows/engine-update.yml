@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test scripts/engine-update.test.mjs
+      - run: node --test scripts/engine-update*.test.mjs
       - name: Discover candidate (preserve usfmtc pin)
         id: candidate
         env:

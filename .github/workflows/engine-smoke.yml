@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test scripts/engine-update.test.mjs
+      - run: node --test scripts/engine-update*.test.mjs
       - name: Build candidate image (no deployment)
         run: docker build --progress=plain -t ptxprint-candidate .
       - name: Real fresh render

@@ -1,0 +1,63 @@
+name: Engine updater isolated integration
+on:
+  pull_request:
+    paths: ['.github/workflows/engine-updater-integration.yml']
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+jobs:
+  isolated-publication:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'oddie/engine-update-20261113'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test live discovery, draft publication and explicit smoke dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.pull_request.head.ref }}
+          TEST_BRANCH: engine-integration-test/${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          mkdir -p integration-evidence
+          echo "base=$BASE branch=$TEST_BRANCH" > integration-evidence/receipt.txt
+          PR_URL=''
+          cleanup() {
+            if [ -n "$PR_URL" ]; then
+              gh pr close "$PR_URL"
+              gh pr view "$PR_URL" --json url,state,headRefName,baseRefName > integration-evidence/closed-pr.json
+              test "$(gh pr view "$PR_URL" --json state --jq .state)" = CLOSED
+            fi
+          }
+          trap cleanup EXIT
+          # Exercise the real upstream read with an older temporary working-copy lock.
+          node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('engine-lock.json'));p.ptxprint.version='0.0.0';fs.writeFileSync('engine-lock.json',JSON.stringify(p))"
+          node scripts/engine-update.mjs
+          cp engine-lock.json integration-evidence/discovered-lock.json
+          # Keep candidate code unchanged; the isolated test branch carries only a receipt.
+          git restore engine-lock.json
+          git checkout -b "$TEST_BRANCH"
+          cp integration-evidence/discovered-lock.json .engine-updater-live-test.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .engine-updater-live-test.json
+          git commit -m 'test: isolated updater publication receipt; never merge'
+          git push origin "$TEST_BRANCH"
+          PR_URL=$(gh pr create --draft --base "$BASE" --head "$TEST_BRANCH" --title 'TEST ONLY: updater integration, never merge' --body 'Isolated updater integration evidence. Targets the development branch, never main. No deployment, secrets, force-push or cache mutation. This draft is closed automatically after the test; branch retained as evidence.')
+          echo "pr=$PR_URL" >> integration-evidence/receipt.txt
+          gh pr view "$PR_URL" --json url,state,isDraft,headRefName,baseRefName > integration-evidence/open-pr.json
+          test "$(gh pr view "$PR_URL" --json isDraft --jq .isDraft)" = true
+          test "$(gh pr view "$PR_URL" --json baseRefName --jq .baseRefName)" = "$BASE"
+          # This checks real dispatch authorization, not default-branch schedule activation.
+          gh workflow run engine-smoke.yml --ref "$TEST_BRANCH" 2>&1 | tee integration-evidence/dispatch.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: updater-integration-evidence
+          path: integration-evidence/
