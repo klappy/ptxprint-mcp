@@ -28,3 +28,30 @@ jobs:
         with:
           name: engine-render-evidence
           path: artifacts/
+  baseline-poetry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select pinned previous engine, same usfmtc and fixture
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('engine-lock.json'); lock=json.loads(p.read_text())
+          lock['ptxprint']={'version':'3.0.20','commit':'c93ee4f6927ef62e19355009fbd519a823234e2e'}
+          p.write_text(json.dumps(lock,indent=2)+'\n')
+          PY
+      - name: Build isolated baseline (never deployed)
+        run: docker build --progress=plain -t ptxprint-baseline .
+      - name: Render identical Psalms fixture on previous engine
+        run: |
+          mkdir -p baseline-artifacts
+          docker run --rm --entrypoint python -v "$PWD/smoke:/fixtures:ro" -v "$PWD/scripts:/checks:ro" -v "$PWD/baseline-artifacts:/artifacts" ptxprint-baseline /checks/render-smoke.py bsb-psa-empirical.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baseline-poetry-evidence
+          path: baseline-artifacts/

@@ -8,7 +8,8 @@ permissions:
   actions: write
 jobs:
   isolated-publication:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'oddie/engine-update-20261113'
+    # Held after observed repository permission refusal; restore only after owner approval and repair.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
