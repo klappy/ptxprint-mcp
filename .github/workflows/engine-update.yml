@@ -31,19 +31,30 @@ jobs:
           BRANCH: ${{ steps.candidate.outputs.branch }}
         run: |
           set -euo pipefail
-          # Do not mutate an existing candidate/review. A maintainer must resolve it.
-          existing=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("engine-candidate/"))] | length')
-          if [ "$existing" != 0 ]; then echo 'Open engine candidate already exists; preserving it.'; exit 0; fi
+          # Paginate so an older open candidate cannot be missed.
+          existing=$(gh api --paginate "repos/${{ github.repository }}/pulls?state=open&per_page=100" --jq '.[] | select(.head.ref | startswith("engine-candidate/")) | .head.ref')
+          if [ -n "$existing" ] && [ "$existing" != "$BRANCH" ]; then echo 'Another engine candidate awaits review; preserving it.'; exit 0; fi
           set +e
           git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null
           branch_status=$?
           set -e
-          if [ "$branch_status" != 2 ]; then echo 'Branch exists or remote check failed; refusing write.'; exit 1; fi
-          git checkout -b "$BRANCH"
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add engine-lock.json
-          git commit -m 'chore: propose pinned PTXprint candidate (not deployed)'
-          git push origin "$BRANCH"
-          gh pr create --draft --base "${{ github.event.repository.default_branch }}" --head "$BRANCH" --title 'PTXprint engine candidate: render validation required' --body 'Immutable upstream tag candidate; usfmtc intentionally retained. No automatic compatibility claim or deployment. Require image render, representative layout QA, version/changelog, exact-head independent review and established DEV/staging release gates. GITHUB_TOKEN PR CI may need workflow approval; image smoke is explicitly dispatched.'
+          if [ "$branch_status" = 0 ]; then
+            # Recover after push/PR/dispatch interruptions without rewriting branch history.
+            git fetch origin "$BRANCH"
+            git show FETCH_HEAD:engine-lock.json > /tmp/existing-engine-lock.json
+            cmp engine-lock.json /tmp/existing-engine-lock.json || { echo 'Existing candidate differs; human inspection required.'; exit 1; }
+          elif [ "$branch_status" = 2 ]; then
+            git checkout -b "$BRANCH"
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add engine-lock.json
+            git commit -m 'chore: propose pinned PTXprint candidate (not deployed)'
+            git push origin "$BRANCH"
+          else
+            echo 'Remote check failed; refusing write.'; exit 1
+          fi
+          if [ "$existing" != "$BRANCH" ]; then
+            gh pr create --draft --base "${{ github.event.repository.default_branch }}" --head "$BRANCH" --title 'PTXprint engine candidate: render validation required' --body 'Immutable candidate; usfmtc intentionally retained. Require image smoke, representative layout QA, version/changelog, exact-head review and established DEV/staging gates. Never automatically deployed.'
+          fi
+          # A rerun repairs a previous dispatch failure even if the PR already exists.
           gh workflow run engine-smoke.yml --ref "$BRANCH"

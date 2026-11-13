@@ -26,6 +26,7 @@ set -eux
 apt-get update
 apt-get install --no-install-recommends -y \
     git ca-certificates curl \
+    python3-gi python3-cairo gir1.2-gtk-3.0 \
     tex-common teckit texlive-base texlive-binaries texlive-latex-base fontconfig \
     fonts-sil-ezra fonts-sil-galatia \
     fonts-sil-charis fonts-sil-gentium fonts-sil-andika \
@@ -74,6 +75,10 @@ EOF
 # Make the ptx2pdf TeX macros findable by XeTeX (kpsewhich).
 # Trailing // means recursive search; trailing : means "then standard paths".
 ENV TEXINPUTS=/usr/local/share/ptx2pdf//:
+
+# PTXprint3.1.6 imports Gtk via report/parlocs even in headless mode.
+# Debian bookworm and this image both use Python3.11; expose distro gi bindings.
+ENV PYTHONPATH=/usr/lib/python3/dist-packages
 
 # FastAPI HTTP handler layer
 COPY container/requirements.txt /app/requirements.txt

@@ -26,7 +26,7 @@ import asyncio
 import re
 import hashlib
 import json
-from importlib.metadata import version as package_version
+from importlib.metadata import version as package_version, distribution
 import logging
 import os
 import subprocess
@@ -50,6 +50,9 @@ app = FastAPI(title="ptxprint-mcp container", version="0.4.0")
 
 ENGINE_LOCK = json.loads(Path(__file__).with_name("engine-lock.json").read_text())
 ENGINE_FINGERPRINT = hashlib.sha256(json.dumps(ENGINE_LOCK, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+USFMTC_ORIGIN = json.loads(distribution("usfmtc").read_text("direct_url.json") or "{}")
+if USFMTC_ORIGIN.get("url") != "https://github.com/usfm-bible/usfmtc/archive/" + ENGINE_LOCK["usfmtc"]["commit"] + ".zip":
+    raise RuntimeError("Installed usfmtc origin disagrees with engine lock")
 if package_version("ptxprint") != ENGINE_LOCK["ptxprint"]["version"]:
     raise RuntimeError("Installed PTXprint version disagrees with engine lock")
 
@@ -294,7 +297,7 @@ def classify_exit(exit_code: int, pdf_exists: bool) -> str:
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
-    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.4.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint")}
+    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.4.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint"), "installed_usfmtc": package_version("usfmtc"), "usfmtc_origin": USFMTC_ORIGIN}
 
 
 @app.post("/jobs")

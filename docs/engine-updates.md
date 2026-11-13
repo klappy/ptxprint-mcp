@@ -47,3 +47,7 @@ force-pushed. Candidate PR is draft, image smoke explicitly dispatched, no merge
 deploy command. Updater requires repository Actions PR creation permission; a refusal
 fails visibly rather than expanding permission. GITHUB_TOKEN PR checks may require
 workflow approval. The updater is not active before this workflow lands on main.
+
+3.1.6 real render uncovered an unconditional gi/Gtk import through report→parlocs.
+The image includes Bookworm Python3.11 GI/Cairo bindings and Gtk3 typelib, exposed
+to the matching Python3.11 runtime. render_revision2 separates this image change.

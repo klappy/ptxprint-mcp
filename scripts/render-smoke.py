@@ -21,7 +21,15 @@ async def run():
         scratch = Path(tmp)
         await main.fetch_inputs(scratch, payload.project_id, payload)
         import subprocess
-        result = subprocess.run(main.build_ptxprint_argv(payload, scratch), cwd=scratch, capture_output=True, text=True, timeout=1200)
+        try:
+            result = subprocess.run(main.build_ptxprint_argv(payload, scratch), cwd=scratch, capture_output=True, text=True, timeout=1200)
+        except subprocess.TimeoutExpired as exc:
+            for name, value in [('stdout',exc.stdout),('stderr',exc.stderr)]:
+                Path('/artifacts/'+name+'.txt').write_bytes(value if isinstance(value,bytes) else (value or '').encode())
+            for index, log in enumerate(scratch.rglob('*.log')):
+                Path(f'/artifacts/timeout-{index}.log').write_bytes(log.read_bytes())
+            Path('/artifacts/timeout.txt').write_text('PTXprint exceeded 1200s')
+            raise
         Path('/artifacts/stdout.txt').write_text(result.stdout)
         Path('/artifacts/stderr.txt').write_text(result.stderr)
         pdf = main.find_output_pdf(scratch, payload.project_id, None)
