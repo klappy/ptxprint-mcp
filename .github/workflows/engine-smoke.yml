@@ -1,7 +1,7 @@
 name: Engine image smoke
 on:
   pull_request:
-    paths: ['Dockerfile', 'engine-lock.json', 'container/**', 'smoke/**', 'scripts/render-smoke.py', '.github/workflows/engine-smoke.yml']
+    paths: ['Dockerfile', 'engine-lock.json', 'container/**', 'smoke/**', 'scripts/render-smoke.py', 'scripts/engine-update*.mjs', '.github/workflows/engine-update.yml', '.github/workflows/engine-smoke.yml']
   workflow_dispatch:
 permissions:
   contents: read

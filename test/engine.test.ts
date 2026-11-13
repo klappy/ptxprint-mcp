@@ -11,7 +11,7 @@ describe("render engine isolation", () => {
   it("separates old/new engines without changing the input digest", async () => {
     const payload = "a".repeat(64);
     const current = await engineFingerprint();
-    const changed = await engineFingerprint({...ENGINE_LOCK, render_revision:2});
+    const changed = await engineFingerprint({...ENGINE_LOCK, render_revision:ENGINE_LOCK.render_revision + 1});
     expect(await renderHash(payload,current)).not.toBe(await renderHash(payload,changed));
     expect(await renderHash(payload,current)).not.toBe(payload);
     expect(await renderHash(payload,current)).toBe(await renderHash(payload,current));
