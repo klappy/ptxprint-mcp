@@ -39,47 +39,37 @@ apt-get clean
 rm -rf /var/lib/apt/lists/*
 EOF
 
-# Install PTXprint from sillsdev/ptx2pdf upstream.
-#
-# Pinned to a tagged release (3.0.20, released ~2026-04-28) for reproducibility.
-# Bumping is a deliberate change.
-#
-# Upstream-pyproject patch: as of 3.0.20, pyproject.toml declares a dependency
-# named "markdown_it" which does not exist on PyPI (the real package is
-# "markdown-it-py"). We sed-fix it in place after the clone. Worth filing
-# upstream as a bug in sillsdev/ptx2pdf.
-#
-# Upstream-package-data bug: pyproject.toml's [tool.setuptools.package-data]
-# declares "ptxprint" = ["ptx2pdf/**/*", "xetex/**/*"], but those subdirs
-# don't exist under python/lib/ptxprint/ in the source tree (verified on
-# both master and 3.0.20). The actual TeX macros (paratext2.tex et al.)
-# live at src/ at the repo root and ship as zero files via pip install.
-# Workaround: copy src/ into a stable location in the image and add it to
-# TEXINPUTS so XeTeX can find paratext2.tex et al. at typeset time.
-# Also worth filing upstream.
-#
-# Upstream-bundled fonts: ptx2pdf bundles a small fonts/ directory at the
-# repo root (Charis-{Regular,Bold,Italic,BoldItalic}.ttf, OrnamentTest.ttf,
-# SourceCodePro-Regular.ttf, empties.ttf). The upstream Dockerfile pulls
-# these in via COPY fonts/. We need at least SourceCodePro-Regular.ttf
-# because src/ptx-cropmarks.tex line 38 unconditionally does
-#     \font\idf@nt="Source Code Pro" at 8pt
-# during macro setup — meaning every Phase 1 typeset attempt would die at
-# this line without it. Apt has no fonts-source-code-pro package, so we
-# copy from /tmp/ptx2pdf/fonts/ before cleanup and run fc-cache. Total
-# image-size cost ~3.6 MB.
-ARG PTX2PDF_REF=3.0.20
-RUN git clone --depth 1 --branch ${PTX2PDF_REF} \
-        https://github.com/sillsdev/ptx2pdf.git /tmp/ptx2pdf \
- && cd /tmp/ptx2pdf \
- && sed -i 's/"markdown_it"/"markdown-it-py"/' pyproject.toml \
- && pip install --no-cache-dir . \
- && mkdir -p /usr/local/share/ptx2pdf \
- && cp -r /tmp/ptx2pdf/src/. /usr/local/share/ptx2pdf/ \
- && mkdir -p /usr/local/share/fonts/ptx2pdf \
- && cp /tmp/ptx2pdf/fonts/*.ttf /usr/local/share/fonts/ptx2pdf/ \
- && fc-cache -fv \
- && rm -rf /tmp/ptx2pdf /root/.cache
+# The lock is the shared source of engine identity for Worker and container.
+# Keep the upstream TeX and bundled-font workaround until real render tests
+# demonstrate that packaging includes them. Never install mutable usfmtc/main.
+COPY engine-lock.json /app/engine-lock.json
+RUN <<'EOF'
+set -eux
+PTX_SHA=$(python -c 'import json; print(json.load(open("/app/engine-lock.json"))["ptxprint"]["commit"])')
+git init /tmp/ptx2pdf
+git -C /tmp/ptx2pdf remote add origin https://github.com/sillsdev/ptx2pdf.git
+git -C /tmp/ptx2pdf fetch --depth 1 origin "$PTX_SHA"
+git -C /tmp/ptx2pdf checkout --detach FETCH_HEAD
+test "$(git -C /tmp/ptx2pdf rev-parse HEAD)" = "$PTX_SHA"
+python - <<'PATCH'
+import json, re
+from pathlib import Path
+lock = json.loads(Path('/app/engine-lock.json').read_text())
+assert re.fullmatch(r'[a-f0-9]{40}', lock['usfmtc']['commit'])
+p = Path('/tmp/ptx2pdf/pyproject.toml')
+s = p.read_text()
+old = 'https://github.com/usfm-bible/usfmtc/archive/main.zip'
+assert s.count(old) == 1, 'Upstream dependency changed; review lock patch manually'
+p.write_text(s.replace(old, 'https://github.com/usfm-bible/usfmtc/archive/' + lock['usfmtc']['commit'] + '.zip'))
+PATCH
+pip install --no-cache-dir /tmp/ptx2pdf
+pip check
+mkdir -p /usr/local/share/ptx2pdf /usr/local/share/fonts/ptx2pdf
+cp -r /tmp/ptx2pdf/src/. /usr/local/share/ptx2pdf/
+cp /tmp/ptx2pdf/fonts/*.ttf /usr/local/share/fonts/ptx2pdf/
+fc-cache -fv
+rm -rf /tmp/ptx2pdf /root/.cache
+EOF
 
 # Make the ptx2pdf TeX macros findable by XeTeX (kpsewhich).
 # Trailing // means recursive search; trailing : means "then standard paths".

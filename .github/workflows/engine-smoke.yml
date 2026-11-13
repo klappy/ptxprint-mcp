@@ -1,0 +1,24 @@
+name: Engine image smoke
+on:
+  pull_request:
+    paths: ['Dockerfile', 'engine-lock.json', 'container/**', 'scripts/render-smoke.py', '.github/workflows/engine-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build candidate image (no deployment)
+        run: docker build --progress=plain -t ptxprint-candidate .
+      - name: Real fresh render
+        run: |
+          mkdir -p artifacts
+          docker run --rm --entrypoint python -v "$PWD/smoke:/fixtures:ro" -v "$PWD/scripts:/checks:ro" -v "$PWD/artifacts:/artifacts" ptxprint-candidate /checks/render-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-render-evidence
+          path: artifacts/

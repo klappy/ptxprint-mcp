@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "ptxprint": {
+    "version": "3.1.6",
+    "commit": "dd668e6e8fc8b1d07e91e851070eb4b5037b1b80"
+  },
+  "usfmtc": {
+    "commit": "e72a391389e9cd516402ba5f2cfd81ff859ca762"
+  },
+  "render_revision": 1
+}

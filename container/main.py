@@ -25,6 +25,8 @@ from __future__ import annotations
 import asyncio
 import re
 import hashlib
+import json
+from importlib.metadata import version as package_version
 import logging
 import os
 import subprocess
@@ -45,6 +47,11 @@ log = logging.getLogger("ptxprint-container")
 
 app = FastAPI(title="ptxprint-mcp container", version="0.1.0")
 
+
+ENGINE_LOCK = json.loads(Path(__file__).with_name("engine-lock.json").read_text())
+ENGINE_FINGERPRINT = hashlib.sha256(json.dumps(ENGINE_LOCK, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+if package_version("ptxprint") != ENGINE_LOCK["ptxprint"]["version"]:
+    raise RuntimeError("Installed PTXprint version disagrees with engine lock")
 
 # ---------- Schema ----------
 
@@ -95,6 +102,7 @@ class JobRequestModel(BaseModel):
     job_id: str
     payload: PayloadModel
     payload_hash: str
+    engine_fingerprint: str
     pdf_r2_key: str
     log_r2_key: str
     worker_callback_url: str | None = None
@@ -286,11 +294,14 @@ def classify_exit(exit_code: int, pdf_exists: bool) -> str:
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
-    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.1.0"}
+    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.1.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint")}
 
 
 @app.post("/jobs")
 async def run_job(req: JobRequestModel) -> JSONResponse:
+    if req.engine_fingerprint != ENGINE_FINGERPRINT:
+        return JSONResponse(status_code=409, content={"error": "Worker/container engine fingerprint mismatch"})
+    log.info("engine fingerprint=%s", ENGINE_FINGERPRINT)
     job_id = req.job_id
     callback = req.worker_callback_url
     payload = req.payload
