@@ -1,0 +1,45 @@
+name: Propose PTXprint engine candidate
+on:
+  schedule:
+    - cron: '23 9 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+concurrency:
+  group: engine-candidate
+  cancel-in-progress: false
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test scripts/engine-update.test.mjs
+      - name: Discover candidate (preserve usfmtc pin)
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/engine-update.mjs
+      - name: Open one draft candidate, never merge
+        if: steps.candidate.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.candidate.outputs.branch }}
+        run: |
+          set -euo pipefail
+          # Do not mutate an existing candidate/review. A maintainer must resolve it.
+          existing=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("engine-candidate/"))] | length')
+          if [ "$existing" != 0 ]; then echo 'Open engine candidate already exists; preserving it.'; exit 0; fi
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then echo 'Candidate branch exists; requires inspection.'; exit 1; fi
+          git checkout -b "$BRANCH"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add engine-lock.json
+          git commit -m 'chore: propose pinned PTXprint candidate (not deployed)'
+          git push origin "$BRANCH"
+          gh pr create --draft --base "${{ github.event.repository.default_branch }}" --head "$BRANCH" --title 'PTXprint engine candidate: render validation required' --body 'Immutable upstream tag candidate; usfmtc intentionally retained. No automatic compatibility claim or deployment. Require image render, representative layout QA, version/changelog, exact-head independent review and established DEV/staging release gates. GITHUB_TOKEN PR CI may need workflow approval; image smoke is explicitly dispatched.'
+          gh workflow run engine-smoke.yml --ref "$BRANCH"

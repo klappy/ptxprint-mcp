@@ -37,3 +37,13 @@ DEV/staging environments or a documented captain ruling are required; a successf
 container CI run is not staging evidence. No cache deletion, secrets, bindings or
 DNS changes are included. Coordinate version/changelog and existing PR59 package
 ownership before promotion; this candidate deliberately leaves those files alone.
+
+## Automated proposals
+Weekly/manual updater selects strictly newer stable semver tags using GitHub tags API
+and pins the resolved commit. It intentionally preserves the explicit usfmtc pin;
+compatibility-driven usfmtc bumps require a deliberate paired change and image evidence.
+One open engine-candidate PR blocks additional proposals. Existing branches are never
+force-pushed. Candidate PR is draft, image smoke explicitly dispatched, no merge or
+deploy command. Updater requires repository Actions PR creation permission; a refusal
+fails visibly rather than expanding permission. GITHUB_TOKEN PR checks may require
+workflow approval. The updater is not active before this workflow lands on main.

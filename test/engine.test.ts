@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { ENGINE_LOCK, engineFingerprint, renderHash } from "../src/engine.js";
 
 describe("render engine isolation", () => {
+  it("matches Python compact sorted JSON fingerprint", async () => {
+    expect(await engineFingerprint()).toBe("acc3adf8038934d601c04d4c4593252649e756e6250f7c4d487a424d423f3d18");
+  });
   it("is stable for equivalent lock key ordering", async () => {
     expect(await engineFingerprint({a:1,b:2})).toBe(await engineFingerprint({b:2,a:1}));
   });

@@ -45,7 +45,7 @@ from pydantic import BaseModel, Field
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ptxprint-container")
 
-app = FastAPI(title="ptxprint-mcp container", version="0.1.0")
+app = FastAPI(title="ptxprint-mcp container", version="0.4.0")
 
 
 ENGINE_LOCK = json.loads(Path(__file__).with_name("engine-lock.json").read_text())
@@ -294,7 +294,7 @@ def classify_exit(exit_code: int, pdf_exists: bool) -> str:
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
-    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.1.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint")}
+    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.4.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint")}
 
 
 @app.post("/jobs")
@@ -355,6 +355,10 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             pdf_path = find_output_pdf(scratch, payload.project_id, effective_config)
             log_path = find_output_log(scratch, payload.project_id, effective_config)
             log_text = log_path.read_text(errors="replace") if log_path else stderr_tail
+            provenance_header = f"[engine] fingerprint={ENGINE_FINGERPRINT} lock={json.dumps(ENGINE_LOCK, sort_keys=True)}\n"
+            log_text = provenance_header + log_text
+            if log_path:
+                log_path.write_text(log_text)
             errors, overfull = parse_log_for_errors(log_text)
             log_tail = "\n".join(log_text.splitlines()[-100:])
             failure_mode = classify_exit(exit_code, pdf_path is not None)
