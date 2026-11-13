@@ -34,7 +34,11 @@ jobs:
           # Do not mutate an existing candidate/review. A maintainer must resolve it.
           existing=$(gh pr list --state open --json headRefName --jq '[.[] | select(.headRefName | startswith("engine-candidate/"))] | length')
           if [ "$existing" != 0 ]; then echo 'Open engine candidate already exists; preserving it.'; exit 0; fi
-          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then echo 'Candidate branch exists; requires inspection.'; exit 1; fi
+          set +e
+          git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null
+          branch_status=$?
+          set -e
+          if [ "$branch_status" != 2 ]; then echo 'Branch exists or remote check failed; refusing write.'; exit 1; fi
           git checkout -b "$BRANCH"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com

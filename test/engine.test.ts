@@ -3,7 +3,7 @@ import { ENGINE_LOCK, engineFingerprint, renderHash } from "../src/engine.js";
 
 describe("render engine isolation", () => {
   it("matches Python compact sorted JSON fingerprint", async () => {
-    expect(await engineFingerprint()).toBe("acc3adf8038934d601c04d4c4593252649e756e6250f7c4d487a424d423f3d18");
+    expect(await engineFingerprint({schema:1,ptxprint:{version:"3.1.6",commit:"a11c7e4e9620908b925ba5fd2ab046dfa918a132"},usfmtc:{commit:"e72a391389e9cd516402ba5f2cfd81ff859ca762"},render_revision:1})).toBe("acc3adf8038934d601c04d4c4593252649e756e6250f7c4d487a424d423f3d18");
   });
   it("is stable for equivalent lock key ordering", async () => {
     expect(await engineFingerprint({a:1,b:2})).toBe(await engineFingerprint({b:2,a:1}));
