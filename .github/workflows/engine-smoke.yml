@@ -1,0 +1,60 @@
+name: Engine image smoke
+on:
+  pull_request:
+    paths: ['Dockerfile', 'engine-lock.json', 'container/**', 'smoke/**', 'scripts/render-smoke.py', 'scripts/engine-update*.mjs', '.github/workflows/engine-update.yml', '.github/workflows/engine-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test scripts/engine-update*.test.mjs
+      - name: Build candidate image (no deployment)
+        run: docker build --progress=plain -t ptxprint-candidate .
+      - name: Real fresh render
+        run: |
+          for fixture in bsb-jhn-empirical bsb-psa-empirical bsb-jud-empirical; do
+            mkdir -p "artifacts/$fixture"
+            docker run --rm --entrypoint python -v "$PWD/smoke:/fixtures:ro" -v "$PWD/scripts:/checks:ro" -v "$PWD/artifacts/$fixture:/artifacts" ptxprint-candidate /checks/render-smoke.py "$fixture.json"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-render-evidence
+          path: artifacts/
+  baseline-poetry:
+    # Completed diagnostic:3.0.20/current-usfmtc is incompatible; evidence run43524557412.
+    # Not a candidate release check. Restore only for a new explicit baseline experiment.
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select pinned previous engine, same usfmtc and fixture
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('engine-lock.json'); lock=json.loads(p.read_text())
+          lock['ptxprint']={'version':'3.0.20','commit':'c93ee4f6927ef62e19355009fbd519a823234e2e'}
+          p.write_text(json.dumps(lock,indent=2)+'\n')
+          PY
+      - name: Build isolated baseline (never deployed)
+        run: docker build --progress=plain -t ptxprint-baseline .
+      - name: Render identical Psalms fixture on previous engine
+        run: |
+          mkdir -p baseline-artifacts
+          docker run --rm --entrypoint python -v "$PWD/smoke:/fixtures:ro" -v "$PWD/scripts:/checks:ro" -v "$PWD/baseline-artifacts:/artifacts" ptxprint-baseline /checks/render-smoke.py bsb-psa-empirical.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baseline-poetry-evidence
+          path: baseline-artifacts/

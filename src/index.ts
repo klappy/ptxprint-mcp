@@ -33,6 +33,7 @@ import {
   payloadHash as computePayloadHash,
   type Payload,
 } from "./payload.js";
+import { ENGINE_LOCK, engineFingerprint, renderHash } from "./engine.js";
 import { outputPdfKey, outputLogKey } from "./output-naming.js";
 import {
   initJob,
@@ -100,7 +101,7 @@ function r2PublicUrl(key: string, baseUrl: string): string {
 }
 
 function jobIdFromHash(payloadHash: string): string {
-  // Use the payload hash itself as the job_id. This is stable across resubmits
+  // Use the engine-isolated render hash as the job_id. This is stable across resubmits
   // of the same payload and gives free idempotency at the DO layer.
   return payloadHash;
 }
@@ -117,13 +118,15 @@ export class PtxprintMcp extends McpAgent<Env> {
     // ----- submit_typeset -----
     this.server.tool(
       "submit_typeset",
-      "Submit a PTXprint typesetting job. Validates the payload, computes its sha256, and either returns the cached output URL (if the same payload has been seen before) or dispatches the job to a Container worker. Returns immediately with a job_id; poll get_job_status for state and result URLs.",
+      "Submit a PTXprint typesetting job. Validates the payload, computes its sha256, and either returns the cached output URL (if the same payload and engine have been seen before) or dispatches the job to a Container worker. Returns immediately with a job_id; poll get_job_status for state and result URLs.",
       { payload: PayloadSchema },
       async ({ payload }: { payload: Payload }) => {
         const submittedAt = new Date().toISOString();
         const hash = await computePayloadHash(payload);
-        const pdfKey = outputPdfKey(payload, hash);
-        const logKey = outputLogKey(payload, hash);
+        const fingerprint = await engineFingerprint();
+        const renderId = await renderHash(hash, fingerprint);
+        const pdfKey = outputPdfKey(payload, renderId);
+        const logKey = outputLogKey(payload, renderId);
 
         const env = this.env;
         // baseUrl is the Worker's public URL. We use it to build the
@@ -159,11 +162,12 @@ export class PtxprintMcp extends McpAgent<Env> {
                 type: "text",
                 text: JSON.stringify(
                   {
-                    job_id: jobIdFromHash(hash),
+                    job_id: jobIdFromHash(renderId),
                     submitted_at: submittedAt,
                     predicted_pdf_url: r2PublicUrl(pdfKey, baseUrl),
                     cached: true,
                     payload_hash: hash,
+            engine_fingerprint: fingerprint,
                   },
                   null,
                   2,
@@ -174,7 +178,7 @@ export class PtxprintMcp extends McpAgent<Env> {
         }
 
         // Cache miss. Initialize DO + dispatch to container.
-        const jobId = jobIdFromHash(hash);
+        const jobId = jobIdFromHash(renderId);
         await initJob(env.JOB_STATE, jobId, hash, submittedAt);
 
         // ----- Diagnostic instrumentation (Day-1 PoC) -----
@@ -219,6 +223,7 @@ export class PtxprintMcp extends McpAgent<Env> {
             job_id: jobId,
             payload,
             payload_hash: hash,
+            engine_fingerprint: fingerprint,
             pdf_r2_key: pdfKey,
             log_r2_key: logKey,
             worker_callback_url: baseUrl
@@ -295,6 +300,7 @@ export class PtxprintMcp extends McpAgent<Env> {
                   predicted_pdf_url: r2PublicUrl(pdfKey, baseUrl),
                   cached: false,
                   payload_hash: hash,
+            engine_fingerprint: fingerprint,
                 },
                 null,
                 2,
@@ -551,7 +557,9 @@ export default {
           ok: true,
           service: "ptxprint-mcp",
           version: WORKER_VERSION,
-          spec: "v1.3-draft",
+          engine: ENGINE_LOCK,
+          engine_fingerprint: await engineFingerprint(),
+          spec: "v1.4-draft",
           tools: [
             "submit_typeset",
             "get_job_status",

@@ -14,7 +14,7 @@ status: draft
 
 # Output Naming
 
-> **What this answers.** What does a v1.2 output URL look like? How does the filename relate to the inputs? How long is it valid?
+> **What this answers.** How do current engine-qualified output URLs differ from legacy payload-only URLs? How does the filename relate to the inputs? How long is it valid?
 >
 > **Related articles.** `klappy://canon/articles/payload-construction` · `klappy://canon/articles/file-system-map`
 
@@ -22,14 +22,14 @@ status: draft
 
 ## The two URLs the agent receives
 
-A successful `get_job_status` response carries two presigned R2 GET URLs:
+Current responses use the Worker's public R2 proxy, not presigned URLs:
 
 ```
-pdf_url:  https://<account>.r2.cloudflarestorage.com/ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.pdf?<presigned-params>
-log_url:  https://<account>.r2.cloudflarestorage.com/ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.log?<presigned-params>
+pdf_url: https://<worker>/r2/outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.pdf
+log_url: https://<worker>/r2/outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.log
 ```
 
-Both follow the same pattern: a content-addressed prefix (`<payload_hash>`) plus a deterministic filename derived from the payload's inputs.
+For the proposed v1.4 contract, `render_id` includes both engine and payload identity. Legacy v1.2/v1.3 artifacts used `payload_hash` in that position. Do not relabel an existing legacy URL or assume an upgrade rewrites it. Older specification examples used presigned R2 URLs; that is not the current Worker proxy implementation.
 
 `submit_typeset` also returns a `predicted_pdf_url` synchronously at submission time, before the job runs. The agent can use it to construct user-facing download links in advance — but the file at that URL doesn't exist until the job completes (or the URL is being returned as a cache hit).
 
@@ -59,33 +59,25 @@ This naming is unchanged from the GUI. Users who recognize PDFs from existing PT
 The full R2 path is:
 
 ```
-ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.pdf
+ptxprint-outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.pdf
 ```
 
-`<payload_hash>` is the sha256 of the canonical JSON of the payload (see `klappy://canon/articles/payload-construction`). Two consequences:
+`<render_id>` is the job ID: `sha256("ptxprint-render-v1:" + engine_fingerprint + ":" + payload_hash)`. The returned `payload_hash` remains the canonical input digest; `engine_fingerprint` hashes sorted compact JSON of `engine-lock.json`. See the v1.4 spec. Two consequences:
 
-- **Cache hit on identical inputs.** Same payload → same hash → same path → existing PDF returned without re-running PTXprint.
-- **Coexistence of variants.** The same project + config + books with different cfg content produces different `<payload_hash>` values, so multiple variants live side by side in R2.
+- **Cache hit on identical inputs.** Same payload and engine lock → same render ID → same path → existing PDF returned without re-running PTXprint.
+- **Coexistence of variants.** The same project + config + books with different cfg content produces different `<render_id>` values, so multiple variants live side by side in R2.
 
-The filename portion alone (`<PRJ>_<Config>_<bks>_ptxp.pdf`) is **not** unique across all jobs — it's only unique within a `<payload_hash>` directory. Don't use it as a session-wide identifier; use `<payload_hash>/<filename>` together.
+The filename portion alone (`<PRJ>_<Config>_<bks>_ptxp.pdf`) is **not** unique across all jobs — it's only unique within a `<render_id>` directory. Don't use it as a session-wide identifier; use `<render_id>/<filename>` together.
 
 ## URL validity
 
-Presigned URLs are time-limited. Default windows:
-
-| URL | Default validity | Configurable per-deployment? |
-|---|---|---|
-| `pdf_url` (in `get_job_status`) | 7 days | yes |
-| `log_url` (in `get_job_status`) | 7 days | yes |
-| `predicted_pdf_url` (in `submit_typeset`) | 7 days | yes |
-
-After a presigned URL expires, the underlying object is still in R2 (subject to the bucket's retention policy — 90 days default for outputs). The agent re-mints by polling `get_job_status` again — the response will carry fresh presigned URLs.
+Current Worker-proxy URLs have no signature-expiry timestamp. Availability depends on the Worker and R2 object retention; it is not a permanent archival guarantee. Old artifacts are retained by this engine update but remain subject to bucket lifecycle policy. Download important PDFs for long-term preservation. The seven-day presigned-URL window in older design material does not describe current proxy behavior.
 
 ## When to surface the URL to the user
 
 Surface the `pdf_url` immediately when the job succeeds. The user typically wants to click and view. Don't wait for additional validation.
 
-For long-lived sharing (the user wants to email the link), warn that the URL expires in 7 days. If they need permanent access, recommend they download the PDF.
+For long-lived sharing, explain that availability depends on retained storage. For permanent access, recommend downloading the PDF.
 
 If `cached: true` was set on the original `submit_typeset` response, the URL points to a PDF that was generated by an earlier (possibly much earlier) submission. The content is byte-identical to what a fresh run would produce — that's what content-addressing guarantees — but the timestamp on the R2 object reflects the original generation time, not now. Useful for tracking authorship; not relevant to most users.
 
@@ -118,7 +110,7 @@ The agent should not surface `predicted_pdf_url` to the user as a download link 
 
 When a user pastes a v1.2 PDF URL into a new conversation, the agent can:
 
-1. Extract the `<payload_hash>` from the URL path.
+1. Extract the `<render_id>` from the URL path.
 2. Optionally HEAD the URL to confirm the object still exists.
 3. If the user asks "what's in this?", treat the URL as the answer — there's no MCP tool that maps `payload_hash` back to the original payload (intentional; payloads can contain content not appropriate to retain server-side).
 4. If the user wants to "make another like that", they need to provide the source materials again (their project state, the cfg they used, etc.); the agent constructs a new payload from those.

@@ -167,7 +167,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       <div class="col-span-12 lg:col-span-8">
         <div class="eyebrow mb-6 flex items-center gap-3">
           <span class="text-rubric">●</span>
-          <span>Cloudflare-native MCP server &nbsp;·&nbsp; v1.3-draft</span>
+          <span>Cloudflare-native MCP server &nbsp;·&nbsp; v1.4-draft</span>
         </div>
 
         <h1 class="display-xl text-paper text-[64px] sm:text-[88px] lg:text-[120px]">
@@ -301,7 +301,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <p class="text-paper-2 leading-relaxed text-[15px]">
           Cloudflare Worker dispatches via service binding into a Container running PTXprint &amp; XeTeX.
           Durable Objects hold per-job state. R2 stores content-addressed outputs.
-          SHA-256 of the canonical payload is the cache key &mdash; identical jobs cost zero CPU.
+          SHA-256 of the engine fingerprint plus canonical payload digest is the cache key &mdash; identical jobs cost zero CPU.
         </p>
       </div>
     </div>
@@ -316,7 +316,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <h2 class="display-lg text-paper text-[44px] lg:text-[64px]">Submit a job. Get a real PDF.</h2>
         <p class="text-paper-2 max-w-[680px] mt-4 leading-relaxed text-[15px]">
           Both demo payloads are checked-in smoke fixtures from the repo's <span class="font-mono text-paper">smoke/</span>
-          directory and have been rendered before, so they cache-hit and return instantly &mdash; zero container CPU.
+          directory. The server checks the current engine-qualified cache on submission; an engine upgrade may require a fresh render.
           The PDF below is the real artifact served from R2.
         </p>
       </div>
@@ -364,7 +364,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <div class="folio">
           <span id="combo-label" class="text-paper-2">BSB &middot; John &middot; Gentium Plus</span>
           <span class="text-paper-mute mx-2">&middot;</span>
-          <span id="combo-cache" class="text-gilt">cache hit &mdash; instant PDF</span>
+          <span id="combo-cache" class="text-gilt">cache checked on submit</span>
         </div>
         <a id="payload-source" href="#" target="_blank" rel="noopener" class="folio text-paper-mute hover:text-gilt ml-auto ed-link">
           view book fixture on github &rarr;
@@ -518,7 +518,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
         <h3 class="display-md text-paper text-[22px] mb-2"><code class="font-mono text-paper">submit_typeset</code></h3>
         <p class="text-paper-2 text-[14px] leading-relaxed mb-4">
           Hand it a project, a config, a book selection. Returns a <code class="font-mono text-gilt">job_id</code>
-          immediately and a predicted output URL. Identical payloads cache-hit.
+          immediately and a predicted output URL. Identical payloads under the same engine lock can cache-hit.
         </p>
         <pre class="code bg-ink/60 p-3 rounded border border-rule overflow-auto"><code><span class="tok-com">// returns immediately</span>
 {
@@ -830,7 +830,7 @@ export const HOMEPAGE_HTML: string = `<!doctype html>
       </div>
       <div>
         <div class="folio mb-2">content-addressed</div>
-        <p class="text-paper-2 text-[13.5px] leading-relaxed">Cache keys are SHA-256 hashes (RFC 8785 JCS) of the canonical payload. No TTL. No staleness. Two identical jobs share one PDF.</p>
+        <p class="text-paper-2 text-[13.5px] leading-relaxed">Cache keys combine the canonical payload digest with the pinned engine fingerprint. Engine upgrades use a fresh namespace; old PDFs remain available subject to retention.</p>
       </div>
       <div>
         <div class="folio mb-2">async by design</div>
@@ -1071,7 +1071,7 @@ const FONTS = {
 // Combinations known to be pre-warmed in R2 — instant cache hits. Anything else
 // dispatches a live container job (~30s for short books, minutes for big ones).
 // As live-dispatched combos finish, they ALSO become cache hits for next time.
-const KNOWN_CACHED = new Set(['jhn:gentium', 'psa:gentium']);
+const KNOWN_CACHED = new Set(); // No pre-warm claim survives an engine upgrade.
 
 let activeBook = 'jhn';
 let activeFont = 'gentium';
@@ -1266,7 +1266,7 @@ async function doSubmit() {
     btnStatus.disabled = false; btnCancel.disabled = false;
     if (result.cached) {
       setPill('cached', 'cache hit');
-      termComment('cache hit — payload sha256 already typeset; PDF served from R2');
+      termComment('cache hit — payload and engine already typeset; PDF served from R2');
       await showPdf(result, BOOKS[activeBook].expected);
     } else {
       setPill('running', 'dispatched');
@@ -1427,7 +1427,7 @@ function refreshPickers() {
     const sizeHint = bookMeta.chapters >= 50 ? '~2-5 min' :
                      bookMeta.chapters >= 20 ? '~30-90 s' :
                                                '~10-30 s';
-    cacheEl.textContent = \`cache MISS · live dispatch (\${sizeHint})\${isCharis ? ' · uses container-bundled font' : ''}\`;
+    cacheEl.textContent = \`cache checked on submit · possible live dispatch (\${sizeHint})\${isCharis ? ' · uses container-bundled font' : ''}\`;
   }
 }
 document.querySelectorAll('.book-btn').forEach(b => {

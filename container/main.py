@@ -25,6 +25,8 @@ from __future__ import annotations
 import asyncio
 import re
 import hashlib
+import json
+from importlib.metadata import version as package_version, distribution
 import logging
 import os
 import subprocess
@@ -43,8 +45,16 @@ from pydantic import BaseModel, Field
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ptxprint-container")
 
-app = FastAPI(title="ptxprint-mcp container", version="0.1.0")
+app = FastAPI(title="ptxprint-mcp container", version="0.5.0")
 
+
+ENGINE_LOCK = json.loads(Path(__file__).with_name("engine-lock.json").read_text())
+ENGINE_FINGERPRINT = hashlib.sha256(json.dumps(ENGINE_LOCK, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+USFMTC_ORIGIN = json.loads(distribution("usfmtc").read_text("direct_url.json") or "{}")
+if USFMTC_ORIGIN.get("url") != "https://github.com/usfm-bible/usfmtc/archive/" + ENGINE_LOCK["usfmtc"]["commit"] + ".zip":
+    raise RuntimeError("Installed usfmtc origin disagrees with engine lock")
+if package_version("ptxprint") != ENGINE_LOCK["ptxprint"]["version"]:
+    raise RuntimeError("Installed PTXprint version disagrees with engine lock")
 
 # ---------- Schema ----------
 
@@ -95,6 +105,7 @@ class JobRequestModel(BaseModel):
     job_id: str
     payload: PayloadModel
     payload_hash: str
+    engine_fingerprint: str
     pdf_r2_key: str
     log_r2_key: str
     worker_callback_url: str | None = None
@@ -286,11 +297,14 @@ def classify_exit(exit_code: int, pdf_exists: bool) -> str:
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
-    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.1.0"}
+    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.5.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint"), "installed_usfmtc": package_version("usfmtc"), "usfmtc_origin": USFMTC_ORIGIN}
 
 
 @app.post("/jobs")
 async def run_job(req: JobRequestModel) -> JSONResponse:
+    if req.engine_fingerprint != ENGINE_FINGERPRINT:
+        return JSONResponse(status_code=409, content={"error": "Worker/container engine fingerprint mismatch"})
+    log.info("engine fingerprint=%s", ENGINE_FINGERPRINT)
     job_id = req.job_id
     callback = req.worker_callback_url
     payload = req.payload
@@ -344,6 +358,10 @@ async def run_job(req: JobRequestModel) -> JSONResponse:
             pdf_path = find_output_pdf(scratch, payload.project_id, effective_config)
             log_path = find_output_log(scratch, payload.project_id, effective_config)
             log_text = log_path.read_text(errors="replace") if log_path else stderr_tail
+            provenance_header = f"[engine] fingerprint={ENGINE_FINGERPRINT} lock={json.dumps(ENGINE_LOCK, sort_keys=True)}\n"
+            log_text = provenance_header + log_text
+            if log_path:
+                log_path.write_text(log_text)
             errors, overfull = parse_log_for_errors(log_text)
             log_tail = "\n".join(log_text.splitlines()[-100:])
             failure_mode = classify_exit(exit_code, pdf_path is not None)
