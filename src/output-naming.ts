@@ -8,8 +8,8 @@
  * "<first>-<last>" if multiple.
  *
  * R2 layout:
- *   outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.pdf
- *   outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.log
+ *   outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.pdf
+ *   outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.log
  */
 
 import type { Payload } from "./payload.js";
@@ -30,10 +30,10 @@ export function logBasename(payload: Payload): string {
   return `${payload.project_id}_${payload.config_name}_${bks}_ptxp.log`;
 }
 
-export function outputPdfKey(payload: Payload, payloadHash: string): string {
-  return `outputs/${payloadHash}/${pdfBasename(payload)}`;
+export function outputPdfKey(payload: Payload, renderId: string): string {
+  return `outputs/${renderId}/${pdfBasename(payload)}`;
 }
 
-export function outputLogKey(payload: Payload, payloadHash: string): string {
-  return `outputs/${payloadHash}/${logBasename(payload)}`;
+export function outputLogKey(payload: Payload, renderId: string): string {
+  return `outputs/${renderId}/${logBasename(payload)}`;
 }
