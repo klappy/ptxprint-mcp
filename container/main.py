@@ -45,7 +45,7 @@ from pydantic import BaseModel, Field
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ptxprint-container")
 
-app = FastAPI(title="ptxprint-mcp container", version="0.4.0")
+app = FastAPI(title="ptxprint-mcp container", version="0.5.0")
 
 
 ENGINE_LOCK = json.loads(Path(__file__).with_name("engine-lock.json").read_text())
@@ -297,7 +297,7 @@ def classify_exit(exit_code: int, pdf_exists: bool) -> str:
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
-    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.4.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint"), "installed_usfmtc": package_version("usfmtc"), "usfmtc_origin": USFMTC_ORIGIN}
+    return {"ok": True, "service": "ptxprint-mcp container", "version": "0.5.0", "engine": ENGINE_LOCK, "engine_fingerprint": ENGINE_FINGERPRINT, "installed_ptxprint": package_version("ptxprint"), "installed_usfmtc": package_version("usfmtc"), "usfmtc_origin": USFMTC_ORIGIN}
 
 
 @app.post("/jobs")

@@ -127,8 +127,8 @@ Same principle: the worker handles placement. Fonts are installed into a per-job
 The worker stages outputs in `local/ptxprint/` (PDF) and `local/ptxprint/<ConfigName>/` (log) inside its scratch directory, then uploads them to R2 at:
 
 ```
-ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.pdf
-ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.log
+ptxprint-outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.pdf
+ptxprint-outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.log
 ```
 
 The agent never reads from `local/`. It receives presigned URLs in `get_job_status.pdf_url` and `log_url`. See `klappy://canon/articles/output-naming`.

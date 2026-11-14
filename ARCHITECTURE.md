@@ -63,7 +63,7 @@ Agent (Claude Desktop / BT Servant / etc.)
 
 ## Core ideas
 
-**PTXprint as a pure function.** The system treats `PTXprint(config, sources, fonts, figures)` as deterministic. Same inputs → same output. Output is content-addressed by `sha256(canonical_payload)`. Re-submitting an unchanged payload returns the cached R2 URL with no PTXprint run.
+**PTXprint as a pure function.** The system treats `PTXprint(config, sources, fonts, figures)` as deterministic. Same inputs → same output. The input digest remains `payload_hash = sha256(canonical_payload)`. The job ID and R2 prefix are now `sha256("ptxprint-render-v1:" + engine_fingerprint + ":" + payload_hash)`. Re-submitting an unchanged payload under the same engine lock returns the cached R2 URL; a changed engine lock gets a new cache namespace. The lock fingerprints PTXprint, usfmtc and render revision, not every transitive OS/Python package. See the v1.4 spec and `docs/engine-updates.md`.
 
 **Stateless workers.** No project tree on the server. Every job is a self-contained submission; the Container materializes a scratch directory at job start, runs, and the disk is wiped on Container sleep. This makes any Container instance interchangeable with any other — true horizontal autoscaling.
 

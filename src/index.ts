@@ -559,7 +559,7 @@ export default {
           version: WORKER_VERSION,
           engine: ENGINE_LOCK,
           engine_fingerprint: await engineFingerprint(),
-          spec: "v1.3-draft",
+          spec: "v1.4-draft",
           tools: [
             "submit_typeset",
             "get_job_status",

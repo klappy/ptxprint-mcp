@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Status: Phase 1 demonstrated](https://img.shields.io/badge/status-phase%201%20demonstrated-green.svg)]()
-[![Spec: v1.3-draft](https://img.shields.io/badge/spec-v1.3--draft-blueviolet.svg)](canon/specs/ptxprint-mcp-v1.3-spec.md)
+[![Spec: v1.4-draft](https://img.shields.io/badge/spec-v1.4--draft-blueviolet.svg)](canon/specs/ptxprint-mcp-v1.4-spec.md)
 
 ---
 
@@ -33,7 +33,7 @@ The two are kept in one repo because they are tightly coupled: a tool surface ch
 
 **Live deployment:** `https://ptxprint.klappy.dev` — `/health` returns `{ ok: true, service, version, spec, tools }`; `/mcp` accepts streamable-HTTP MCP. Worker version and spec version are reported live; the README does not duplicate them to avoid drift.
 
-**Read the full spec:** [`canon/specs/ptxprint-mcp-v1.3-spec.md`](canon/specs/ptxprint-mcp-v1.3-spec.md) (v1.2 remains the tool-surface baseline; v1.3 adds telemetry). `/health` reports the live `spec` string — trust it over this line.
+**Read the full spec:** [`canon/specs/ptxprint-mcp-v1.4-spec.md`](canon/specs/ptxprint-mcp-v1.4-spec.md) (v1.2 remains the tool-surface baseline; v1.4 adds telemetry). `/health` reports the live `spec` string — trust it over this line.
 
 **Read the architecture overview:** [`ARCHITECTURE.md`](ARCHITECTURE.md).
 

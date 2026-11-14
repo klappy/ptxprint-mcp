@@ -180,11 +180,11 @@ Whatever pattern the agent's host supports, the agent's job is to land at a fina
 
 When the agent submits a payload:
 
-1. The worker hashes it.
-2. If `outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.pdf` exists in R2 → the response includes `cached: true` and the URL points to the existing PDF. **No typesetting runs.**
+1. The worker hashes it, then computes `render_id = sha256("ptxprint-render-v1:" + engine_fingerprint + ":" + payload_hash)`. The fingerprint hashes the sorted compact engine lock, including both pinned commits and render revision.
+2. If `outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.pdf` exists in R2 → the response includes `cached: true` and the URL points to the existing PDF. **No typesetting runs.**
 3. If miss → a Container is dispatched, the job runs, the PDF lands at the same content-addressed path.
 
-This is the mechanism behind "free re-runs of unchanged builds." Agents that iterate by changing one cfg key and re-submitting get a cache hit on every key that has been tried before. There is no separate undo button — re-submitting an earlier payload is the undo.
+This is the mechanism behind "free re-runs of unchanged builds under the same engine lock." Agents that iterate by changing one cfg key and re-submitting get a cache hit on every key that has been tried before. There is no separate undo button — re-submitting an earlier payload is the undo.
 
 ## Worked example: a simple draft of John
 

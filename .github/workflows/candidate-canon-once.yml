@@ -1,0 +1,49 @@
+name: One-time candidate canon generation
+on:
+  pull_request:
+    paths: ['.github/workflows/candidate-canon-once.yml']
+permissions:
+  contents: write
+jobs:
+  generate:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'oddie/engine-update-20261113'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Generate only canon and synchronize root lock version
+        run: |
+          npm run bundle-canon
+          node --input-type=module -e "import fs from 'node:fs';const p=JSON.parse(fs.readFileSync('package.json'));const l=JSON.parse(fs.readFileSync('package-lock.json'));l.version=p.version;l.packages[''].version=p.version;fs.writeFileSync('package-lock.json',JSON.stringify(l,null,2)+'\\n');"
+          rm .github/workflows/candidate-canon-once.yml
+          git add -- src/bundled-canon.ts package-lock.json .github/workflows/candidate-canon-once.yml
+          python3 - <<'PY'
+          import subprocess
+          actual=set(subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines())
+          allowed={'src/bundled-canon.ts','package-lock.json','.github/workflows/candidate-canon-once.yml'}
+          assert actual <= allowed, actual
+          PY
+      - name: Validate generated candidate
+        run: |
+          npm run cf-typegen --if-present
+          npm run lint --if-present
+          npm run tsc --if-present
+          npm test --if-present
+          node --test scripts/engine-update*.test.mjs
+      - name: Publish only if candidate head remains unchanged
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          current=$(git ls-remote --heads origin refs/heads/oddie/engine-update-20261113 | cut -f1)
+          test "$current" = "$EXPECTED_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Generate candidate canon and remove one-time workflow"
+          git push origin HEAD:refs/heads/oddie/engine-update-20261113

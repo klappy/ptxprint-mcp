@@ -25,11 +25,11 @@ status: draft
 A successful `get_job_status` response carries two presigned R2 GET URLs:
 
 ```
-pdf_url:  https://<account>.r2.cloudflarestorage.com/ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.pdf?<presigned-params>
-log_url:  https://<account>.r2.cloudflarestorage.com/ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.log?<presigned-params>
+pdf_url:  https://<account>.r2.cloudflarestorage.com/ptxprint-outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.pdf?<presigned-params>
+log_url:  https://<account>.r2.cloudflarestorage.com/ptxprint-outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.log?<presigned-params>
 ```
 
-Both follow the same pattern: a content-addressed prefix (`<payload_hash>`) plus a deterministic filename derived from the payload's inputs.
+Both follow the same pattern: a content-addressed prefix (`<render_id>`) plus a deterministic filename derived from the payload's inputs.
 
 `submit_typeset` also returns a `predicted_pdf_url` synchronously at submission time, before the job runs. The agent can use it to construct user-facing download links in advance — but the file at that URL doesn't exist until the job completes (or the URL is being returned as a cache hit).
 
@@ -59,15 +59,15 @@ This naming is unchanged from the GUI. Users who recognize PDFs from existing PT
 The full R2 path is:
 
 ```
-ptxprint-outputs/<payload_hash>/<PRJ>_<Config>_<bks>_ptxp.pdf
+ptxprint-outputs/<render_id>/<PRJ>_<Config>_<bks>_ptxp.pdf
 ```
 
-`<payload_hash>` is the sha256 of the canonical JSON of the payload (see `klappy://canon/articles/payload-construction`). Two consequences:
+`<render_id>` is the job ID: `sha256("ptxprint-render-v1:" + engine_fingerprint + ":" + payload_hash)`. The returned `payload_hash` remains the canonical input digest; `engine_fingerprint` hashes sorted compact JSON of `engine-lock.json`. See the v1.4 spec. Two consequences:
 
-- **Cache hit on identical inputs.** Same payload → same hash → same path → existing PDF returned without re-running PTXprint.
-- **Coexistence of variants.** The same project + config + books with different cfg content produces different `<payload_hash>` values, so multiple variants live side by side in R2.
+- **Cache hit on identical inputs.** Same payload and engine lock → same render ID → same path → existing PDF returned without re-running PTXprint.
+- **Coexistence of variants.** The same project + config + books with different cfg content produces different `<render_id>` values, so multiple variants live side by side in R2.
 
-The filename portion alone (`<PRJ>_<Config>_<bks>_ptxp.pdf`) is **not** unique across all jobs — it's only unique within a `<payload_hash>` directory. Don't use it as a session-wide identifier; use `<payload_hash>/<filename>` together.
+The filename portion alone (`<PRJ>_<Config>_<bks>_ptxp.pdf`) is **not** unique across all jobs — it's only unique within a `<render_id>` directory. Don't use it as a session-wide identifier; use `<render_id>/<filename>` together.
 
 ## URL validity
 
@@ -118,7 +118,7 @@ The agent should not surface `predicted_pdf_url` to the user as a download link 
 
 When a user pastes a v1.2 PDF URL into a new conversation, the agent can:
 
-1. Extract the `<payload_hash>` from the URL path.
+1. Extract the `<render_id>` from the URL path.
 2. Optionally HEAD the URL to confirm the object still exists.
 3. If the user asks "what's in this?", treat the URL as the answer — there's no MCP tool that maps `payload_hash` back to the original payload (intentional; payloads can contain content not appropriate to retain server-side).
 4. If the user wants to "make another like that", they need to provide the source materials again (their project state, the cfg they used, etc.); the agent constructs a new payload from those.
