@@ -17,3 +17,10 @@
 
 ### 2026-09-05 (translator's desk) — 0.4.0
 - **D2** Diglot impossible: the container wrote every source into the primary project and sandboxed `config_files` to it, so no secondary project could exist. → `payload.projects` (optional map of secondary projects), spec §4, `payload-construction`, `workflow-recipes` diglot recipe. Closed in 0.4.0; first render pending (kitchen `trb-diglot-ult-ust`).
+
+## 2026-11-13 — proposed 0.5.0 engine update
+
+- Payload-only cache identity fixed by engine-qualified render IDs; old artifacts retained.
+- Actions draft-PR creation denied by repository policy in run 43524109242. Updater live test disabled pending explicit setting approval and repair; scheduler not proven.
+- Minimal no-config render produces no PDF; configured John/Psalms/Jude pass. Broader multilingual/diglot/study QA remains open.
+- Stateful isolated staging and production release gates remain open. No production update claimed.

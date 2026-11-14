@@ -78,3 +78,13 @@ engine-integration-test/43524109242-1, but GitHub refused PR creation:
 No PR was created, dispatch not reached, no identity workaround or permission change.
 The live test is disabled pending owner-approved repository permission repair.
 Default-branch schedule activation and real bot draft/dispatch remain unverified.
+
+## Rollback unit
+
+Restore the known-good complete Worker/container image pair, not only the PTXprint version. The controlled 3.0.20/current-usfmtc pair failed with `PTXEmitter.tag()` unexpected `prefix`. The lock is not a full transitive image pin.
+
+## Bot workflow approval and staging path
+
+GitHub-token-created pull-request checks may require approval by a user with write access. Allowing PR creation alone does not prove unattended checks; explicitly dispatched smoke must be verified end to end after permission repair. No new credential or identity fallback is authorized by this design.
+
+Before production promotion, provision a separately named staging Worker with its own Durable Object namespace, output and snapshot R2 buckets, and telemetry dataset. Use a separate Wrangler config (not an unconfigured `--env` shortcut); point WORKER_URL to staging and disable scheduled snapshots. Do not reuse production output bindings or credentials. Deploy the exact reviewed candidate there only after resource/deployment authority is established. Exercise submit → polling → artifact upload → cache hit, then a controlled render-revision change → cache miss, plus mismatch409 and cancellation. Record actual endpoint, image/Worker identity and receipts. Current repository config is production-only; no isolated resources have been created or deployment performed by this PR.
