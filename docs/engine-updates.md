@@ -35,8 +35,7 @@ This PR must not deploy production while the existing missing DEV/staging hold
 remains unresolved. Main pushes automatically deploy production. Separate stateful
 DEV/staging environments or a documented captain ruling are required; a successful
 container CI run is not staging evidence. No cache deletion, secrets, bindings or
-DNS changes are included. Coordinate version/changelog and existing PR59 package
-ownership before promotion; this candidate deliberately leaves those files alone.
+DNS changes are included. Candidate wrapper version0.5.0 and v1.4 engine contract are recorded in this PR; package-lock changes only root version metadata, not dependency selections. Coordinate existing PR59 package ownership before promotion. See docs/releases/0.5.0.md.
 
 ## Automated proposals
 Weekly/manual updater selects strictly newer stable semver tags using GitHub tags API
