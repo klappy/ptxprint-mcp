@@ -34,10 +34,11 @@ describe("submit_typeset result (0.4.1)", () => {
     expect(s).toMatch(/after a soft failure the degraded PDF is cached/);
   });
   it("tool descriptions pin the small-model contract wording", () => {
-    for (const phrase of ["Smallest valid payload", "Call this once per payload", "cached: true", "do not poll",
+    for (const phrase of ["config_files are required", "bundle-default-cfg-handoff", "Call this once per payload", "cached: true", "do not poll",
       "exact job_id", "Never guess a job_id", "only after a hard failure", "after a soft failure the degraded PDF is cached"]) {
       expect(SUBMIT_TYPESET_DESCRIPTION).toContain(phrase);
     }
+    expect(SUBMIT_TYPESET_DESCRIPTION).not.toMatch(/bundled default cfg renders|Smallest valid payload|Level 0/);
     expect(GET_JOB_STATUS_DESCRIPTION).toContain("exact value returned by submit_typeset");
     expect(GET_JOB_STATUS_DESCRIPTION).toContain("Not needed when submit_typeset returned cached: true");
   });
