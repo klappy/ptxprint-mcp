@@ -14,6 +14,8 @@ status: draft
 
 > **Quickstart.** The smallest valid payload is `{schema_version, project_id, books, sources}` — the Container's bundled default cfg fills in everything else and produces a publication-quality A5 two-column Bible book in Charis. Levels of customization stack on top of this from there:
 >
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
+>
 > ```json
 > {
 >   "schema_version": "1.0",

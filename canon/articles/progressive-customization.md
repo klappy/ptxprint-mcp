@@ -32,6 +32,8 @@ supersedes_partial: "canon/articles/phase-1-poc-scope.md (the Phase 1 minimum-pa
 > **What this answers.** I'm an agent. I want to render a Bible book. What is the *smallest* thing I can send? And when I want to customize something, where do I go next?
 >
 > **The short answer.** Send `{books, sources}`. The Container's bundled default cfg produces a publication-quality A5 two-column Bible book in Charis. Add fields when you need them; this article is the map of which field unlocks which capability.
+>
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 ---
 
@@ -45,6 +47,8 @@ supersedes_partial: "canon/articles/phase-1-poc-scope.md (the Phase 1 minimum-pa
 | **3** | `fonts: [...]` | Different typefaces (Gentium, Andika, language-specific fonts) | `klappy://canon/articles/font-resolution` |
 | **4** | `config_files["shared/ptxprint/Default/ptxprint.sty"]`, `Settings.xml`, `*-mods.sty` | Custom styling, Paratext settings, stylesheet overrides | `klappy://canon/articles/stylesheet-format` · `klappy://canon/articles/file-system-map` |
 | **5** | `figures: [...]` + `config_files[".../<PRJ>-<config>.piclist"]` | Pictures and illustrations | `klappy://canon/articles/piclist-format` |
+
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 Each level is purely additive. Level 1 doesn't require anything from Level 2. Level 3 doesn't require anything from Level 4. The bundle is the floor; you climb only the rungs you need.
 
@@ -71,6 +75,8 @@ The smallest possible payload:
 ```
 
 That's it. No `config_files`, no `fonts`, no `figures`, no `define`, no `mode` (defaults to `simple`). The Container stages its bundled cfg at the project's Default config path, runs PTXprint, returns a content-addressed PDF URL.
+
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 What the bundle produces is described in `klappy://canon/articles/bundled-default-cfg`. Empirically: BSB John → 37 pages, ~377 KB PDF, ~15 seconds container time, 0 errors.
 
@@ -268,6 +274,8 @@ Future option (deferred): PTXprint's native `[import] config = Parent` inheritan
 ## Discovery via docs
 
 Most Level-0 → Level-1 → Level-2 transitions are agent-driven:
+
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 ```
 agent: "render BSB John"
