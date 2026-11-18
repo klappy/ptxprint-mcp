@@ -21,4 +21,10 @@ describe("submit_typeset result (0.4.1)", () => {
   it("names the exact job_id to poll next", () => {
     expect(submitResult(payload, r).next_step).toContain(`"${r.jobId}"`);
   });
+  it("sends failed jobs to errors/logs, not pdf_url, and allows a retry", () => {
+    const s = submitResult(payload, r).next_step;
+    expect(s).toMatch(/On succeeded, use its pdf_url/);
+    expect(s).toMatch(/On failed, report its errors/);
+    expect(s).toMatch(/resubmitting the same payload retries/);
+  });
 });

@@ -33,6 +33,6 @@ export function submitResult(payload: Payload, r: SubmitResultInput) {
       books: payload.books,
       sources: payload.sources.map((s) => ({ book: s.book, filename: s.filename, sha256: s.sha256 })),
     },
-    next_step: `Call get_job_status with job_id "${r.jobId}" (exactly this value) until state is succeeded or failed; then use its pdf_url.`,
+    next_step: `Call get_job_status with job_id "${r.jobId}" (exactly this value) until state is succeeded or failed. On succeeded, use its pdf_url. On failed, report its errors / log_tail / log_url (pdf_url is null); resubmitting the same payload retries.`,
   };
 }
