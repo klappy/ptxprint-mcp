@@ -17,3 +17,8 @@
 
 ### 2026-09-05 (translator's desk) — 0.4.0
 - **D2** Diglot impossible: the container wrote every source into the primary project and sandboxed `config_files` to it, so no secondary project could exist. → `payload.projects` (optional map of secondary projects), spec §4, `payload-construction`, `workflow-recipes` diglot recipe. Closed in 0.4.0; first render pending (kitchen `trb-diglot-ult-ust`).
+
+### 2026-11-18 (small-model test) — 0.4.1
+- **S1** 7B models fired `get_job_status` with invented ids (`job-1234567890`, `"job_id"`) in the same turn as `submit_typeset`, and mistyped `project_id` (`bsoref`). → tool descriptions state submit-once-then-poll-the-returned-`job_id`; the submit result echoes what was hashed and names the next call (spec v1.3 §3 amendment). Closed in 0.4.1, pending re-measure against a deploy.
+- **S2** Proposed server-side `preset` on `submit_typeset` — **not built.** The Level-0 path (no `config_files`/`fonts`, bundled default cfg) already gives small models a short payload, and a server-side template merge would contradict `composition-and-templates` ("the worker has zero knowledge of templates"). Re-open only with evidence that Level 0 is not enough.
+- **S3** Proposed flat-args variant for weak tool callers — **not built.** Llama 3.1 8B also failed at the runtime's tool-call parser, so flat args would not have fixed it; a second argument shape grows the surface. Re-open with a runtime that parses the model's calls.

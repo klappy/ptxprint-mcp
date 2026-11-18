@@ -106,6 +106,8 @@ The first four tools are unchanged from v1.2 — interface, behavior, return sha
 
 **Returns:** `{ job_id, submitted_at, predicted_pdf_url, cached }` — same shape.
 
+**Additive amendment 2026-11-18 (Worker 0.4.1).** The result also carries `payload_hash` (already returned since v1.2's implementation), `echo` — `{ project_id, config_name, books, sources: [{ book, filename, sha256 }] }`, the values the server actually hashed, with defaults applied — and `next_step`, a one-line instruction naming the exact `job_id` to poll. `job_id` stays the first key. No field was renamed or removed. The `submit_typeset` and `get_job_status` tool descriptions now state the Level-0 smallest payload and the submit-once-then-poll-the-returned-`job_id` contract. Why: in a 2026-11-18 small-model test (local 7B models), agents polled with invented `job_id`s and mistyped project ids; see klappy/kitchen `rail/2-cooking/2026-11-17-funding-opportunity-lens/SMALL-MODEL-TEST.md`.
+
 Behavior: validate, hash, HEAD R2 for cached output, return cached URL or dispatch via `ctx.waitUntil(fetch(...))`. Same as v1.2.
 
 **v1.3 telemetry:** every call writes one `mcp_request` event with `cache_outcome ∈ {hit, miss}`, plus one `tool_call` event. Cache hits do NOT write `job_*` events (no Container dispatched). Cache misses cause the Worker to write a `job_phase` event with `phase = "queued"` immediately upon DO creation; the Container takes over from there.
