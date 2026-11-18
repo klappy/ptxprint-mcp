@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PayloadSchema } from "../src/payload.js";
-import { submitResult } from "../src/submit-result.js";
+import { submitResult, SUBMIT_TYPESET_DESCRIPTION, GET_JOB_STATUS_DESCRIPTION } from "../src/submit-result.js";
 
 const payload = PayloadSchema.parse({
   schema_version: "1.0", project_id: "bsbref", books: ["JHN"],
@@ -18,13 +18,27 @@ describe("submit_typeset result (0.4.1)", () => {
     const out = submitResult(payload, r);
     expect(out.echo).toEqual({ project_id: "bsbref", config_name: "Default", books: ["JHN"], sources: [{ book: "JHN", filename: "44JHNtest.usfm", sha256: "f".repeat(64) }] });
   });
-  it("names the exact job_id to poll next", () => {
-    expect(submitResult(payload, r).next_step).toContain(`"${r.jobId}"`);
+  it("on a cache miss, names the exact job_id to poll next", () => {
+    expect(submitResult(payload, { ...r, cached: false }).next_step).toContain(`"${r.jobId}"`);
   });
-  it("sends failed jobs to errors/logs, not pdf_url, and allows a retry", () => {
+  it("on a cache hit, says the PDF is final and no polling is needed", () => {
     const s = submitResult(payload, r).next_step;
+    expect(s).toMatch(/already exists at predicted_pdf_url/);
+    expect(s).toMatch(/No polling is needed/);
+    expect(s).not.toContain(r.jobId);
+  });
+  it("on failure, retries only after a hard failure; soft failures stay cached", () => {
+    const s = submitResult(payload, { ...r, cached: false }).next_step;
     expect(s).toMatch(/On succeeded, use its pdf_url/);
-    expect(s).toMatch(/On failed, report its errors/);
-    expect(s).toMatch(/resubmitting the same payload retries/);
+    expect(s).toMatch(/after a hard failure \(no PDF\) resubmitting the same payload re-runs it/);
+    expect(s).toMatch(/after a soft failure the degraded PDF is cached/);
+  });
+  it("tool descriptions pin the small-model contract wording", () => {
+    for (const phrase of ["Smallest valid payload", "Call this once per payload", "cached: true", "do not poll",
+      "exact job_id", "Never guess a job_id", "only after a hard failure", "after a soft failure the degraded PDF is cached"]) {
+      expect(SUBMIT_TYPESET_DESCRIPTION).toContain(phrase);
+    }
+    expect(GET_JOB_STATUS_DESCRIPTION).toContain("exact value returned by submit_typeset");
+    expect(GET_JOB_STATUS_DESCRIPTION).toContain("Not needed when submit_typeset returned cached: true");
   });
 });

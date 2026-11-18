@@ -55,7 +55,7 @@ import {
   type ConsumerInfo,
   type ParsedRpc,
 } from "./telemetry.js";
-import { submitResult } from "./submit-result.js";
+import { submitResult, SUBMIT_TYPESET_DESCRIPTION, GET_JOB_STATUS_DESCRIPTION } from "./submit-result.js";
 import { exportSchema } from "./telemetry-schema.js";
 import {
   runSnapshot,
@@ -118,7 +118,7 @@ export class PtxprintMcp extends McpAgent<Env> {
     // ----- submit_typeset -----
     this.server.tool(
       "submit_typeset",
-      "Submit a PTXprint typesetting job. Validates the payload, computes its sha256, and either returns the cached output URL (if the same payload has been seen before) or dispatches the job to a Container worker. Returns immediately with a job_id; poll get_job_status for state and result URLs. Smallest valid payload: {schema_version: \"1.0\", project_id, books, sources} — config_files and fonts are optional; without them the bundled default cfg renders (canon progressive-customization, Level 0). Call this once per payload, wait for its result, then call get_job_status with the exact job_id it returns; do not resubmit while that job is queued or running (resubmitting the same payload after the job has failed is how you retry). Never guess a job_id: it is the payload sha256 and cannot be known before this call returns. The result echoes the project, books and source sha256 it hashed — check them against what you meant to send.",
+      SUBMIT_TYPESET_DESCRIPTION,
       { payload: PayloadSchema },
       async ({ payload }: { payload: Payload }) => {
         const submittedAt = new Date().toISOString();
@@ -309,7 +309,7 @@ export class PtxprintMcp extends McpAgent<Env> {
     // ----- get_job_status -----
     this.server.tool(
       "get_job_status",
-      "Poll a job's state, progress, errors, and (when complete) result URLs. job_id must be the exact value returned by submit_typeset — never a placeholder or a guess. Returns the same shape regardless of state; null fields indicate the job has not reached that point yet.",
+      GET_JOB_STATUS_DESCRIPTION,
       { job_id: z.string().min(1) },
       async ({ job_id }: { job_id: string }) => {
         const env = this.env;
