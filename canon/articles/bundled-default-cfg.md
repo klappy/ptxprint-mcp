@@ -38,6 +38,8 @@ status: working
 > **What this answers.** What `ptxprint.cfg` does the Container ship with? What does it produce? When does an agent need to override it?
 >
 > **What this is.** The source of truth for the cfg the Container stages as the default when the caller's payload provides no `shared/ptxprint/Default/ptxprint.cfg` entry. The fenced INI block at the bottom is the literal file content. Container build copies from this article; the article is canonical, the build artifact is derived.
+>
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 ---
 
@@ -50,6 +52,8 @@ If the cfg lived in the Container repo only, agents reasoning about "what does t
 ## What this cfg produces
 
 When a caller submits the smallest possible payload (`{books, sources}`) the Container stages this cfg at the project's Default config path, runs PTXprint, and emits:
+
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 - **Two-column justified** A5 layout (148mm × 210mm)
 - **12pt margins**, 18pt top, 10.5pt bottom
@@ -134,6 +138,8 @@ These aren't bugs — they're knowable behaviors of the bundle:
 | Change many knobs / replace cfg | Add `config_files["shared/ptxprint/Default/ptxprint.cfg"]` with your own cfg |
 | Different fonts | Add `fonts: [...]` array with URL+sha256 entries |
 | Custom stylesheet | Add `config_files["shared/ptxprint/Default/ptxprint.sty"]` |
+
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 | Add figures | Add `figures: [...]` array + a piclist in `config_files` |
 | Front matter | Add `config_files["shared/ptxprint/Default/FRTlocal.sfm"]` and override `iffrontmatter` |
 

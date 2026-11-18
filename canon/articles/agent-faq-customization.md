@@ -43,13 +43,15 @@ status: draft_for_operator_review
 
 | User intent | What the agent sends | Level on the ladder | Does it need `config_files`? |
 |---|---|---|---|
-| Render this USFM as a default Bible book | `{schema_version, project_id, books, sources}` | **Level 0** | **No.** Bundle provides cfg. |
-| Tighter / looser line spacing | `{...Level 0..., define: {linespacing: <value>}}` | **Level 1** | **No.** `define` is a one-shot override. |
-| Hide cross-references; change page size; toggle headers; etc. | `{...Level 0..., define: {<key>: <value>}}` | **Level 1** | **No.** See `klappy://canon/articles/settings-cookbook`. |
-| Different typeface (Gentium, Andika, language-specific) | `{...Level 0/1..., fonts: [...]}` | **Level 3** | **No.** Fonts are a separate payload field. |
+| Render this USFM as a default Bible book | `{schema_version, project_id, books, sources}` | **Level 0** | **No.** Bundle provides cfg. ⚠️ Not on this build — `config_files` required; see note below. |
+| Tighter / looser line spacing | `{...Level 0..., define: {linespacing: <value>}}` | **Level 1** | **No.** `define` is a one-shot override. ⚠️ Not on this build — `config_files` required; see note below. |
+| Hide cross-references; change page size; toggle headers; etc. | `{...Level 0..., define: {<key>: <value>}}` | **Level 1** | **No.** See `klappy://canon/articles/settings-cookbook`. ⚠️ Not on this build — `config_files` required; see note below. |
+| Different typeface (Gentium, Andika, language-specific) | `{...Level 0/1..., fonts: [...]}` | **Level 3** | **No.** Fonts are a separate payload field. ⚠️ Not on this build — `config_files` required; see note below. |
 | Wholesale layout change (different cfg entirely) | `{...Level 0..., config_files: {".../ptxprint.cfg": "<full cfg text>"}}` | **Level 2** | **Yes** — agent supplies a full cfg. |
 | Custom stylesheet, Paratext settings overrides | `config_files` extended with `.sty`, `Settings.xml`, `*-mods.sty` | **Level 4** | **Yes** — extended cfg map. |
 | Pictures / illustrations | `figures: [...]` + piclist in `config_files` | **Level 5** | **Yes** for the piclist file. |
+
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 The ladder is **purely additive**. Level 1 doesn't require Level 2; Level 3 doesn't require Level 4. Climb only the rungs the user actually needs.
 
@@ -82,6 +84,8 @@ If a downstream user reports "the agent told me line spacing is a Phase 2 capabi
 ## Q: Do I need to supply `config_files` in the current phase?
 
 **A: No, not for Level 0 or Level 1 payloads.** The Container bundles a publication-quality default cfg (A5 two-column, Charis, parallel refs, footnotes, mirror header). An empty `config_files` is a valid Level 0 payload — the bundle materializes the project's `shared/ptxprint/Default/` tree at job time.
+
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
 
 You only supply `config_files` when you've climbed to **Level 2 or higher** — i.e. you've decided to replace the cfg wholesale (different layout family) or extend it with stylesheets / Paratext settings.
 

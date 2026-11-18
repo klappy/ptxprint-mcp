@@ -18,6 +18,8 @@ supersession_reason: "Phase 1's anticipated bundling work has been completed. Th
 
 > 🛈 **Superseded.** This article describes the Phase 1 PoC scope as defined on 2026-04-28 (transcript-encoded-session-7 D-025). At that time, the Container was expected to ship with PTXprint's compiled defaults serving as the bundle, with everything else as Phase 2/3 work. Empirical testing on 2026-04-30 found the Container had no usable bundled defaults — Phase 1 strict payloads failed with `"PTXprint produced no output (silent exit)"`. The bundling work is being completed (see `klappy://canon/handoffs/bundle-default-cfg-handoff`), and the new default-behavior surface (Level 0 in `klappy://canon/articles/progressive-customization`) is publication-quality.
 >
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
+>
 > **For current default behavior, see `klappy://canon/articles/progressive-customization`.**
 >
 > **For what the bundle contains, see `klappy://canon/articles/bundled-default-cfg`.**

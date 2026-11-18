@@ -141,6 +141,8 @@ Use the family value verbatim in the cfg keys. Don't lowercase, don't slugify. P
 
 The container ships with a publication-quality default cfg. Don't write a cfg from scratch; **start from the bundle and modify only the four font keys**. The bundle is documented at `klappy://canon/articles/bundled-default-cfg` — its full INI block lives at the bottom of that article and is the source of truth.
 
+> ⚠️ **Not on this build:** `config_files` required (at least `shared/ptxprint/Default/ptxprint.cfg`; the templates also send Settings.xml) — a payload without them, including define-only, fails (exit 0, no PDF; `klappy://canon/articles/failure-mode-taxonomy` 3a). The bundled default cfg is future work: see `klappy://canon/handoffs/bundle-default-cfg-handoff`.
+
 A simple sed-style modification works:
 
 ```python
