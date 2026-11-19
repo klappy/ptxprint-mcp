@@ -1,0 +1,2 @@
+# VERDICT — 2026-09-05-titus-study-bible-ptxprint
+PASS — plated on the captain's merge ("Merge 4 and plate Titus", 2026-09-04 ~22:20 ET). Cookbook PR #4 merged → main `bc3292f0` (main `7609ce8b` confirmed ancestor of dish tip `d754092b` before merge). Product: 7-page 6×9 two-column Titus, all 41 Aquifer Open Study Notes on the page of their verses, licence front matter (PTXprint job 0b75640b). Validator: captain (merge); creator Auggie. Open in DEBRIEF: `\ef` unrendered (F9), note splitting, localized Titus.

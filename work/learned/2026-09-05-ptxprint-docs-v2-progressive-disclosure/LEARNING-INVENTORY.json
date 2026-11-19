@@ -1,0 +1,35 @@
+{
+  "source_commit": "d621c6f32e539522deeae2eab8bab404e8ad5019",
+  "source_files": [
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-docs-v2-progressive-disclosure/DEBRIEF.md",
+      "sha": "b183b5103a88b99cd841585a0479f4915bf2350d",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-docs-v2-progressive-disclosure/DELTA.md",
+      "sha": "a42dedca2131893bcfe0bb7f1e9f2da122fe59c5",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-docs-v2-progressive-disclosure/FIRE-CHECK-RUN.md",
+      "sha": "6ea94841082cd392cc2f83c495412ded8f17946f",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-docs-v2-progressive-disclosure/LEARNING-CLAIM.md",
+      "sha": "6c6f4659f73247bf47cbc9e881e15828e0cd53d1",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-docs-v2-progressive-disclosure/TICKET.md",
+      "sha": "f514a89941ee2b9fd6b9a06aaf5a23bbe8f0929d",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-ptxprint-docs-v2-progressive-disclosure/VERDICT.md",
+      "sha": "d3563254806130fe6ae23f3cdc55199882481c90",
+      "mode": "100644"
+    }
+  ]
+}

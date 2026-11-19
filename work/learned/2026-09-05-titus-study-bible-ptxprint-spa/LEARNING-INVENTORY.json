@@ -1,0 +1,35 @@
+{
+  "source_commit": "d621c6f32e539522deeae2eab8bab404e8ad5019",
+  "source_files": [
+    {
+      "path": "rail/4-plated/2026-09-05-titus-study-bible-ptxprint-spa/DEBRIEF.md",
+      "sha": "aab478ce6393d6591ec6b782d3f21e817d9bd1f5",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-titus-study-bible-ptxprint-spa/DELTA.md",
+      "sha": "f0756be1da29e1a043a8b71bc4a5a5a276a3a1ef",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-titus-study-bible-ptxprint-spa/FIRE-CHECK-RUN.md",
+      "sha": "e0c2f89fabb9309066255be8c4d1d44cff5f2d7e",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-titus-study-bible-ptxprint-spa/LEARNING-CLAIM.md",
+      "sha": "6c6f4659f73247bf47cbc9e881e15828e0cd53d1",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-titus-study-bible-ptxprint-spa/TICKET.md",
+      "sha": "e098b185e58a3c94dd883a375c12307efc90e2e9",
+      "mode": "100644"
+    },
+    {
+      "path": "rail/4-plated/2026-09-05-titus-study-bible-ptxprint-spa/VERDICT.md",
+      "sha": "604d5f1b87ca924c3c6e5cef9dc63f3a25c3e0fb",
+      "mode": "100644"
+    }
+  ]
+}

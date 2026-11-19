@@ -1,0 +1,2 @@
+# FIRE-CHECK-RUN — titus-study-bible-ptxprint-spa
+1. Order observed ✅ (captain "Yes 🙌", 2026-09-04 ~22:30 ET). 2. Recipe fetched ✅ (canon study-notes-and-footnotes; PASS-0003). 3. Ingredients pinned ✅ (ASBRT@449610f7, AOSN@d355583a). 4. Head check ✅ kitchen `656d979` at fire; cookbook main `bc3292f0`. 5. Allergens (R12) ✅ open licences only, CC BY-SA both; review level disclosed. 6. Token custody (R4) ✅ none in cargo (grep on staged diff = 0). 7. Report in cargo (R7) ✅ PASS-0004 in the PR.
